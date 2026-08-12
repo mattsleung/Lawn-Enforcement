@@ -7,12 +7,14 @@ export class CommonWeed {
     this.health = 10;
     this.damage = 4;
     this.coinValue = 1;
+    this.coinDropChance = 0.5;
     this.xpValue = 10;
     this.xpDropChance = 0.5;
     this.lifetime = lifetime;
     this.copyInterval = copyInterval;
     this.copyTimer = copyInterval;
     this.hasCloned = false;
+    this.hasLateCloned = false;
     this.hitFlash = 0;
     this.slowTime = 0;
     this.freezeTime = 0;
@@ -28,10 +30,19 @@ export class CommonWeed {
     if (this.freezeTime > 0) return {};
     this.lifetime -= deltaTime;
     if (this.lifetime <= 0) return {};
-    if (this.hasCloned) return {};
-    this.copyTimer -= deltaTime;
-    if (this.copyTimer > 0) return {};
-    this.hasCloned = true;
+    if (!this.hasCloned) {
+      this.copyTimer -= deltaTime;
+      if (this.copyTimer <= 0) {
+        this.hasCloned = true;
+        return this.makeCopy(target);
+      }
+    }
+    if (this.hasLateCloned || this.lifetime > this.copyInterval) return {};
+    this.hasLateCloned = true;
+    return this.makeCopy(target);
+  }
+
+  makeCopy(target) {
     const offsetX = target.x - this.x;
     const offsetY = target.y - this.y;
     const distance = Math.hypot(offsetX, offsetY) || 1;

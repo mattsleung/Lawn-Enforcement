@@ -37,13 +37,13 @@ test("weapon chest costs 1,000 coins", () => {
   assert.equal(CHEST_COST, 1000);
 });
 
-test("Diet Cola Launcher is a 40,000-coin Legendary shop purchase", () => {
+test("Diet Cola Launcher is a 25,000-coin Legendary shop purchase", () => {
   const weapon = PERMANENT_WEAPONS.find((entry) => entry.id === "diet-cola-launcher");
   assert.equal(weapon.name, "Diet Cola Launcher");
   assert.equal(weapon.rarity, "Legendary");
-  assert.equal(weapon.price, 40000);
+  assert.equal(weapon.price, 25000);
   const progress = defaultProgress();
-  progress.coins = 40000;
+  progress.coins = 25000;
   assert.equal(buyWeapon(progress, weapon.id), true);
   assert.equal(progress.coins, 0);
   assert.equal(progress.ownedWeapons.includes(weapon.id), true);

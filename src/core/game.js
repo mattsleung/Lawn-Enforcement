@@ -226,8 +226,9 @@ export class Game {
         ? uiAction.value
         : this.input.consumeScrollRequest();
       if (scrollDirection) {
-        const maxOffset = Math.max(0, weapons.length - 6);
-        this.weaponSelectionScroll[slot] = clamp(this.weaponSelectionScroll[slot] + scrollDirection, 0, maxOffset);
+        const visibleCount = Math.min(5, weapons.length);
+        const maxOffset = Math.max(0, weapons.length - visibleCount);
+        this.weaponSelectionScroll[slot] = clamp(this.weaponSelectionScroll[slot] + scrollDirection * 3, 0, maxOffset);
       }
       const choice = uiAction?.type === "choice" ? uiAction.value : this.input.consumeUpgradeChoice();
       this.input.consumeWeaponSlot();
@@ -773,9 +774,12 @@ export class Game {
         this.finishVictory();
         return;
       }
-      for (let index = 0; index < enemy.coinValue; index += 1) {
-        const offset = randomDropOffset();
-        this.pickups.push(new Pickup({ x: enemy.x, y: enemy.y, type: "coin", ...offset }));
+      const coinDropChance = enemy.coinDropChance ?? 1;
+      if (coinDropChance >= 1 || (this.random ?? Math.random)() < coinDropChance) {
+        for (let index = 0; index < enemy.coinValue; index += 1) {
+          const offset = randomDropOffset();
+          this.pickups.push(new Pickup({ x: enemy.x, y: enemy.y, type: "coin", ...offset }));
+        }
       }
       const xpDropChance = enemy.xpDropChance ?? 1;
       if (xpDropChance >= 1 || (this.random ?? Math.random)() < xpDropChance) {
@@ -1430,7 +1434,7 @@ export class Game {
     const slot = this.screenState === "melee-selection" ? "melee" : "ranged";
     const weapons = this.ownedWeaponsForSlot(slot);
     const equippedId = this.progress.equippedWeapons[slot];
-    const visibleCount = Math.min(6, weapons.length);
+    const visibleCount = Math.min(5, weapons.length);
     const maxOffset = Math.max(0, weapons.length - visibleCount);
     const offset = clamp(this.weaponSelectionScroll[slot], 0, maxOffset);
     this.weaponSelectionScroll[slot] = offset;

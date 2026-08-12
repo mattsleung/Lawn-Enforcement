@@ -126,7 +126,7 @@
     Object.freeze({ id: "gnome", name: "Lawn Gnome", description: "A fast garden invader that deals 6 contact damage." }),
     Object.freeze({ id: "gopher", name: "Gopher", description: "A durable burrower that resurfaces at full health." }),
     Object.freeze({ id: "king-gnomulus", name: "King Gnomulus", description: "The Backyard boss who summons and throws gnomes." }),
-    Object.freeze({ id: "common-weed", name: "Common Weed", description: "A short-lived plant that grows one child toward the player." }),
+    Object.freeze({ id: "common-weed", name: "Common Weed", description: "A short-lived plant that grows two children toward the player." }),
     Object.freeze({ id: "dandelion", name: "Dandelion", description: "The Community Garden boss; its spores grow weeds and its low-health shield absorbs damage." }),
   ]);
 
@@ -141,7 +141,7 @@
       shape: "arc", color: "#dcc45f", description: "Wide 180° sweep for crowd control.", levelTenFeature: "Reinforced line: +20% range", levelTenRangeMultiplier: 1.2,
     }),
     meleeWeapon({
-      id: "hedge-clippers", name: "Hedge Clippers", rarity: "Uncommon", price: 240,
+      id: "hedge-clippers", name: "Hedge Clippers", rarity: "Uncommon", price: 720,
       duplicateValue: 90, damage: 36.4, cooldown: 0.62, range: 132, arc: Math.PI / 4,
       shape: "arc", color: "#b9c8a5", description: "Long, powerful 45° precision cut.", levelTenFeature: "Precision cut: +25% critical damage",
       levelTenDamageMultiplier: 1.25,
@@ -179,19 +179,19 @@
       recoil: 0.045, levelTenModifiers: { explosive: true, splashRadius: 72, slowDuration: 2 },
     }),
     rangedWeapon({
-      id: "tennis-balls", name: "Tennis Balls", rarity: "Rare", price: 150,
+      id: "tennis-balls", name: "Tennis Balls", rarity: "Rare", price: 450,
       duplicateValue: 60, damage: 13, cooldown: 1, projectileSpeed: 820,
       projectileLifetime: 1.6, projectileKind: "tennis-ball", color: "#d8e85f", bounces: 2, description: "Low damage ball ricochets between two extra enemies.",
       recoil: 0.04, levelTenFeature: "Match point: +2 bounces", levelTenModifiers: { bounces: 4 },
     }),
     rangedWeapon({
-      id: "acorn-slingshot", name: "Acorn Slingshot", rarity: "Uncommon", price: 290,
+      id: "acorn-slingshot", name: "Acorn Slingshot", rarity: "Uncommon", price: 870,
       duplicateValue: 100, damage: 38, cooldown: 1, projectileSpeed: 920,
       projectileLifetime: 1.35, projectileKind: "acorn", color: "#7b4b2b", pierces: 1, description: "Hard-hitting acorn passes through two targets.",
       recoil: 0.055, levelTenFeature: "Hard shell: +2 pierces", levelTenModifiers: { pierces: 3 },
     }),
     rangedWeapon({
-      id: "garden-hose", name: "Garden Hose", rarity: "Rare", price: 440,
+      id: "garden-hose", name: "Garden Hose", rarity: "Rare", price: 1320,
       duplicateValue: 160, damage: 4, cooldown: 0.075, projectileSpeed: 980,
       projectileLifetime: 0.48, projectileKind: "water", color: "#63cbe8", spread: 0.035, description: "Short steady stream with frequent light hits.",
       recoil: 0.012, levelTenFeature: "High pressure: slows targets", levelTenModifiers: { slowDuration: 0.5 },
@@ -206,14 +206,14 @@
       levelTenModifiers: { pierces: 2 },
     }),
     rangedWeapon({
-      id: "diet-cola-launcher", name: "Diet Cola Launcher", rarity: "Legendary", price: 40000,
+      id: "diet-cola-launcher", name: "Diet Cola Launcher", rarity: "Legendary", price: 25000,
       duplicateValue: 440, damage: 42, cooldown: 0.72, projectileSpeed: 570,
       projectileLifetime: 1.7, projectileKind: "diet-cola", color: "#b63b32",
       explosive: true, splashRadius: 58, splashDamageMultiplier: 0.45, description: "Launches shaken cola bottles that burst across a group.",
       recoil: 0.07, levelTenFeature: "Menthol reaction: +55% blast radius", levelTenModifiers: { splashRadius: 90 },
     }),
     rangedWeapon({
-      id: "leaf-blower", name: "Leaf Blower", rarity: "Epic", price: 720,
+      id: "leaf-blower", name: "Leaf Blower", rarity: "Epic", price: 2160,
       duplicateValue: 260, damage: 4, cooldown: 0.06, projectileSpeed: 900,
       projectileLifetime: 0.4, projectileKind: "gust", color: "#d6d0aa", spread: 0.11,
       knockback: 18, recoil: 0.014, description: "Weak steady gust repeatedly pushes enemies back.", levelTenFeature: "Gale force: doubles pushback",
@@ -1424,12 +1424,14 @@
       this.health = 10;
       this.damage = 4;
       this.coinValue = 1;
+      this.coinDropChance = 0.5;
       this.xpValue = 10;
       this.xpDropChance = 0.5;
       this.lifetime = lifetime;
       this.copyInterval = copyInterval;
       this.copyTimer = copyInterval;
       this.hasCloned = false;
+      this.hasLateCloned = false;
       this.hitFlash = 0;
       this.slowTime = 0;
       this.freezeTime = 0;
@@ -1445,10 +1447,19 @@
       if (this.freezeTime > 0) return {};
       this.lifetime -= deltaTime;
       if (this.lifetime <= 0) return {};
-      if (this.hasCloned) return {};
-      this.copyTimer -= deltaTime;
-      if (this.copyTimer > 0) return {};
-      this.hasCloned = true;
+      if (!this.hasCloned) {
+        this.copyTimer -= deltaTime;
+        if (this.copyTimer <= 0) {
+          this.hasCloned = true;
+          return this.makeCopy(target);
+        }
+      }
+      if (this.hasLateCloned || this.lifetime > this.copyInterval) return {};
+      this.hasLateCloned = true;
+      return this.makeCopy(target);
+    }
+
+    makeCopy(target) {
       const offsetX = target.x - this.x;
       const offsetY = target.y - this.y;
       const distance = Math.hypot(offsetX, offsetY) || 1;
@@ -2227,8 +2238,9 @@
           ? uiAction.value
           : this.input.consumeScrollRequest();
         if (scrollDirection) {
-          const maxOffset = Math.max(0, weapons.length - 6);
-          this.weaponSelectionScroll[slot] = clamp(this.weaponSelectionScroll[slot] + scrollDirection, 0, maxOffset);
+          const visibleCount = Math.min(5, weapons.length);
+          const maxOffset = Math.max(0, weapons.length - visibleCount);
+          this.weaponSelectionScroll[slot] = clamp(this.weaponSelectionScroll[slot] + scrollDirection * 3, 0, maxOffset);
         }
         const choice = uiAction?.type === "choice" ? uiAction.value : this.input.consumeUpgradeChoice();
         this.input.consumeWeaponSlot();
@@ -2774,9 +2786,12 @@
           this.finishVictory();
           return;
         }
-        for (let index = 0; index < enemy.coinValue; index += 1) {
-          const offset = randomDropOffset();
-          this.pickups.push(new Pickup({ x: enemy.x, y: enemy.y, type: "coin", ...offset }));
+        const coinDropChance = enemy.coinDropChance ?? 1;
+        if (coinDropChance >= 1 || (this.random ?? Math.random)() < coinDropChance) {
+          for (let index = 0; index < enemy.coinValue; index += 1) {
+            const offset = randomDropOffset();
+            this.pickups.push(new Pickup({ x: enemy.x, y: enemy.y, type: "coin", ...offset }));
+          }
         }
         const xpDropChance = enemy.xpDropChance ?? 1;
         if (xpDropChance >= 1 || (this.random ?? Math.random)() < xpDropChance) {
@@ -3431,7 +3446,7 @@
       const slot = this.screenState === "melee-selection" ? "melee" : "ranged";
       const weapons = this.ownedWeaponsForSlot(slot);
       const equippedId = this.progress.equippedWeapons[slot];
-      const visibleCount = Math.min(6, weapons.length);
+      const visibleCount = Math.min(5, weapons.length);
       const maxOffset = Math.max(0, weapons.length - visibleCount);
       const offset = clamp(this.weaponSelectionScroll[slot], 0, maxOffset);
       this.weaponSelectionScroll[slot] = offset;
