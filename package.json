@@ -1,0 +1,13 @@
+{
+  "name": "lawn-enforcement",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npm run build && python3 -m http.server 8000",
+    "test": "node --test",
+    "validate": "node scripts/validate-release.mjs",
+    "build": "node scripts/build-browser.mjs && npm test && npm run validate",
+    "build:pages": "npm run build && node scripts/build-pages.mjs"
+  }
+}

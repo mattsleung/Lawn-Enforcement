@@ -1,0 +1,127 @@
+:root {
+  color-scheme: dark;
+  font-family: "Courier New", ui-monospace, monospace;
+  background: #10170f;
+  color: #f4f0dc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  background:
+    radial-gradient(circle at 50% 20%, rgb(83 116 53 / 35%), transparent 45%),
+    #10170f;
+}
+
+.game-shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 320px;
+  min-height: 320px;
+  overflow: hidden;
+}
+
+#game {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+  image-rendering: pixelated;
+}
+
+.title-card,
+.controls,
+.debug {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+.title-card {
+  top: 22px;
+  left: 26px;
+  text-shadow: 3px 3px 0 #172011;
+}
+
+.title-card h1,
+.title-card p {
+  margin: 0;
+}
+
+.title-card h1 {
+  font-size: clamp(1.25rem, 2.6vw, 2.1rem);
+  font-weight: 900;
+  letter-spacing: -0.08em;
+  text-transform: uppercase;
+}
+
+.eyebrow {
+  color: #efd36d;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.controls {
+  right: 20px;
+  bottom: 18px;
+  display: flex;
+  gap: 14px;
+  padding: 9px 12px;
+  border: 1px solid rgb(255 255 255 / 13%);
+  border-radius: 0;
+  background: rgb(13 20 12 / 74%);
+  color: rgb(255 255 255 / 74%);
+  font-size: 0.72rem;
+  box-shadow: 4px 4px 0 rgb(0 0 0 / 30%);
+}
+
+kbd {
+  color: #efd36d;
+  font: inherit;
+  font-weight: 800;
+}
+
+.debug {
+  top: 92px;
+  left: 26px;
+  display: none;
+  min-width: 176px;
+  padding: 10px 12px;
+  border: 1px solid rgb(239 211 109 / 30%);
+  border-radius: 0;
+  background: rgb(8 13 8 / 82%);
+  color: #dce8cf;
+  font: 0.72rem/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre;
+}
+
+.debug.is-visible {
+  display: block;
+}
+
+@media (max-width: 600px) {
+  .title-card {
+    top: 14px;
+    left: 16px;
+  }
+
+  .controls {
+    right: 12px;
+    bottom: 12px;
+    gap: 8px;
+  }
+}

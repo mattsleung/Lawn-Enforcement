@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Defend your suburban lawn from an unruly creature invasion.">
+    <title>Lawn Enforcement</title>
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="styles/main.css">
+  </head>
+  <body>
+    <main class="game-shell">
+      <canvas id="game" aria-label="Lawn Enforcement game area"></canvas>
+
+      <section class="title-card" aria-hidden="true">
+        <p class="eyebrow">City ordinance division</p>
+        <h1>Lawn Enforcement</h1>
+      </section>
+
+      <aside class="controls" aria-label="Game controls">
+        <span><kbd>WASD</kbd> Move</span>
+        <span><kbd>Mouse</kbd> Aim</span>
+        <span><kbd>Hold Click</kbd> Attack</span>
+        <span><kbd>1 / 2</kbd> Weapon</span>
+        <span><kbd>X</kbd> Spawn Boss</span>
+        <span><kbd>F3</kbd> Debug</span>
+      </aside>
+
+      <output id="debug" class="debug" aria-live="off"></output>
+    </main>
+
+    <noscript>Lawn Enforcement requires JavaScript to run.</noscript>
+    <script defer src="game.bundle.js?v=20260811-release"></script>
+  </body>
+</html>
