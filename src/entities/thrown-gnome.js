@@ -29,6 +29,15 @@ export class ThrownGnome {
   render(context, camera) {
     const x = Math.round(this.x - camera.x);
     const y = Math.round(this.y - camera.y);
+    const targetX = Math.round(this.targetX - camera.x);
+    const targetY = Math.round(this.targetY - camera.y);
+    context.strokeStyle = "rgba(238, 197, 75, 0.78)";
+    context.lineWidth = 2;
+    context.strokeRect(targetX - 14, targetY - 14, 28, 28);
+    context.fillRect(targetX - 2, targetY - 20, 4, 12);
+    context.fillRect(targetX - 2, targetY + 8, 4, 12);
+    context.fillRect(targetX - 20, targetY - 2, 12, 4);
+    context.fillRect(targetX + 8, targetY - 2, 12, 4);
     context.save();
     context.translate(x, y);
     context.rotate(this.rotation);

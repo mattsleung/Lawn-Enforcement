@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { Camera } from "../src/core/camera.js";
 import { Game } from "../src/core/game.js";
 import { PLAYER, VIEWPORT, WORLD } from "../src/config/game-config.js";
-import { FIRST_MAP, FRONTYARD_MAP, GARDEN_MAP, MAP_SLOTS, mapById } from "../src/config/map-config.js";
+import { FIRST_MAP, FRONTYARD_MAP, GARDEN_MAP, LAKE_ELIZABETH_MAP, MAP_SLOTS, PUBLIC_PARK_MAP, mapById } from "../src/config/map-config.js";
 import { Player } from "../src/entities/player.js";
 
 test("Backyard is slightly smaller and Frontyard is slightly taller", () => {
@@ -39,8 +39,37 @@ test("Community Garden is the third map and uses weed waves", () => {
   assert.equal(GARDEN_MAP.bossSpawnTime, 90);
   assert.equal(GARDEN_MAP.boss.type, "dandelion");
   assert.equal(GARDEN_MAP.boss.health, 1000);
+  assert.equal(GARDEN_MAP.bossSpawnTime, 90);
   assert.equal(GARDEN_MAP.victoryCoinBonus, 1500);
   assert.equal(mapById("garden"), GARDEN_MAP);
+});
+
+test("Public Park uses the Groundskeeper boss", () => {
+  assert.equal(PUBLIC_PARK_MAP.boss.type, "groundskeeper");
+  assert.equal(PUBLIC_PARK_MAP.boss.health, 2000);
+  assert.equal(PUBLIC_PARK_MAP.bossSpawnTime, 120);
+  assert.equal(PUBLIC_PARK_MAP.boss.mowCooldown, 5);
+  assert.equal(PUBLIC_PARK_MAP.boss.clippingCooldown, 1);
+});
+
+test("Public Park is a large obstacle-filled fourth map", () => {
+  assert.equal(MAP_SLOTS[3], PUBLIC_PARK_MAP);
+  assert.equal(PUBLIC_PARK_MAP.world.width, VIEWPORT.designWidth * 1.8);
+  assert.equal(PUBLIC_PARK_MAP.world.height, VIEWPORT.designHeight * 1.5);
+  assert.equal(PUBLIC_PARK_MAP.normalEnemyType, "park");
+  assert.ok(PUBLIC_PARK_MAP.obstacles.length >= 5);
+  assert.ok(PUBLIC_PARK_MAP.obstacles.every((obstacle) => obstacle.width > 0 && obstacle.height > 0));
+  assert.equal(GARDEN_MAP.unlocks, "public-park");
+  assert.equal(mapById("public-park"), PUBLIC_PARK_MAP);
+});
+
+test("Lake Elizabeth has a central lake and two timed bosses", () => {
+  assert.equal(MAP_SLOTS[4], LAKE_ELIZABETH_MAP);
+  assert.equal(LAKE_ELIZABETH_MAP.bossSpawnTime, 90);
+  assert.equal(LAKE_ELIZABETH_MAP.bosses.length, 2);
+  assert.equal(LAKE_ELIZABETH_MAP.bosses[1].type, "pondfather");
+  assert.ok(LAKE_ELIZABETH_MAP.obstacles.some((obstacle) => obstacle.kind === "lake" && obstacle.solid === true));
+  assert.equal(mapById("lake-elizabeth"), LAKE_ELIZABETH_MAP);
 });
 
 test("yard fences span the full map beside the house edge", () => {

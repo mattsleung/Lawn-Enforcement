@@ -214,7 +214,12 @@ test("glossary enemy defeat counts persist and reject malformed values", () => {
     gopher: 3,
     "king-gnomulus": 0,
     "common-weed": 0,
+    squirrel: 0,
+    "acorn-squirrel": 0,
     dandelion: 0,
+    groundskeeper: 0,
+    goose: 0,
+    pondfather: 0,
   });
   values.set("lawn-enforcement-save-v1", JSON.stringify({
     defeatedEnemies: { gnome: -5, gopher: "many", "king-gnomulus": 2.9 },
@@ -224,7 +229,12 @@ test("glossary enemy defeat counts persist and reject malformed values", () => {
     gopher: 0,
     "king-gnomulus": 2,
     "common-weed": 0,
+    squirrel: 0,
+    "acorn-squirrel": 0,
     dandelion: 0,
+    groundskeeper: 0,
+    goose: 0,
+    pondfather: 0,
   });
 });
 
