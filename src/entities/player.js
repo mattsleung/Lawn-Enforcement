@@ -44,13 +44,14 @@ export class Player {
         });
   }
 
-  update(deltaTime, movement, aimPoint, world = WORLD) {
+  update(deltaTime, movement, aimPoint, world = WORLD, obstacles = []) {
     this.invulnerability = Math.max(0, this.invulnerability - deltaTime);
     this.hitFlash = Math.max(0, this.hitFlash - deltaTime);
     const previousX = this.x;
     const previousY = this.y;
     this.x = clamp(this.x + movement.x * this.speed * deltaTime, this.radius, world.width - this.radius);
     this.y = clamp(this.y + movement.y * this.speed * deltaTime, this.radius, world.height - this.radius);
+    resolveObstacleCollisions(this, obstacles);
     this.facing = Math.atan2(aimPoint.y - this.y, aimPoint.x - this.x);
     this.isMoving = this.x !== previousX || this.y !== previousY;
     this.walkTime = this.isMoving ? this.walkTime + deltaTime : 0;
@@ -178,6 +179,23 @@ export class Player {
     context.restore();
 
     context.restore();
+  }
+}
+
+function resolveObstacleCollisions(circle, obstacles) {
+  for (const obstacle of obstacles) {
+    if (obstacle.solid === false) continue;
+    const closestX = Math.max(obstacle.x, Math.min(circle.x, obstacle.x + obstacle.width));
+    const closestY = Math.max(obstacle.y, Math.min(circle.y, obstacle.y + obstacle.height));
+    const offsetX = circle.x - closestX;
+    const offsetY = circle.y - closestY;
+    if (offsetX * offsetX + offsetY * offsetY >= circle.radius * circle.radius) continue;
+    const pushX = Math.min(Math.abs(circle.x - obstacle.x), Math.abs(circle.x - (obstacle.x + obstacle.width)));
+    const pushY = Math.min(Math.abs(circle.y - obstacle.y), Math.abs(circle.y - (obstacle.y + obstacle.height)));
+    if (pushX < pushY) circle.x = circle.x < obstacle.x + obstacle.width / 2
+      ? obstacle.x - circle.radius : obstacle.x + obstacle.width + circle.radius;
+    else circle.y = circle.y < obstacle.y + obstacle.height / 2
+      ? obstacle.y - circle.radius : obstacle.y + obstacle.height + circle.radius;
   }
 }
 

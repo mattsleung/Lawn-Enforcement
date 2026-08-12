@@ -1,5 +1,5 @@
 export class Gnome {
-  constructor({ x, y, health, speed, damage, coinValue, xpValue }) {
+  constructor({ x, y, health, speed, damage, coinValue, xpValue, bossMinion = false }) {
     this.x = x;
     this.y = y;
     this.radius = 18;
@@ -12,6 +12,7 @@ export class Gnome {
     this.hitFlash = 0;
     this.slowTime = 0;
     this.enemyType = "gnome";
+    this.bossMinion = bossMinion;
   }
 
   get active() {

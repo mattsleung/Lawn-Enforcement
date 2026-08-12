@@ -9,6 +9,7 @@ export class SporeProjectile {
     this.radius = 12;
     this.active = true;
     this.spawnedWeed = false;
+    this.spawnsWeed = true;
   }
 
   update(deltaTime, world) {

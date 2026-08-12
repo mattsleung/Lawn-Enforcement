@@ -93,7 +93,7 @@ export const WEAPON_DEFINITIONS = Object.freeze([
     recoil: 0.018, description: "Inaccurate water minigun with extreme fire rate.", levelTenFeature: "Cloudburst: fires two water bolts", levelTenModifiers: { projectileCount: 2 },
   }),
   rangedWeapon({
-    id: "backyard-flamethrower", name: "Backyard Flamethrower", rarity: "Secret", price: null,
+    id: "backyard-flamethrower", name: "Backyard Flamethrower", rarity: "Mythical", price: null,
     duplicateValue: 2000, damage: 10, cooldown: 0.09, projectileSpeed: 460,
     projectileLifetime: 0.38, projectileKind: "flame", color: "#f27a32", spread: 0.12,
     fireDamagePerSecond: 10, fireDuration: 5, fireMaxStacks: 2, recoil: 0.018,

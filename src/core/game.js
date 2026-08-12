@@ -4,11 +4,18 @@ import { Player } from "../entities/player.js";
 import { Gnome } from "../entities/gnome.js";
 import { Gopher } from "../entities/gopher.js";
 import { CommonWeed } from "../entities/common-weed.js";
+import { Squirrel } from "../entities/squirrel.js";
+import { AcornSquirrel } from "../entities/acorn-squirrel.js";
+import { Goose } from "../entities/goose.js";
 import { Projectile } from "../entities/projectile.js";
+import { AcornProjectile } from "../entities/acorn-projectile.js";
 import { Pickup } from "../entities/pickup.js";
 import { Boss } from "../entities/boss.js";
 import { DandelionBoss } from "../entities/dandelion-boss.js";
+import { GroundskeeperBoss } from "../entities/groundskeeper-boss.js";
+import { PondfatherBoss } from "../entities/pondfather-boss.js";
 import { SporeProjectile } from "../entities/spore-projectile.js";
+import { GrassClipping } from "../entities/grass-clipping.js";
 import { ThrownGnome } from "../entities/thrown-gnome.js";
 import { COLORS } from "../config/game-config.js";
 import { FIRST_MAP, MAP_SLOTS, mapById } from "../config/map-config.js";
@@ -50,7 +57,10 @@ export class Game {
     this.menuMessage = "";
     this.permanentUpgradeCategory = null;
     this.glossaryTab = "bestiary";
+    this.glossaryScroll = 0;
+    this.mapSelectionScroll = 0;
     this.weaponSelectionScroll = { melee: 0, ranged: 0 };
+    this.arsenalScroll = { melee: 0, ranged: 0 };
     this.uiHitTargets = [];
 
     this.resize = this.resize.bind(this);
@@ -77,6 +87,7 @@ export class Game {
     this.abilityProjectiles = [];
     this.thrownGnomes = [];
     this.bossProjectiles = [];
+    this.activeObstacles = (this.currentMap.obstacles ?? []).map((obstacle) => ({ ...obstacle }));
     this.weaponSlot = 1;
     this.attackCooldown = 0;
     this.meleePulse = 0;
@@ -94,6 +105,9 @@ export class Game {
     this.passiveCooldowns = { mower: 5, battery: 5, freeze: 5, scarecrow: 5 };
     this.boss = null;
     this.bossSpawned = false;
+    this.bossIndex = 0;
+    this.bossNextSpawnTimer = null;
+    this.firstBossDefeated = false;
     this.bossIntroTime = 0;
     this.victoryReward = 0;
     this.spawnTimer = 0.8;
@@ -198,6 +212,14 @@ export class Game {
         this.screenState = "menu";
         return;
       }
+      const scrollDirection = uiAction?.type === "map-scroll"
+        ? uiAction.value
+        : this.input.consumeScrollRequest();
+      if (scrollDirection) {
+        const visibleCount = Math.max(1, Math.floor((this.camera.viewHeight / 2 - 20) / 62));
+        const maxOffset = Math.max(0, MAP_SLOTS.length - visibleCount);
+        this.mapSelectionScroll = clamp(this.mapSelectionScroll + scrollDirection * 3, 0, maxOffset);
+      }
       const keyboardChoice = this.input.consumeUpgradeChoice();
       this.input.consumeWeaponSlot();
       const mapId = uiAction?.type === "map"
@@ -270,6 +292,15 @@ export class Game {
         else this.screenState = "menu";
         return;
       }
+      if (this.permanentUpgradeCategory) {
+        const scrollDirection = uiAction?.type === "arsenal-scroll" ? uiAction.value : this.input.consumeScrollRequest();
+        if (scrollDirection) {
+          const weapons = this.ownedWeaponsForSlot(this.permanentUpgradeCategory);
+          const visibleCount = Math.min(5, weapons.length);
+          const maxOffset = Math.max(0, weapons.length - visibleCount);
+          this.arsenalScroll[this.permanentUpgradeCategory] = clamp(this.arsenalScroll[this.permanentUpgradeCategory] + scrollDirection * 3, 0, maxOffset);
+        }
+      }
       const choice = uiAction?.type === "choice" ? uiAction.value : this.input.consumeUpgradeChoice();
       this.input.consumeWeaponSlot();
       if (choice !== null) this.handlePermanentUpgradeChoice(choice);
@@ -306,6 +337,13 @@ export class Game {
         this.screenState = "menu";
       } else if (uiAction?.type === "glossary-tab") {
         this.glossaryTab = uiAction.value;
+        this.glossaryScroll = 0;
+      } else if (uiAction?.type === "glossary-scroll") {
+        this.glossaryScroll = clamp(this.glossaryScroll + uiAction.value * 3, 0, this.glossaryMaxScroll(this.camera.viewWidth, this.camera.viewHeight));
+      }
+      if (!uiAction || (uiAction?.type !== "glossary-scroll" && uiAction !== "back")) {
+        const scrollDirection = this.input.consumeScrollRequest();
+        if (scrollDirection) this.glossaryScroll = clamp(this.glossaryScroll + scrollDirection * 3, 0, this.glossaryMaxScroll(this.camera.viewWidth, this.camera.viewHeight));
       }
       this.input.consumeUpgradeChoice();
       this.input.consumeWeaponSlot();
@@ -363,7 +401,7 @@ export class Game {
     deltaTime = this.applyBossIntroSlowdown(deltaTime);
 
     let aimPoint = this.camera.screenToWorld(this.input.pointer);
-    this.player.update(deltaTime, this.input.movementVector(), aimPoint, this.world);
+    this.player.update(deltaTime, this.input.movementVector(), aimPoint, this.world, this.activeObstacles);
     this.camera.follow(this.player);
     aimPoint = this.camera.screenToWorld(this.input.pointer);
     this.player.updateRecoil(deltaTime, this.input.pointer.down);
@@ -371,7 +409,10 @@ export class Game {
     this.attackCooldown = Math.max(0, this.attackCooldown - deltaTime);
     this.meleePulse = Math.max(0, this.meleePulse - deltaTime);
     this.runTime += deltaTime;
-    if (!this.bossSpawned && this.runTime >= this.currentMap.bossSpawnTime) {
+    if (!this.bossSpawned && this.bossNextSpawnTimer !== null) {
+      this.bossNextSpawnTimer -= deltaTime;
+      if (this.bossNextSpawnTimer <= 0) this.spawnBoss();
+    } else if (!this.bossSpawned && this.runTime >= this.currentMap.bossSpawnTime) {
       this.spawnBoss();
     }
     this.spawnTimer -= deltaTime;
@@ -381,7 +422,7 @@ export class Game {
       for (let index = 0; index < Math.min(burstSize, availableSlots); index += 1) {
         this.spawnNormalEnemy();
       }
-      this.spawnTimer = Math.max(0.6, 2.25 - this.runTime * 0.018);
+      this.spawnTimer = Math.max(0.6, 2.25 - this.runTime * 0.018) * (this.currentMap.normalEnemyType === "park" ? 1.3 : this.currentMap.normalEnemyType === "lake" ? 1.5 : 1);
     }
 
     if (this.player.syrupTrail && this.player.isMoving) {
@@ -449,7 +490,7 @@ export class Game {
 
     for (const thrownGnome of this.thrownGnomes) {
       thrownGnome.update(deltaTime);
-      if (thrownGnome.arrived) this.spawnLandedEnemy(thrownGnome.enemyType, thrownGnome.x, thrownGnome.y);
+      if (thrownGnome.arrived) this.spawnLandedEnemy(thrownGnome.enemyType, thrownGnome.x, thrownGnome.y, true);
     }
     this.thrownGnomes = this.thrownGnomes.filter((thrownGnome) => !thrownGnome.arrived);
 
@@ -459,7 +500,7 @@ export class Game {
         this.player.takeDamage(spore.damage);
         spore.hitPlayer();
       }
-      if (!spore.active && !spore.spawnedWeed) {
+      if (!spore.active && spore.spawnsWeed && !spore.spawnedWeed) {
         spore.spawnedWeed = true;
         this.spawnCommonWeedAt(spore.x, spore.y);
       }
@@ -470,7 +511,7 @@ export class Game {
     for (const enemy of this.enemies) {
       const status = updateEnemyStatus(enemy, deltaTime);
       if (status.fireDamage > 0) this.damageEnemy(enemy, status.fireDamage);
-      const bossEvents = status.frozen || !enemy.active ? {} : enemy.update(deltaTime, this.player) ?? {};
+      const bossEvents = status.frozen || !enemy.active ? {} : enemy.update(deltaTime, this.player, this.activeObstacles) ?? {};
       if (enemy.isBoss && bossEvents.summonGnomes) {
         this.summonBossGnomes(enemy);
       }
@@ -484,9 +525,64 @@ export class Game {
           enemyType: this.currentMap.bossThrownEnemy,
         }));
       }
+      if (bossEvents.throwAcorn) {
+        const event = bossEvents.throwAcorn;
+        const dx = event.x - enemy.x;
+        const dy = event.y - enemy.y;
+        const distance = Math.hypot(dx, dy) || 1;
+        this.bossProjectiles.push(new AcornProjectile({
+          x: enemy.x,
+          y: enemy.y,
+          velocityX: dx / distance * event.speed,
+          velocityY: dy / distance * event.speed,
+        }));
+      }
+      if (enemy.isBoss && bossEvents.throwMinions) {
+        for (const thrown of bossEvents.throwMinions) {
+          this.thrownGnomes.push(new ThrownGnome({
+            x: enemy.x, y: enemy.y, targetX: thrown.x, targetY: thrown.y,
+            speed: thrown.speed, enemyType: thrown.type,
+          }));
+        }
+      }
       if (enemy.isBoss && bossEvents.fireSpores) this.fireDandelionSpores(enemy);
       if (enemy.isBoss && bossEvents.fireAimedSpore) this.fireDandelionAimedSpore(enemy);
+      if (enemy.isBoss && bossEvents.divebomb) {
+        this.player.takeDamage(50);
+        const dx = this.player.x - enemy.waterX;
+        const dy = this.player.y - enemy.waterY;
+        const distance = Math.hypot(dx, dy) || 1;
+        this.player.x = clamp(this.player.x + dx / distance * 120, this.player.radius, this.world.width - this.player.radius);
+        this.player.y = clamp(this.player.y + dy / distance * 120, this.player.radius, this.world.height - this.player.radius);
+      }
       if (bossEvents.copyWeed) this.spawnCommonWeedAt(bossEvents.copyWeed.x, bossEvents.copyWeed.y);
+      resolveEnemyObstacles(enemy, this.activeObstacles);
+      if (enemy.isBoss && bossEvents.fireClippings) this.fireGroundskeeperClippings(bossEvents.fireClippings);
+      if (enemy.isBoss && bossEvents.crushObstacles?.length) {
+        for (const obstacle of bossEvents.crushObstacles) {
+          this.activeObstacles = this.activeObstacles.filter((entry) => entry !== obstacle);
+          this.spawnParkEnemyAt(obstacle.x + obstacle.width / 2, obstacle.y + obstacle.height / 2, false, true);
+          this.spawnParkEnemyAt(obstacle.x + obstacle.width / 2, obstacle.y + obstacle.height / 2, true, true);
+        }
+      }
+      if (enemy.isBoss && bossEvents.spawnGeese) {
+        for (let index = 0; index < 3; index += 1) this.spawnGoose(Math.PI * 2 * index / 3, true);
+      }
+      if (enemy.isBoss && bossEvents.spawnMinion) {
+        const angle = Math.random() * Math.PI * 2;
+        if (bossEvents.spawnMinion === "goose") this.spawnGoose(angle, true);
+        else {
+          const offset = 80 + Math.random() * 120;
+          this.spawnParkEnemyAt(enemy.x + Math.cos(angle) * offset, enemy.y + Math.sin(angle) * offset, bossEvents.spawnMinion === "acorn-squirrel", true);
+        }
+      }
+      if (enemy.isBoss && enemy.enemyType === "groundskeeper" && enemy.chargeTime > 0) {
+        for (const minion of this.enemies) {
+          if (minion !== enemy && minion.active && !minion.isBoss && circlesOverlap(enemy, minion)) {
+            this.damageEnemy(minion, Number.POSITIVE_INFINITY);
+          }
+        }
+      }
       if (this.syrupSplats.some((splat) => Math.hypot(enemy.x - splat.x, enemy.y - splat.y) <= 34)) {
         enemy.slowTime = Math.max(enemy.slowTime, 0.15);
       }
@@ -638,6 +734,15 @@ export class Game {
   }
 
   spawnNormalEnemy(forcedAngle = Math.random() * Math.PI * 2) {
+    if (this.currentMap.normalEnemyType === "lake" && this.firstBossDefeated) {
+      if (Math.random() < 0.5) this.spawnGoose(forcedAngle);
+      else this.spawnParkEnemy(forcedAngle);
+      return;
+    }
+    if (this.currentMap.normalEnemyType === "lake") {
+      this.spawnLakeEnemy(forcedAngle);
+      return;
+    }
     if (this.currentMap.normalEnemyType === "weed") {
       this.spawnCommonWeed(forcedAngle);
       return;
@@ -648,7 +753,42 @@ export class Game {
       this.spawnGopher(forcedAngle);
       return;
     }
+    if (this.currentMap.normalEnemyType === "park") {
+      this.spawnParkEnemy(forcedAngle);
+      return;
+    }
     this.spawnEnemy(forcedAngle);
+  }
+
+  spawnLakeEnemy(forcedAngle = Math.random() * Math.PI * 2) {
+    if (Math.random() < this.currentMap.gopherSpawnChance) this.spawnGopher(forcedAngle);
+    else this.spawnEnemy(forcedAngle);
+  }
+
+  spawnGoose(forcedAngle = Math.random() * Math.PI * 2, bossMinion = false) {
+    const distance = Math.max(this.camera.viewWidth, this.camera.viewHeight) * 0.52 + 90;
+    const goose = new Goose({
+      x: clamp(this.player.x + Math.cos(forcedAngle) * distance, 30, this.world.width - 30),
+      y: clamp(this.player.y + Math.sin(forcedAngle) * distance, 30, this.world.height - 30),
+    });
+    goose.bossMinion = bossMinion;
+    this.enemies.push(goose);
+  }
+
+  spawnParkEnemy(forcedAngle = Math.random() * Math.PI * 2) {
+    const distance = Math.max(this.camera.viewWidth, this.camera.viewHeight) * 0.52 + 90;
+    const options = {
+      x: clamp(this.player.x + Math.cos(forcedAngle) * distance, 30, this.world.width - 30),
+      y: clamp(this.player.y + Math.sin(forcedAngle) * distance, 30, this.world.height - 30),
+    };
+    this.enemies.push(new (Math.random() < 0.35 ? AcornSquirrel : Squirrel)(options));
+  }
+
+  spawnParkEnemyAt(x, y, acorn = false, bossMinion = false) {
+    if (this.enemies.length >= MAX_ENEMIES) return;
+    const enemy = new (acorn ? AcornSquirrel : Squirrel)({ x, y });
+    enemy.bossMinion = bossMinion;
+    this.enemies.push(enemy);
   }
 
   spawnGopher(forcedAngle = Math.random() * Math.PI * 2) {
@@ -677,14 +817,21 @@ export class Game {
 
   spawnBoss() {
     this.bossSpawned = true;
+    this.bossNextSpawnTimer = null;
     this.bossIntroTime = 1;
     const angle = -Math.PI / 2;
     const distance = Math.max(this.camera.viewWidth, this.camera.viewHeight) * 0.45;
-    const BossType = this.currentMap.boss.type === "dandelion" ? DandelionBoss : Boss;
+    const bossConfig = this.currentMap.bosses?.[this.bossIndex] ?? this.currentMap.boss;
+    const BossType = bossConfig.type === "dandelion"
+      ? DandelionBoss
+      : bossConfig.type === "groundskeeper" ? GroundskeeperBoss
+        : bossConfig.type === "pondfather" ? PondfatherBoss : Boss;
+    const pond = this.currentMap.obstacles?.find((obstacle) => obstacle.kind === "lake");
     this.boss = new BossType({
-      x: clamp(this.player.x + Math.cos(angle) * distance, 80, this.world.width - 80),
-      y: clamp(this.player.y + Math.sin(angle) * distance, 80, this.world.height - 80),
-      config: this.currentMap.boss,
+      x: bossConfig.type === "pondfather" && pond ? pond.x + pond.width / 2 : clamp(this.player.x + Math.cos(angle) * distance, 80, this.world.width - 80),
+      y: bossConfig.type === "pondfather" && pond ? pond.y + pond.height / 2 : clamp(this.player.y + Math.sin(angle) * distance, 80, this.world.height - 80),
+      config: bossConfig,
+      world: this.world,
     });
     this.enemies.push(this.boss);
   }
@@ -722,6 +869,18 @@ export class Game {
     }));
   }
 
+  fireGroundskeeperClippings(event) {
+    const base = Math.atan2(event.directionY, event.directionX);
+    for (const offset of [-0.38, -0.19, 0, 0.19, 0.38]) {
+      const angle = base + offset;
+      this.bossProjectiles.push(new GrassClipping({
+        x: event.x, y: event.y,
+        velocityX: Math.cos(angle) * 300,
+        velocityY: Math.sin(angle) * 300,
+      }));
+    }
+  }
+
   summonBossGnomes(boss) {
     const distance = 84;
     const positions = [
@@ -740,18 +899,25 @@ export class Game {
         damage: 6,
         coinValue: 3,
         xpValue: 20,
+        bossMinion: true,
       }));
     }
   }
 
-  spawnLandedEnemy(enemyType, x, y) {
+  spawnLandedEnemy(enemyType, x, y, bossMinion = false) {
     if (this.enemies.length >= MAX_ENEMIES) return;
     if (enemyType === "gopher") {
-      const gopher = new Gopher({ x, y });
+      const gopher = new Gopher({ x, y, bossMinion });
       gopher.burrowed = false;
       gopher.burrowTime = 0;
       this.enemies.push(gopher);
       return;
+    }
+    if (enemyType === "goose") {
+      const goose = new Goose({ x, y }); goose.bossMinion = bossMinion; this.enemies.push(goose); return;
+    }
+    if (enemyType === "squirrel" || enemyType === "acorn-squirrel") {
+      this.spawnParkEnemyAt(x, y, enemyType === "acorn-squirrel", bossMinion); return;
     }
     this.enemies.push(new Gnome({
       x,
@@ -761,17 +927,27 @@ export class Game {
       damage: 6,
       coinValue: 3,
       xpValue: 20,
+      bossMinion,
     }));
   }
 
   damageEnemy(enemy, damage) {
+    if (this.bossSpawned && this.boss?.active && !enemy.isBoss && !enemy.bossMinion) damage *= 3;
     if (enemy.takeDamage(damage)) {
       const enemyType = enemy.enemyType ?? (enemy.isBoss ? "king-gnomulus" : "gnome");
       if (enemyType in this.progress.defeatedEnemies) {
         this.progress.defeatedEnemies[enemyType] += 1;
       }
       if (enemy.isBoss) {
-        this.finishVictory();
+        if (this.currentMap.bosses && this.bossIndex < this.currentMap.bosses.length - 1) {
+          this.bossIndex += 1;
+          this.firstBossDefeated = true;
+          this.bossSpawned = false;
+          this.boss = null;
+          this.bossNextSpawnTimer = 60;
+        } else {
+          this.finishVictory();
+        }
         return;
       }
       const coinDropChance = enemy.coinDropChance ?? 1;
@@ -1308,10 +1484,20 @@ export class Game {
   }
 
   renderBestiary(context, width, height) {
+    const listTop = height / 2 - 165;
+    const listBottom = height - 92;
+    const rowHeight = 104;
+    const visibleHeight = listBottom - listTop;
+    const maxScroll = Math.max(0, ENEMY_GLOSSARY.length * rowHeight - visibleHeight);
+    this.glossaryScroll = clamp(this.glossaryScroll, 0, maxScroll);
+    context.save();
+    context.beginPath();
+    context.rect(width / 2 - 300, listTop, 600, visibleHeight);
+    context.clip();
     ENEMY_GLOSSARY.forEach((enemy, index) => {
       const defeated = this.progress.defeatedEnemies[enemy.id] ?? 0;
       const x = width / 2 - 285;
-      const y = height / 2 - 165 + index * 104;
+      const y = listTop + index * rowHeight - this.glossaryScroll;
       context.fillStyle = defeated > 0 ? "rgba(52, 54, 33, 0.94)" : "rgba(35, 35, 27, 0.94)";
       context.fillRect(x, y, 570, 86);
       context.strokeStyle = defeated > 0 ? "#9a9256" : "#5b5747";
@@ -1327,6 +1513,19 @@ export class Game {
       context.font = "11px 'Courier New', monospace";
       context.fillText(defeated > 0 ? enemy.description : "Defeat this enemy to reveal its entry.", width / 2, y + 67);
     });
+    context.restore();
+    this.renderScrollBar(context, Math.min(width / 2 + 294, width - 14), listTop, visibleHeight, maxScroll, this.glossaryScroll);
+    const controlX = Math.min(width / 2 + 265, width - 64);
+    this.renderButton(context, controlX, listTop - 32, 58, 24, "▲", { type: "glossary-scroll", value: -1 }, { font: "bold 12px 'Courier New', monospace" });
+    this.renderButton(context, controlX, listBottom + 6, 58, 24, "▼", { type: "glossary-scroll", value: 1 }, { font: "bold 12px 'Courier New', monospace" });
+  }
+
+  glossaryMaxScroll(width, height) {
+    const listTop = height / 2 - 165;
+    const visibleHeight = height - 92 - listTop;
+    const itemCount = this.glossaryTab === "bestiary" ? ENEMY_GLOSSARY.length : WEAPONS_SORTED_BY_RARITY.length + 4;
+    const contentHeight = this.glossaryTab === "bestiary" ? itemCount * 104 : Math.ceil(WEAPON_DEFINITIONS.length / 2) * 26 + 160;
+    return Math.max(0, contentHeight - visibleHeight);
   }
 
   renderCollection(context, width, height) {
@@ -1337,12 +1536,21 @@ export class Game {
     context.fillStyle = "#ead77b";
     context.font = "bold 14px 'Courier New', monospace";
     context.fillText(`WEAPONS ${owned.size}/${WEAPON_DEFINITIONS.length}`, width / 2, weaponListTop - 20);
+    const listTop = height / 2 - 135;
+    const contentHeight = Math.ceil(WEAPON_DEFINITIONS.length / 2) * weaponRowSpacing + 170;
+    const visibleHeight = height - 92 - listTop;
+    const maxScroll = Math.max(0, contentHeight - visibleHeight);
+    this.glossaryScroll = clamp(this.glossaryScroll, 0, maxScroll);
+    context.save();
+    context.beginPath();
+    context.rect(width / 2 - 300, listTop - 28, 600, visibleHeight + 28);
+    context.clip();
     WEAPONS_SORTED_BY_RARITY.forEach((weapon, index) => {
       const column = index < rowsPerColumn ? 0 : 1;
       const row = column === 0 ? index : index - rowsPerColumn;
-      const boxWidth = 275;
-      const x = width / 2 - 285 + column * 295;
-      const y = weaponListTop + row * weaponRowSpacing;
+      const boxWidth = Math.min(275, Math.max(130, (width - 70) / 2));
+      const x = width / 2 - boxWidth - 10 + column * (boxWidth + 20);
+      const y = weaponListTop + row * weaponRowSpacing - this.glossaryScroll;
       const unlocked = owned.has(weapon.id);
       context.fillStyle = unlocked ? "#343621" : "#29291f";
       context.fillRect(x, y, boxWidth, 24);
@@ -1366,14 +1574,14 @@ export class Game {
     context.fillStyle = "#ead77b";
     context.font = "bold 14px 'Courier New', monospace";
     const mapsTitleY = weaponListTop + rowsPerColumn * weaponRowSpacing + 30;
-    context.fillText(`MAPS ${this.unlockedMaps.size}/${MAP_SLOTS.length}`, width / 2, mapsTitleY);
-    const mapCardWidth = 180;
+    context.fillText(`MAPS ${this.unlockedMaps.size}/${MAP_SLOTS.length}`, width / 2, mapsTitleY - this.glossaryScroll);
+    const mapCardWidth = Math.min(180, Math.max(130, (width - 80) / 2));
     const mapGap = 15;
-    const mapStartX = width / 2 - (MAP_SLOTS.length * mapCardWidth + (MAP_SLOTS.length - 1) * mapGap) / 2;
+    const mapStartX = width / 2 - mapCardWidth - mapGap / 2;
     MAP_SLOTS.forEach((map, index) => {
       const unlocked = this.unlockedMaps.has(map.id);
-      const x = mapStartX + index * (mapCardWidth + mapGap);
-      const y = mapsTitleY + 17;
+      const x = mapStartX + (index % 2) * (mapCardWidth + mapGap);
+      const y = mapsTitleY + 17 + Math.floor(index / 2) * 48 - this.glossaryScroll;
       context.fillStyle = unlocked ? "#343621" : "#29291f";
       context.fillRect(x, y, mapCardWidth, 42);
       context.strokeStyle = unlocked ? "#9a9256" : "#4d493a";
@@ -1383,6 +1591,26 @@ export class Game {
       context.font = "bold 10px 'Courier New', monospace";
       fitCenteredText(context, unlocked ? map.name.toUpperCase() : "??? · LOCKED", x + mapCardWidth / 2, y + 26, mapCardWidth - 12, 10, 8, true);
     });
+    context.restore();
+    this.renderScrollBar(context, Math.min(width / 2 + 294, width - 14), listTop - 28, visibleHeight + 28, maxScroll, this.glossaryScroll);
+    const controlX = Math.min(width / 2 + 265, width - 64);
+    this.renderButton(context, controlX, listTop - 32, 58, 24, "▲", { type: "glossary-scroll", value: -1 }, { font: "bold 12px 'Courier New', monospace" });
+    this.renderButton(context, controlX, height - 86, 58, 24, "▼", { type: "glossary-scroll", value: 1 }, { font: "bold 12px 'Courier New', monospace" });
+  }
+
+  renderScrollBar(context, x, y, height, maxScroll, scroll) {
+    const width = 8;
+    context.fillStyle = "rgba(20, 20, 14, 0.82)";
+    context.fillRect(x, y, width, height);
+    if (maxScroll <= 0) {
+      context.fillStyle = "#8d8756";
+      context.fillRect(x, y, width, height);
+      return;
+    }
+    const thumbHeight = Math.max(24, height * height / (height + maxScroll));
+    const thumbY = y + (height - thumbHeight) * (scroll / maxScroll);
+    context.fillStyle = "#d4bd58";
+    context.fillRect(x, thumbY, width, thumbHeight);
   }
 
   renderMapSelectionOverlay(context, width, height) {
@@ -1395,16 +1623,31 @@ export class Game {
     context.fillStyle = "#d8d0ae";
     context.font = "13px 'Courier New', monospace";
     context.fillText("Click an unlocked map to continue to your loadout", width / 2, height / 2 - 120);
+    const listTop = height / 2 - 75;
+    const listBottom = height - 95;
+    const rowHeight = 62;
+    const visibleCount = Math.min(5, MAP_SLOTS.length);
+    const visibleHeight = visibleCount * rowHeight;
+    const maxOffset = Math.max(0, MAP_SLOTS.length - visibleCount);
+    this.mapSelectionScroll = clamp(this.mapSelectionScroll, 0, maxOffset);
+    context.save();
+    context.beginPath();
+    context.rect(width / 2 - 240, listTop, 480, visibleHeight);
+    context.clip();
     MAP_SLOTS.forEach((map, index) => {
       const unlocked = this.unlockedMaps.has(map.id);
-      this.renderButton(context, width / 2 - 230, height / 2 - 75 + index * 72, 460, 54,
+      this.renderButton(context, width / 2 - 230, listTop + (index - this.mapSelectionScroll) * rowHeight, 460, 54,
         `${unlocked ? "PLAY" : "LOCKED"} — ${map.name}`,
         unlocked ? { type: "map", value: map.id } : null,
         { fill: unlocked ? "#343621" : "#29291f", text: unlocked ? "#f3e7bd" : "#756f58", font: "bold 14px 'Courier New', monospace" });
     });
+    context.restore();
+    this.renderScrollBar(context, Math.min(width / 2 + 238, width - 12), listTop, visibleHeight, maxOffset, this.mapSelectionScroll);
+    const controlX = Math.min(width / 2 + 245, width - 46);
+    this.renderButton(context, controlX, listTop - 30, 40, 24, "▲", { type: "map-scroll", value: -1 }, { font: "bold 12px 'Courier New', monospace" });
+    this.renderButton(context, controlX, listBottom + 6, 40, 24, "▼", { type: "map-scroll", value: 1 }, { font: "bold 12px 'Courier New', monospace" });
     context.fillStyle = "#d8d0ae";
     context.font = "11px 'Courier New', monospace";
-    context.fillText("Keyboard shortcut: press the map number", width / 2, height / 2 + 155);
     context.textAlign = "start";
   }
 
@@ -1600,17 +1843,37 @@ export class Game {
     context.font = "bold 14px 'Courier New', monospace";
     context.fillText(`COINS ${this.bankCoins} · EVERY OWNED WEAPON CAN REACH LEVEL 5`, width / 2, height / 2 - 192);
     context.font = "12px 'Courier New', monospace";
-    weapons.forEach((weapon, index) => {
+    const listTop = height / 2 - 165;
+    const listBottom = height - 105;
+    const rowHeight = 34;
+    const visibleCount = Math.max(1, Math.floor((listBottom - listTop) / rowHeight));
+    const maxOffset = Math.max(0, weapons.length - visibleCount);
+    const offset = clamp(this.arsenalScroll[category] ?? 0, 0, maxOffset);
+    this.arsenalScroll[category] = offset;
+    context.save();
+    context.beginPath();
+    context.rect(width / 2 - 265, listTop, 530, visibleCount * rowHeight);
+    context.clip();
+    weapons.slice(offset, offset + visibleCount).forEach((weapon, visibleIndex) => {
+      const index = offset + visibleIndex;
       const equipped = weapon.id === this.progress.equippedWeapons[category];
-      this.renderButton(context, width / 2 - 255, height / 2 - 165 + index * 34, 510, 29,
+      this.renderButton(context, width / 2 - 255, listTop + visibleIndex * rowHeight, 510, 29,
         `${equipped ? "> " : ""}${weaponUpgradeLabel(this.progress, weapon)}`,
         { type: "choice", value: index + 1 },
-        { fill: equipped ? "#5a5530" : "#343621", font: "12px 'Courier New', monospace" });
+        { fill: equipped ? "#5a5530" : "#343621", font: "11px 'Courier New', monospace" });
     });
+    context.restore();
+    this.renderScrollBar(context, Math.min(width / 2 + 264, width - 14), listTop, visibleCount * rowHeight, maxOffset, offset);
+    const controlX = Math.min(width / 2 + 235, width - 64);
+    if (maxOffset > 0) {
+      this.renderButton(context, controlX, listTop - 30, 58, 24, "▲", { type: "arsenal-scroll", value: -1 }, { font: "bold 12px 'Courier New', monospace" });
+      this.renderButton(context, controlX, listBottom + 6, 58, 24, "▼", { type: "arsenal-scroll", value: 1 }, { font: "bold 12px 'Courier New', monospace" });
+    }
     context.fillStyle = "#9fcf71";
-    context.fillText(this.menuMessage, width / 2, height / 2 + 142);
+    context.font = "11px 'Courier New', monospace";
+    context.fillText(this.menuMessage, width / 2, height - 70);
     context.fillStyle = "#d8d0ae";
-    context.fillText("Click a weapon to upgrade · Escape returns to categories", width / 2, height / 2 + 174);
+    context.fillText("Click a weapon to upgrade · Scroll or arrows · Escape returns", width / 2, height - 46);
     context.textAlign = "start";
   }
 
@@ -1729,6 +1992,14 @@ export class Game {
 
   renderLandmarks(context) {
     if (this.currentMap.id === "garden") return;
+    if (this.currentMap.id === "public-park") {
+      this.renderParkLandmarks(context);
+      return;
+    }
+    if (this.currentMap.id === "lake-elizabeth") {
+      this.renderLakeLandmarks(context);
+      return;
+    }
     const landmarks = this.currentMap.id === "frontyard"
       ? [
           { x: this.world.width / 2 - 260, y: 60, width: 520, height: 260, color: "#83604b" },
@@ -1760,6 +2031,56 @@ export class Game {
       context.fillStyle = "rgba(255, 255, 255, 0.12)";
       context.fillRect(Math.round(x + 10), Math.round(y + 10), landmark.width - 20, 8);
     }
+  }
+
+  renderParkLandmarks(context) {
+    const worldWidth = this.world.width;
+    const worldHeight = this.world.height;
+    context.fillStyle = "rgba(206, 181, 126, 0.36)";
+    context.fillRect(-this.camera.x, Math.round(worldHeight * 0.54 - this.camera.y), worldWidth, 46);
+    context.fillRect(Math.round(worldWidth * 0.47 - this.camera.x), -this.camera.y, 48, worldHeight);
+    for (const obstacle of this.activeObstacles ?? []) {
+      const x = Math.round(obstacle.x - this.camera.x);
+      const y = Math.round(obstacle.y - this.camera.y);
+      if (x + obstacle.width < 0 || y + obstacle.height < 0 || x > this.camera.viewWidth || y > this.camera.viewHeight) continue;
+      context.fillStyle = "rgba(31, 39, 21, 0.28)";
+      context.fillRect(x + 8, y + 10, obstacle.width, obstacle.height);
+      if (obstacle.kind === "trees") {
+        context.fillStyle = "#60402d";
+        context.fillRect(x + obstacle.width * 0.42, y + 22, obstacle.width * 0.16, obstacle.height - 30);
+        context.fillStyle = "#31552e";
+        context.fillRect(x + 12, y + 10, obstacle.width - 24, obstacle.height * 0.58);
+        context.fillStyle = "#47733b";
+        context.fillRect(x + 28, y + 2, obstacle.width - 56, obstacle.height * 0.34);
+      } else if (obstacle.kind === "playground") {
+        context.fillStyle = "#c56d43";
+        context.fillRect(x + 20, y + 24, obstacle.width - 40, 22);
+        context.fillStyle = "#4d6c93";
+        context.fillRect(x + 55, y + 48, 28, obstacle.height - 78);
+        context.fillRect(x + obstacle.width - 83, y + 48, 28, obstacle.height - 78);
+        context.fillStyle = "#d7a53f";
+        context.fillRect(x + 20, y + obstacle.height - 48, obstacle.width - 40, 22);
+      } else {
+        context.fillStyle = obstacle.kind === "picnic-table" ? "#8a5d38" : "#6b523d";
+        context.fillRect(x, y, obstacle.width, obstacle.height);
+        context.fillStyle = "#c0925b";
+        context.fillRect(x + 10, y + 8, obstacle.width - 20, 8);
+        context.strokeStyle = "#3f3024";
+        context.lineWidth = 4;
+        context.strokeRect(x, y, obstacle.width, obstacle.height);
+      }
+    }
+  }
+
+  renderLakeLandmarks(context) {
+    const lake = this.currentMap.obstacles?.find((obstacle) => obstacle.kind === "lake");
+    if (!lake) return;
+    const x = Math.round(lake.x - this.camera.x); const y = Math.round(lake.y - this.camera.y);
+    context.fillStyle = "#315b73"; context.fillRect(x, y, lake.width, lake.height);
+    context.fillStyle = "#4f8e9a"; context.fillRect(x + 18, y + 18, lake.width - 36, lake.height - 36);
+    context.strokeStyle = "#8fb7a1"; context.lineWidth = 8; context.strokeRect(x, y, lake.width, lake.height);
+    context.fillStyle = "rgba(216, 239, 213, 0.28)";
+    for (let wave = 0; wave < 8; wave += 1) context.fillRect(x + 40, y + 42 + wave * 68, lake.width - 80, 4);
   }
 
   renderFence(context) {
@@ -1941,6 +2262,27 @@ function renderGrassTuft(context, x, y, seed) {
 
 function circlesOverlap(first, second) {
   return Math.hypot(first.x - second.x, first.y - second.y) <= first.radius + second.radius;
+}
+
+function resolveEnemyObstacles(enemy, obstacles) {
+  if (enemy.isBoss || enemy.targetable === false) return;
+  for (const obstacle of obstacles) {
+    if (obstacle.solid === false) continue;
+    const closestX = Math.max(obstacle.x, Math.min(enemy.x, obstacle.x + obstacle.width));
+    const closestY = Math.max(obstacle.y, Math.min(enemy.y, obstacle.y + obstacle.height));
+    const offsetX = enemy.x - closestX;
+    const offsetY = enemy.y - closestY;
+    if (offsetX * offsetX + offsetY * offsetY >= enemy.radius * enemy.radius) continue;
+    const leftPush = Math.abs(enemy.x - obstacle.x);
+    const rightPush = Math.abs(enemy.x - (obstacle.x + obstacle.width));
+    const topPush = Math.abs(enemy.y - obstacle.y);
+    const bottomPush = Math.abs(enemy.y - (obstacle.y + obstacle.height));
+    if (Math.min(leftPush, rightPush) < Math.min(topPush, bottomPush)) {
+      enemy.x = leftPush < rightPush ? obstacle.x - enemy.radius : obstacle.x + obstacle.width + enemy.radius;
+    } else {
+      enemy.y = topPush < bottomPush ? obstacle.y - enemy.radius : obstacle.y + obstacle.height + enemy.radius;
+    }
+  }
 }
 
 function distanceBetween(first, second) {

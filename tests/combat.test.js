@@ -164,7 +164,7 @@ test("projectiles support fire and freeze payloads while only the flamethrower u
 
 test("Backyard Flamethrower has short range and at most two burn stacks", () => {
   const flamethrower = weaponById("backyard-flamethrower");
-  assert.equal(flamethrower.rarity, "Secret");
+  assert.equal(flamethrower.rarity, "Mythical");
   assert.ok(flamethrower.projectileSpeed * flamethrower.projectileLifetime < 180);
   assert.equal(flamethrower.damage, 10);
   assert.equal(flamethrower.fireDamagePerSecond, 10);

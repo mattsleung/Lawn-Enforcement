@@ -1,5 +1,5 @@
 export class Gopher {
-  constructor({ x, y, health = 250, speed = 58, damage = 8, coinValue = 4, xpValue = 30, random = Math.random }) {
+  constructor({ x, y, health = 250, speed = 58, damage = 8, coinValue = 4, xpValue = 30, random = Math.random, bossMinion = false }) {
     this.x = x;
     this.y = y;
     this.radius = 17;
@@ -13,6 +13,7 @@ export class Gopher {
     this.slowTime = 0;
     this.weaveTime = Math.random() * Math.PI * 2;
     this.enemyType = "gopher";
+    this.bossMinion = bossMinion;
     this.burrowed = true;
     this.burrowTime = 2;
     this.nextBurrowTime = 8 + random() * 6;
