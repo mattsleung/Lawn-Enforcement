@@ -8,7 +8,7 @@ export const WEAPON_DEFINITIONS = Object.freeze([
     shape: "arc", color: "#dcc45f", description: "Wide 180° sweep for crowd control.", levelTenFeature: "Reinforced line: +20% range", levelTenRangeMultiplier: 1.2,
   }),
   meleeWeapon({
-    id: "hedge-clippers", name: "Hedge Clippers", rarity: "Uncommon", price: 240,
+    id: "hedge-clippers", name: "Hedge Clippers", rarity: "Uncommon", price: 720,
     duplicateValue: 90, damage: 36.4, cooldown: 0.62, range: 132, arc: Math.PI / 4,
     shape: "arc", color: "#b9c8a5", description: "Long, powerful 45° precision cut.", levelTenFeature: "Precision cut: +25% critical damage",
     levelTenDamageMultiplier: 1.25,
@@ -46,19 +46,19 @@ export const WEAPON_DEFINITIONS = Object.freeze([
     recoil: 0.045, levelTenModifiers: { explosive: true, splashRadius: 72, slowDuration: 2 },
   }),
   rangedWeapon({
-    id: "tennis-balls", name: "Tennis Balls", rarity: "Rare", price: 150,
+    id: "tennis-balls", name: "Tennis Balls", rarity: "Rare", price: 450,
     duplicateValue: 60, damage: 13, cooldown: 1, projectileSpeed: 820,
     projectileLifetime: 1.6, projectileKind: "tennis-ball", color: "#d8e85f", bounces: 2, description: "Low damage ball ricochets between two extra enemies.",
     recoil: 0.04, levelTenFeature: "Match point: +2 bounces", levelTenModifiers: { bounces: 4 },
   }),
   rangedWeapon({
-    id: "acorn-slingshot", name: "Acorn Slingshot", rarity: "Uncommon", price: 290,
+    id: "acorn-slingshot", name: "Acorn Slingshot", rarity: "Uncommon", price: 870,
     duplicateValue: 100, damage: 38, cooldown: 1, projectileSpeed: 920,
     projectileLifetime: 1.35, projectileKind: "acorn", color: "#7b4b2b", pierces: 1, description: "Hard-hitting acorn passes through two targets.",
     recoil: 0.055, levelTenFeature: "Hard shell: +2 pierces", levelTenModifiers: { pierces: 3 },
   }),
   rangedWeapon({
-    id: "garden-hose", name: "Garden Hose", rarity: "Rare", price: 440,
+    id: "garden-hose", name: "Garden Hose", rarity: "Rare", price: 1320,
     duplicateValue: 160, damage: 4, cooldown: 0.075, projectileSpeed: 980,
     projectileLifetime: 0.48, projectileKind: "water", color: "#63cbe8", spread: 0.035, description: "Short steady stream with frequent light hits.",
     recoil: 0.012, levelTenFeature: "High pressure: slows targets", levelTenModifiers: { slowDuration: 0.5 },
@@ -73,14 +73,14 @@ export const WEAPON_DEFINITIONS = Object.freeze([
     levelTenModifiers: { pierces: 2 },
   }),
   rangedWeapon({
-    id: "diet-cola-launcher", name: "Diet Cola Launcher", rarity: "Legendary", price: 40000,
+    id: "diet-cola-launcher", name: "Diet Cola Launcher", rarity: "Legendary", price: 25000,
     duplicateValue: 440, damage: 42, cooldown: 0.72, projectileSpeed: 570,
     projectileLifetime: 1.7, projectileKind: "diet-cola", color: "#b63b32",
     explosive: true, splashRadius: 58, splashDamageMultiplier: 0.45, description: "Launches shaken cola bottles that burst across a group.",
     recoil: 0.07, levelTenFeature: "Menthol reaction: +55% blast radius", levelTenModifiers: { splashRadius: 90 },
   }),
   rangedWeapon({
-    id: "leaf-blower", name: "Leaf Blower", rarity: "Epic", price: 720,
+    id: "leaf-blower", name: "Leaf Blower", rarity: "Epic", price: 2160,
     duplicateValue: 260, damage: 4, cooldown: 0.06, projectileSpeed: 900,
     projectileLifetime: 0.4, projectileKind: "gust", color: "#d6d0aa", spread: 0.11,
     knockback: 18, recoil: 0.014, description: "Weak steady gust repeatedly pushes enemies back.", levelTenFeature: "Gale force: doubles pushback",

@@ -7,13 +7,14 @@ import { CommonWeed } from "../src/entities/common-weed.js";
 import { DandelionBoss } from "../src/entities/dandelion-boss.js";
 import { SporeProjectile } from "../src/entities/spore-projectile.js";
 
-test("Common Weed has 10 health, clones once toward the player, and expires after five seconds", () => {
+test("Common Weed grows once early, once near the end of life, and expires after five seconds", () => {
   const weed = new CommonWeed({ x: 0, y: 0 });
   assert.equal(weed.maxHealth, 10);
   assert.equal(weed.update(0.39, { x: 100, y: 0 }).copyWeed, undefined);
   assert.deepEqual(weed.update(0.02, { x: 100, y: 0 }).copyWeed, { x: 48, y: 0 });
   assert.equal(weed.update(1, { x: 100, y: 0 }).copyWeed, undefined);
-  weed.update(3.6, { x: 100, y: 0 });
+  assert.deepEqual(weed.update(3.2, { x: 100, y: 0 }).copyWeed, { x: 48, y: 0 });
+  weed.update(0.4, { x: 100, y: 0 });
   assert.equal(weed.active, false);
 });
 
@@ -53,6 +54,20 @@ test("defeated Common Weeds drop one XP orb fifty percent of the time", () => {
   game.random = () => 0.5;
   game.damageEnemy(new CommonWeed({ x: 100, y: 100 }), 10);
   assert.equal(game.pickups.filter((pickup) => pickup.type === "xp").length, 0);
+});
+
+test("Common Weeds drop one coin fifty percent of the time", () => {
+  const game = Object.create(Game.prototype);
+  game.pickups = [];
+  game.progress = { defeatedEnemies: { "common-weed": 0 } };
+  game.random = () => 0.49;
+  game.damageEnemy(new CommonWeed({ x: 100, y: 100 }), 10);
+  assert.equal(game.pickups.filter((pickup) => pickup.type === "coin").length, 1);
+
+  game.pickups = [];
+  game.random = () => 0.5;
+  game.damageEnemy(new CommonWeed({ x: 100, y: 100 }), 10);
+  assert.equal(game.pickups.filter((pickup) => pickup.type === "coin").length, 0);
 });
 
 test("Dandelion fires four spores every ten seconds", () => {
