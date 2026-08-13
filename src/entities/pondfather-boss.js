@@ -4,7 +4,7 @@ export class PondfatherBoss {
     this.radius = 55; this.name = config.name; this.maxHealth = config.health; this.health = config.health;
     this.damage = 50; this.speed = 80; this.world = world; this.isBoss = true; this.enemyType = "pondfather";
     this.form = "water"; this.phase = "water"; this.phaseTime = 0; this.regenTime = 0; this.warningTime = 0;
-    this.speed = config.speed ?? 200; this.healthRegeneration = config.healthRegeneration ?? 15; this.shieldRegeneration = config.shieldRegeneration ?? 25; this.shieldStrength = config.shieldStrength ?? 200; this.shield = this.shieldStrength; this.wanderTime = 0; this.wanderX = 1; this.wanderY = 0;
+    this.speed = config.speed ?? 200; this.healthRegeneration = config.healthRegeneration ?? 15; this.shieldRegeneration = config.shieldRegeneration ?? 50; this.shieldStrength = config.shieldStrength ?? 200; this.shield = this.shieldStrength; this.wanderTime = 0; this.wanderX = 1; this.wanderY = 0;
     this.diveTarget = null; this.hitFlash = 0; this.slowTime = 0;
   }
 

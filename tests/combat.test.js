@@ -5,6 +5,7 @@ import { isEnemyHitByMelee, isWithinMeleeArc, RARITY_ORDER, WEAPON_DEFINITIONS, 
 import { Gnome } from "../src/entities/gnome.js";
 import { Player } from "../src/entities/player.js";
 import { Projectile } from "../src/entities/projectile.js";
+import { Game } from "../src/core/game.js";
 import { applyFire, applyFreeze, applyKnockback, nearestBounceTarget, totalContactDamage, updateEnemyStatus } from "../src/systems/combat.js";
 
 test("weapon slots resolve to melee and ranged loadout entries", () => {
@@ -17,7 +18,8 @@ test("every permanent weapon level improves damage and attack speed", () => {
     let previous = weaponStatsAtLevel(weapon, 1);
     for (let level = 2; level <= 10; level += 1) {
       const current = weaponStatsAtLevel(weapon, level);
-      assert.ok(current.damage > previous.damage);
+      if (weapon.id === "rock-salt-blaster" && level === 10) assert.ok(current.damage < previous.damage);
+      else assert.ok(current.damage > previous.damage);
       assert.ok(current.cooldown < previous.cooldown);
       previous = current;
     }
@@ -32,8 +34,8 @@ test("every permanent weapon level improves damage and attack speed", () => {
 
 test("weapon roster has unique playable designs in both slots", () => {
   assert.equal(new Set(WEAPON_DEFINITIONS.map((weapon) => weapon.id)).size, WEAPON_DEFINITIONS.length);
-  assert.equal(WEAPON_DEFINITIONS.filter((weapon) => weapon.slot === "melee").length, 6);
-  assert.equal(WEAPON_DEFINITIONS.filter((weapon) => weapon.slot === "ranged").length, 10);
+  assert.equal(WEAPON_DEFINITIONS.filter((weapon) => weapon.slot === "melee").length, 9);
+  assert.equal(WEAPON_DEFINITIONS.filter((weapon) => weapon.slot === "ranged").length, 18);
   for (const weapon of WEAPON_DEFINITIONS) {
     assert.ok(weapon.description.length > 10);
     assert.ok(weapon.levelTenFeature.length > 10);
@@ -58,7 +60,9 @@ test("starter balance uses reduced Weedwacker range and one-second ball and frui
 test("melee damage is reduced by thirty percent while rapid air and water weapons are stronger", () => {
   const originalMeleeDamage = {
     "weedwacker-9000": 34,
+    "garden-shears": 12,
     "hedge-clippers": 52,
+    wheelbarrow: 16,
     "garden-shovel": 72,
     "golden-rake": 64,
     "turbo-mower": 30,
@@ -114,10 +118,27 @@ test("shovel thrust is narrow and Turbo Mower covers a lane", () => {
   assert.equal(mower.knockback, 22);
 });
 
-test("Bowling Ball is a slow medium-range Rare projectile with one pierce", () => {
+test("Wheelbarrow and Garden Shears expose their distinct melee designs", () => {
+  const barrow = weaponById("wheelbarrow");
+  const shears = weaponById("garden-shears");
+  const player = { x: 0, y: 0, facing: 0 };
+  assert.equal(barrow.rarity, "Uncommon");
+  assert.ok(barrow.knockback > 60);
+  assert.equal(isEnemyHitByMelee(player, { x: 90, y: 45, radius: 5 }, barrow), true);
+  assert.equal(isEnemyHitByMelee(player, { x: 90, y: 80, radius: 5 }, barrow), false);
+  assert.equal(shears.rarity, "Common");
+  assert.ok(shears.cooldown < 0.25);
+  assert.equal(shears.range, 104);
+  assert.equal(isEnemyHitByMelee(player, { x: 90, y: 0, radius: 5 }, shears), true);
+  assert.equal(isEnemyHitByMelee(player, { x: 90, y: 20, radius: 5 }, shears), false);
+  assert.equal(weaponStatsAtLevel(barrow, 10).knockbackCollisionDamage, 8);
+  assert.equal(weaponStatsAtLevel(shears, 10).extraAttackChance, 0.5);
+});
+
+test("Bowling Ball is a slow medium-range Uncommon projectile with one pierce", () => {
   const bowlingBall = weaponById("bowling-ball");
   const leafBlower = weaponById("leaf-blower");
-  assert.equal(bowlingBall.rarity, "Rare");
+  assert.equal(bowlingBall.rarity, "Uncommon");
   assert.equal(bowlingBall.pierces, 1);
   assert.equal(bowlingBall.projectileRadius, 12);
   assert.ok(bowlingBall.projectileSpeed < 350);
@@ -157,14 +178,15 @@ test("projectiles support fire and freeze payloads while only the flamethrower u
   assert.equal(projectile.fireMaxStacks, 1);
   assert.equal(projectile.freezeDuration, 2);
   for (const weapon of WEAPON_DEFINITIONS.filter((entry) => entry.slot === "ranged")) {
-    assert.equal(weapon.fireDuration > 0, weapon.id === "backyard-flamethrower");
-    assert.equal(weapon.freezeDuration, 0, `${weapon.id} does not use freeze yet`);
+    assert.equal(weapon.fireDuration > 0, ["backyard-flamethrower", "firecracker"].includes(weapon.id));
+    assert.equal(weapon.freezeDuration, weapon.id === "gravity-freezer" ? 1 : 0, `${weapon.id} freeze duration`);
   }
 });
 
 test("Backyard Flamethrower has short range and at most two burn stacks", () => {
   const flamethrower = weaponById("backyard-flamethrower");
-  assert.equal(flamethrower.rarity, "Mythical");
+  assert.equal(flamethrower.rarity, "Rare");
+  assert.equal(flamethrower.cooldown, 0.11);
   assert.ok(flamethrower.projectileSpeed * flamethrower.projectileLifetime < 180);
   assert.equal(flamethrower.damage, 10);
   assert.equal(flamethrower.fireDamagePerSecond, 10);
@@ -193,8 +215,96 @@ test("Tennis Racket and Tennis Balls are Rare and grant each other one effective
   assert.equal(weaponLevelWithLoadoutBonus(balls.id, 4, { melee: "weedwacker-9000", ranged: balls.id }), 4);
 });
 
+test("new shotgun and nail-gun ranged designs expose their signatures", () => {
+  const sprayer = weaponById("garden-sprayer");
+  const salt = weaponById("rock-salt-blaster");
+  const nails = weaponById("nail-gun");
+  const firecracker = weaponById("firecracker");
+  assert.equal(sprayer.projectileCount, 6);
+  assert.equal(sprayer.cooldown, 0.92);
+  assert.equal(weaponStatsAtLevel(sprayer, 10).projectileCount, 8);
+  assert.equal(weaponStatsAtLevel(sprayer, 10).centerPierceCount, 2);
+  assert.equal(salt.projectileCount, 5);
+  assert.equal(nails.rarity, "Rare");
+  assert.equal(salt.rarity, "Epic");
+  assert.equal(salt.damage, 40);
+  assert.equal(weaponStatsAtLevel(salt, 10).rounds, 2);
+  assert.equal(weaponStatsAtLevel(salt, 10).damage, Number((salt.damage * 2.08 * 0.75).toFixed(2)));
+  assert.equal(nails.recoil, 0);
+  assert.equal(nails.damage, 14);
+  assert.equal(nails.perfectAccuracy, true);
+  assert.equal(weaponStatsAtLevel(nails, 10).pierces, 2);
+  assert.equal(firecracker.fireDamagePerSecond, 20);
+  assert.equal(firecracker.fireDuration, 5);
+});
+
+test("Plastic Ghost is a broad Legendary sustain stream", () => {
+  const ghost = weaponById("plastic-ghost");
+  assert.equal(ghost.rarity, "Legendary");
+  assert.equal(ghost.lifesteal, 0.0075);
+  assert.equal(ghost.projectileCount, 2);
+  assert.equal(ghost.recoil, 0.018);
+  assert.ok(ghost.cooldown < 0.1);
+  assert.ok(ghost.projectileLifetime > weaponById("backyard-flamethrower").projectileLifetime);
+  assert.ok(Math.abs(weaponStatsAtLevel(ghost, 10).projectileLifetime - ghost.projectileLifetime * 1.3) < 1e-9);
+  assert.equal(weaponStatsAtLevel(ghost, 10).damage > ghost.damage, true);
+  assert.equal(weaponStatsAtLevel(ghost, 10).lifesteal, 0.0075);
+});
+
+test("Vampire Fang is a fast Legendary lifesteal arc and pairs with Plastic Ghost", () => {
+  const fang = weaponById("vampire-fang");
+  assert.equal(fang.rarity, "Legendary");
+  assert.equal(fang.arc, Math.PI / 2);
+  assert.equal(fang.lifesteal, 0.01);
+  assert.ok(fang.cooldown < 0.25);
+  assert.equal(weaponLevelWithLoadoutBonus("vampire-fang", 3, { melee: "vampire-fang", ranged: "plastic-ghost" }), 5);
+  assert.equal(weaponLevelWithLoadoutBonus("plastic-ghost", 3, { melee: "vampire-fang", ranged: "plastic-ghost" }), 5);
+});
+
+test("Plastic Ghost lifesteal accumulates fractional healing across enemies", () => {
+  const game = Object.create(Game.prototype);
+  game.player = { health: 50, maxHealth: 100, lifestealAccumulator: 0 };
+  game.bossSpawned = false;
+  const makeEnemy = (health = 100) => ({
+    health,
+    isBoss: false,
+    bossMinion: false,
+    takeDamage(amount) { this.health -= amount; return false; },
+  });
+  game.damageEnemy(makeEnemy(), 3, 0.05);
+  game.damageEnemy(makeEnemy(), 4, 0.05);
+  game.damageEnemy(makeEnemy(), 7, 0.05);
+  game.damageEnemy(makeEnemy(), 8, 0.05);
+  assert.equal(game.player.health, 51);
+  assert.ok(Math.abs(game.player.lifestealAccumulator - 0.1) < 1e-9);
+});
+
+test("Rock Salt Blaster pellets speed up initially and slow near the end of flight", () => {
+  const salt = weaponById("rock-salt-blaster");
+  assert.equal(salt.endSpeedMultiplier, 0.1);
+  assert.equal(salt.speedCurve, "fast-slowdown");
+  assert.ok(salt.projectileSpeed > 800);
+  assert.ok(salt.fanSpacing < 0.07);
+  assert.ok(salt.spread < 0.025);
+
+  const projectile = new Projectile({
+    x: 0, y: 0, velocityX: 100, velocityY: 0, damage: 1, lifetime: 1,
+    endSpeedMultiplier: salt.endSpeedMultiplier,
+  });
+  projectile.update(0.1);
+  const earlyDistance = projectile.x;
+  projectile.update(0.8);
+  const beforeLateStep = projectile.x;
+  projectile.update(0.05);
+  const lateDistance = projectile.x - beforeLateStep;
+  assert.ok(earlyDistance > 9);
+  assert.ok(lateDistance < earlyDistance);
+});
+
 test("Ordinance Undefined fires at half its previous attack speed", () => {
-  assert.equal(weaponById("ordinance-undefined").cooldown, 0.24);
+  const ordinance = weaponById("ordinance-undefined");
+  assert.equal(ordinance.cooldown, 0.24);
+  assert.equal(ordinance.projectileCount, 2);
 });
 
 test("fire deals damage over time and freeze reports movement lock duration", () => {

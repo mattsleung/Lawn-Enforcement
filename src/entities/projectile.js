@@ -4,6 +4,8 @@ export class Projectile {
     radius = 7, explosive = false, splashRadius = 0, splashDamageMultiplier = 0.5,
     slowDuration = 0, bounces = 0, pierces = 0, knockback = 0,
     fireDamagePerSecond = 0, fireDuration = 0, fireMaxStacks = 1, freezeDuration = 0,
+    endSpeedMultiplier = 1, speedCurve = "linear", lifesteal = 0, boundaryBounces = false, allowRepeatBounces = false,
+    gravityPull = 0, splitCount = 0, splitDamage = 0, splitRadius = 0, detonateOnExpiry = false,
   }) {
     this.x = x;
     this.y = y;
@@ -11,6 +13,14 @@ export class Projectile {
     this.velocityY = velocityY;
     this.damage = damage;
     this.lifetime = lifetime;
+    this.initialLifetime = lifetime;
+    this.endSpeedMultiplier = endSpeedMultiplier;
+    this.speedCurve = speedCurve;
+    this.lifesteal = lifesteal;
+    this.boundaryBounces = boundaryBounces;
+    this.allowRepeatBounces = allowRepeatBounces;
+    this.gravityPull = gravityPull; this.splitCount = splitCount; this.splitDamage = splitDamage; this.splitRadius = splitRadius;
+    this.detonateOnExpiry = detonateOnExpiry;
     this.kind = kind;
     this.color = color;
     this.radius = radius;
@@ -28,11 +38,19 @@ export class Projectile {
     this.fireMaxStacks = fireMaxStacks;
     this.freezeDuration = freezeDuration;
     this.hitEnemies = new Set();
+    this.rehitCooldown = 0;
   }
 
   update(deltaTime) {
-    this.x += this.velocityX * deltaTime;
-    this.y += this.velocityY * deltaTime;
+    if (!this.active) return;
+    this.rehitCooldown = Math.max(0, this.rehitCooldown - deltaTime);
+    const lifeProgress = this.initialLifetime > 0
+      ? Math.max(0, this.lifetime / this.initialLifetime)
+      : 0;
+    const curveProgress = this.speedCurve === "fast-slowdown" ? lifeProgress ** 2 : lifeProgress;
+    const speedMultiplier = this.endSpeedMultiplier + (1 - this.endSpeedMultiplier) * curveProgress;
+    this.x += this.velocityX * speedMultiplier * deltaTime;
+    this.y += this.velocityY * speedMultiplier * deltaTime;
     this.lifetime -= deltaTime;
     this.rotation += deltaTime * 9;
     this.active = this.lifetime > 0;
@@ -68,6 +86,36 @@ function renderProjectileShape(context, projectile) {
     context.fillRect(-2, -6, 10, 12);
     context.fillStyle = "#d9432f";
     context.fillRect(5, -4, 7, 8);
+    return;
+  }
+  if (projectile.kind === "plastic-ghost") {
+    context.fillStyle = "rgba(185, 244, 237, 0.35)";
+    context.fillRect(-13, -7, 26, 14);
+    context.fillStyle = projectile.color;
+    context.fillRect(-9, -4, 18, 8);
+    context.fillStyle = "#f2ffff";
+    context.fillRect(2, -3, 8, 3);
+    return;
+  }
+  if (projectile.kind === "gravity-portal") {
+    const diameter = projectile.splashRadius * 2;
+    const half = diameter / 2;
+    context.fillStyle = "rgba(120, 92, 220, 0.22)";
+    context.fillRect(-half, -half, diameter, diameter);
+    context.strokeStyle = "#bda8ff"; context.lineWidth = 4;
+    context.strokeRect(-half + 5, -half + 5, diameter - 10, diameter - 10);
+    context.fillStyle = "#f2edff"; context.fillRect(-8, -8, 16, 16);
+    return;
+  }
+  if (projectile.kind === "beach-ball") {
+    context.fillStyle = "#f8e6b0"; context.fillRect(-18, -18, 36, 36);
+    context.fillStyle = projectile.color; context.fillRect(-13, -13, 26, 26);
+    context.fillStyle = "#6bc5d8"; context.fillRect(-4, -13, 8, 26);
+    return;
+  }
+  if (projectile.kind === "shuriken") {
+    context.fillStyle = projectile.color;
+    context.fillRect(-2, -10, 4, 20); context.fillRect(-10, -2, 20, 4);
     return;
   }
   if (projectile.kind === "water" || projectile.kind === "storm-water") {
@@ -110,6 +158,20 @@ function renderProjectileShape(context, projectile) {
     context.fillRect(-6, -6, 12, 5);
     context.fillStyle = projectile.color;
     context.fillRect(-5, -1, 10, 8);
+    return;
+  }
+  if (projectile.kind === "nail") {
+    context.fillStyle = "#252a2b";
+    context.fillRect(-10, -2, 20, 4);
+    context.fillStyle = projectile.color;
+    context.fillRect(-7, -1, 14, 2);
+    return;
+  }
+  if (projectile.kind === "rock-salt") {
+    context.fillStyle = "#51452e";
+    context.fillRect(-6, -6, 12, 12);
+    context.fillStyle = projectile.color;
+    context.fillRect(-4, -4, 8, 8);
     return;
   }
   if (projectile.kind === "diet-cola") {

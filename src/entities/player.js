@@ -18,6 +18,7 @@ export class Player {
     this.meleeRangeMultiplier = 1;
     this.pickupRadius = 90;
     this.appleCount = 1;
+    this.lifestealAccumulator = 0;
     this.rangedExplosion = false;
     this.weaponBonuses = {};
     this.syrupTrail = false;
@@ -49,8 +50,12 @@ export class Player {
     this.hitFlash = Math.max(0, this.hitFlash - deltaTime);
     const previousX = this.x;
     const previousY = this.y;
-    this.x = clamp(this.x + movement.x * this.speed * deltaTime, this.radius, world.width - this.radius);
-    this.y = clamp(this.y + movement.y * this.speed * deltaTime, this.radius, world.height - this.radius);
+    const inSandBunker = obstacles.some((obstacle) => obstacle.kind === "sand-bunker"
+      && this.x >= obstacle.x && this.x <= obstacle.x + obstacle.width
+      && this.y >= obstacle.y && this.y <= obstacle.y + obstacle.height);
+    const movementSpeed = inSandBunker ? this.speed * 0.5 : this.speed;
+    this.x = clamp(this.x + movement.x * movementSpeed * deltaTime, this.radius, world.width - this.radius);
+    this.y = clamp(this.y + movement.y * movementSpeed * deltaTime, this.radius, world.height - this.radius);
     resolveObstacleCollisions(this, obstacles);
     this.facing = Math.atan2(aimPoint.y - this.y, aimPoint.x - this.x);
     this.isMoving = this.x !== previousX || this.y !== previousY;

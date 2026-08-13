@@ -40,6 +40,48 @@ test("Garden normal spawns create Common Weeds", () => {
   assert.equal(game.enemies[0] instanceof CommonWeed, true);
 });
 
+test("Dandelion boss weeds have 200 health, no expiry, and never reproduce", () => {
+  const weed = new CommonWeed({ x: 0, y: 0, bossMode: true });
+  assert.equal(weed.maxHealth, 200);
+  assert.equal(weed.health, 200);
+  assert.equal(weed.lifetime, Number.POSITIVE_INFINITY);
+  assert.deepEqual(weed.update(20, { x: 100, y: 0 }), {});
+  assert.equal(weed.active, true);
+});
+
+test("Dandelion boss mode converts existing and spawned weeds", () => {
+  const existing = new CommonWeed({ x: 100, y: 100 });
+  const game = Object.create(Game.prototype);
+  game.currentMap = GARDEN_MAP;
+  game.world = GARDEN_MAP.world;
+  game.bossSpawned = false;
+  game.bossIndex = 0;
+  game.bossNextSpawnTimer = null;
+  game.boss = null;
+  game.bossIntroTime = 0;
+  game.player = { x: 500, y: 500 };
+  game.camera = { viewWidth: 1280, viewHeight: 720 };
+  game.enemies = [existing];
+  game.spawnBoss();
+  assert.equal(existing.maxHealth, 200);
+  game.spawnCommonWeedAt(200, 200);
+  const spawned = game.enemies.at(-1);
+  assert.equal(spawned.maxHealth, 200);
+  assert.equal(spawned.bossMode, true);
+});
+
+test("Dandelion boss weeds separate until they no longer touch", () => {
+  const first = new CommonWeed({ x: 200, y: 200, bossMode: true });
+  const second = new CommonWeed({ x: 200, y: 200, bossMode: true });
+  const game = Object.create(Game.prototype);
+  game.world = { width: 1000, height: 800 };
+  game.bossSpawned = true;
+  game.boss = { active: true, enemyType: "dandelion" };
+  game.enemies = [first, second];
+  game.separateDandelionWeeds();
+  assert.ok(Math.hypot(first.x - second.x, first.y - second.y) >= first.radius + second.radius);
+});
+
 test("defeated Common Weeds drop one XP orb fifty percent of the time", () => {
   const game = Object.create(Game.prototype);
   game.pickups = [];
@@ -70,12 +112,12 @@ test("Common Weeds drop one coin fifty percent of the time", () => {
   assert.equal(game.pickups.filter((pickup) => pickup.type === "coin").length, 0);
 });
 
-test("Dandelion fires four spores every ten seconds", () => {
+test("Dandelion fires four spores every half second", () => {
   const boss = new DandelionBoss({ x: 200, y: 200, config: GARDEN_MAP.boss });
-  assert.equal(boss.maxHealth, 1000);
+  assert.equal(boss.maxHealth, 800);
   assert.equal(boss.shieldStrength, 200);
-  assert.equal(boss.update(9.99, { x: 400, y: 200 }).fireSpores, false);
-  assert.equal(boss.update(0.01, { x: 400, y: 200 }).fireSpores, true);
+  assert.equal(boss.update(0.49, { x: 400, y: 200 }).fireSpores, false);
+  assert.equal(boss.update(0.02, { x: 400, y: 200 }).fireSpores, true);
 
   const game = Object.create(Game.prototype);
   game.bossProjectiles = [];
@@ -88,9 +130,9 @@ test("Dandelion fires four spores every ten seconds", () => {
   assert.equal(game.bossProjectiles.every((spore) => spore.damage === 20), true);
 });
 
-test("Dandelion fires one non-tracking spore toward the player every two seconds", () => {
+test("Dandelion fires one non-tracking spore toward the player every half second", () => {
   const boss = new DandelionBoss({ x: 100, y: 100, config: GARDEN_MAP.boss });
-  assert.equal(boss.update(1.99, { x: 400, y: 100 }).fireAimedSpore, false);
+  assert.equal(boss.update(0.49, { x: 400, y: 100 }).fireAimedSpore, false);
   assert.equal(boss.update(0.02, { x: 400, y: 100 }).fireAimedSpore, true);
 
   const game = Object.create(Game.prototype);
@@ -104,24 +146,18 @@ test("Dandelion fires one non-tracking spore toward the player every two seconds
   assert.equal(Math.round(game.bossProjectiles[0].velocityY), 280);
 });
 
-test("Dandelion shields immediately, recharges in five seconds, and regenerates health", () => {
+test("Dandelion shields immediately and regenerates health at 15 per second", () => {
   const boss = new DandelionBoss({ x: 0, y: 0, config: GARDEN_MAP.boss });
-  assert.equal(boss.takeDamage(901), false);
+  assert.equal(boss.takeDamage(701), false);
   assert.equal(boss.health, 99);
   assert.equal(boss.shield, 200);
   boss.takeDamage(210);
   assert.equal(boss.health, 89);
   assert.equal(boss.shield, 0);
-  boss.update(2, { x: 0, y: 0 });
-  assert.equal(boss.health, 99);
-  assert.equal(boss.shield, 0);
-  boss.takeDamage(50);
-  assert.equal(boss.health, 49);
-  boss.update(2.99, { x: 0, y: 0 });
-  assert.equal(boss.shield, 0);
-  boss.update(0.01, { x: 0, y: 0 });
-  assert.equal(boss.health, 64);
-  assert.equal(boss.shield, 200);
+  const regenBoss = new DandelionBoss({ x: 0, y: 0, config: GARDEN_MAP.boss });
+  regenBoss.health = 50;
+  regenBoss.update(1, { x: 0, y: 0 });
+  assert.equal(regenBoss.health, 65);
 });
 
 test("Dandelion can activate its shield at most five times", () => {

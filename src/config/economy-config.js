@@ -3,9 +3,10 @@ import { WEAPON_DEFINITIONS } from "./weapons.js";
 export const CHEST_COST = 1000;
 
 export const CHEST_ODDS = Object.freeze([
-  Object.freeze({ rarity: "Uncommon", chance: 0.2 }),
-  Object.freeze({ rarity: "Rare", chance: 0.4 }),
-  Object.freeze({ rarity: "Epic", chance: 0.3 }),
+  Object.freeze({ rarity: "Common", chance: 0.25 }),
+  Object.freeze({ rarity: "Uncommon", chance: 0.25 }),
+  Object.freeze({ rarity: "Rare", chance: 0.25 }),
+  Object.freeze({ rarity: "Epic", chance: 0.15 }),
   Object.freeze({ rarity: "Legendary", chance: 0.08 }),
   Object.freeze({ rarity: "Mythical", chance: 0.019 }),
   Object.freeze({ rarity: "Secret", chance: 0.001 }),

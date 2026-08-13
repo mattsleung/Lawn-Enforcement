@@ -9,4 +9,6 @@ export const ENEMY_GLOSSARY = Object.freeze([
   Object.freeze({ id: "groundskeeper", name: "The Groundskeeper", description: "The Public Park boss on a ride-on mower. Charges across the arena, destroys obstacles, fires grass clippings, and releases both squirrel variants." }),
   Object.freeze({ id: "goose", name: "Goose", description: "A 40-health lake pest that charges quickly at 250 speed. Drops 1 coin and 10 XP." }),
   Object.freeze({ id: "pondfather", name: "The Pondfather", description: "A gigantic goose that alternates between the lake and land, divebombing and spawning geese." }),
+  Object.freeze({ id: "golfer", name: "Golfer", description: "A 300-health golfer that pauses at range to fire quick 8-damage balls, but charges with its club when approached." }),
+  Object.freeze({ id: "pro-golfer", name: "The Pro Golfer", description: "The Golf Course boss who retreats quickly and alternates regular balls, fan shots, and bunker bombs." }),
 ]);

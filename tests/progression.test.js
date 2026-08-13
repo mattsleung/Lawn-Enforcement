@@ -2,10 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { Player } from "../src/entities/player.js";
-import { applyRunWeaponBonuses, weaponById, weaponsForSlot } from "../src/config/weapons.js";
+import { applyRunWeaponBonuses, WEAPON_DEFINITIONS, weaponById, weaponsForSlot } from "../src/config/weapons.js";
 import {
   applyRunUpgrade,
   chooseRunUpgrades,
+  defaultProgress,
   eligibleRunUpgrades,
   loadBankCoins,
   loadProgress,
@@ -13,6 +14,7 @@ import {
   RUN_UPGRADES,
   saveBankCoins,
   saveProgress,
+  unlockAllWeapons,
   xpRequiredForLevel,
 } from "../src/systems/progression.js";
 
@@ -113,6 +115,21 @@ test("weapon-specific Gold choices follow the equipped loadout", () => {
   assert.equal(pool.some((upgrade) => upgrade.id === "apple-projectile"), false);
 });
 
+test("Plastic Ghost Extended Haunting is only offered when equipped", () => {
+  const equippedPool = eligibleRunUpgrades(["weedwacker-9000", "plastic-ghost"]);
+  const unequippedPool = eligibleRunUpgrades(["weedwacker-9000", "apples"]);
+  assert.equal(equippedPool.some((upgrade) => upgrade.id === "plastic-ghost-haunting"), true);
+  assert.equal(unequippedPool.some((upgrade) => upgrade.id === "plastic-ghost-haunting"), false);
+});
+
+test("unlockAllWeapons grants every current weapon at level one without changing rarity", () => {
+  const progress = defaultProgress();
+  unlockAllWeapons(progress);
+  assert.deepEqual(new Set(progress.ownedWeapons), new Set(WEAPON_DEFINITIONS.map((weapon) => weapon.id)));
+  assert.equal(progress.weaponLevels["plastic-ghost"], 1);
+  assert.equal(weaponById("plastic-ghost").rarity, "Legendary");
+});
+
 test("chosen one-use Gold upgrades can be excluded while Second Wind remains repeatable", () => {
   const excluded = new Set([
     "apple-projectile",
@@ -139,21 +156,27 @@ test("Gold weapon upgrades affect only their intended weapon behavior", () => {
 test("all weapon-specific Gold upgrades modify final weapon stats", () => {
   const cases = [
     ["weedwacker-range", "weedwacker-9000", "range", 1.4],
+    ["shears-sharpening", "garden-shears", "width", 1.4],
     ["clipper-jaw", "hedge-clippers", "arc", 1.5],
+    ["barrow-bigger", "wheelbarrow", "width", 1.35],
     ["shovel-impact", "garden-shovel", "damage", 1.25],
     ["rake-tines", "golden-rake", "width", 1.4],
     ["mower-deck", "turbo-mower", "width", 1.35],
     ["racket-reach", "tennis-racket", "range", 1.3],
     ["apple-projectile", "apples", "projectileCount", 2],
+    ["sprayer-nozzle", "garden-sprayer", "projectileCount", 9],
     ["tennis-bounce", "tennis-balls", "bounces", 3],
     ["acorn-pierce", "acorn-slingshot", "pierces", 2],
+    ["nail-magazine", "nail-gun", "projectileLifetime", 1.5],
+    ["salt-buckshot", "rock-salt-blaster", "projectileCount", 7],
     ["hose-pressure", "garden-hose", "projectileLifetime", 1.35],
     ["bowling-spin", "bowling-ball", "pierces", 2],
     ["cola-blast", "diet-cola-launcher", "splashRadius", 1.4],
     ["leaf-gale", "leaf-blower", "knockback", 1.5],
     ["storm-barrels", "storm-sprinkler", "projectileCount", 2],
     ["flamethrower-nozzle", "backyard-flamethrower", "projectileLifetime", 1.35],
-    ["undefined-overflow", "ordinance-undefined", "projectileCount", 2],
+    ["plastic-ghost-haunting", "plastic-ghost", "projectileLifetime", 1.4],
+    ["undefined-overflow", "ordinance-undefined", "projectileCount", 3],
   ];
   for (const [upgradeId, weaponId, stat, expected] of cases) {
     const player = new Player();
@@ -168,8 +191,8 @@ test("all weapon-specific Gold upgrades modify final weapon stats", () => {
 
 test("the full upgrade catalog has one weapon-specific Gold upgrade per weapon", () => {
   const weaponUpgrades = RUN_UPGRADES.filter((upgrade) => upgrade.weaponId);
-  assert.equal(weaponUpgrades.length, 16);
-  assert.equal(new Set(weaponUpgrades.map((upgrade) => upgrade.weaponId)).size, 16);
+  assert.equal(weaponUpgrades.length, 27);
+  assert.equal(new Set(weaponUpgrades.map((upgrade) => upgrade.weaponId)).size, 27);
 });
 
 test("banked coins save, load, and reject malformed data", () => {
@@ -220,6 +243,8 @@ test("glossary enemy defeat counts persist and reject malformed values", () => {
     groundskeeper: 0,
     goose: 0,
     pondfather: 0,
+    golfer: 0,
+    "pro-golfer": 0,
   });
   values.set("lawn-enforcement-save-v1", JSON.stringify({
     defeatedEnemies: { gnome: -5, gopher: "many", "king-gnomulus": 2.9 },
@@ -235,6 +260,8 @@ test("glossary enemy defeat counts persist and reject malformed values", () => {
     groundskeeper: 0,
     goose: 0,
     pondfather: 0,
+    golfer: 0,
+    "pro-golfer": 0,
   });
 });
 
@@ -258,7 +285,7 @@ test("structurally invalid save fields safely fall back and clamp", () => {
   assert.equal(progress.keybinds.melee, "Digit1");
 });
 
-test("saved loadouts keep valid owned weapons and reject invalid slot swaps", () => {
+test("saved loadouts allow any owned weapon in either slot", () => {
   const validStorage = {
     getItem: () => JSON.stringify({
       ownedWeapons: ["golden-rake", "garden-hose"],
@@ -278,7 +305,7 @@ test("saved loadouts keep valid owned weapons and reject invalid slot swaps", ()
     }),
   };
   const progress = loadProgress(invalidStorage);
-  assert.deepEqual(progress.equippedWeapons, { melee: "weedwacker-9000", ranged: "apples" });
+  assert.deepEqual(progress.equippedWeapons, { melee: "garden-hose", ranged: "apples" });
   assert.equal(progress.ownedWeapons.includes("made-up-weapon"), false);
 });
 
