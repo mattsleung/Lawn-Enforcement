@@ -2,9 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { Camera } from "../src/core/camera.js";
-import { Game } from "../src/core/game.js";
+import { Game, wrapCenteredText } from "../src/core/game.js";
 import { PLAYER, VIEWPORT, WORLD } from "../src/config/game-config.js";
-import { FIRST_MAP, FRONTYARD_MAP, GARDEN_MAP, LAKE_ELIZABETH_MAP, MAP_SLOTS, PUBLIC_PARK_MAP, mapById } from "../src/config/map-config.js";
+import { FIRST_MAP, FRONTYARD_MAP, GARDEN_MAP, GOLF_COURSE_MAP, LAKE_ELIZABETH_MAP, MAP_SLOTS, PUBLIC_PARK_MAP, mapById } from "../src/config/map-config.js";
 import { Player } from "../src/entities/player.js";
 
 test("Backyard is slightly smaller and Frontyard is slightly taller", () => {
@@ -32,13 +32,28 @@ test("The Frontyard is a distinct smaller second map", () => {
   assert.equal(mapById("frontyard"), FRONTYARD_MAP);
 });
 
+test("Bestiary descriptions wrap within their card width", () => {
+  const lines = [];
+  const context = {
+    measureText: (value) => ({ width: value.length * 6 }),
+    fillText: (value) => lines.push(value),
+  };
+  wrapCenteredText(context, "A very long bestiary description that must wrap instead of spilling outside its card.", 0, 0, 120, 13, 3);
+  assert.ok(lines.length > 1);
+  assert.ok(lines.length <= 3);
+  assert.ok(lines.every((line) => context.measureText(line).width <= 120));
+});
+
 test("Community Garden is the third map and uses weed waves", () => {
   assert.equal(MAP_SLOTS[2], GARDEN_MAP);
   assert.equal(GARDEN_MAP.name, "The Community Garden");
   assert.equal(GARDEN_MAP.normalEnemyType, "weed");
   assert.equal(GARDEN_MAP.bossSpawnTime, 90);
   assert.equal(GARDEN_MAP.boss.type, "dandelion");
-  assert.equal(GARDEN_MAP.boss.health, 1000);
+  assert.equal(GARDEN_MAP.boss.health, 800);
+  assert.equal(GARDEN_MAP.boss.sporeCooldown, 0.5);
+  assert.equal(GARDEN_MAP.boss.aimedSporeCooldown, 0.5);
+  assert.equal(GARDEN_MAP.boss.healthRegeneration, 15);
   assert.equal(GARDEN_MAP.bossSpawnTime, 90);
   assert.equal(GARDEN_MAP.victoryCoinBonus, 1500);
   assert.equal(mapById("garden"), GARDEN_MAP);
@@ -50,6 +65,7 @@ test("Public Park uses the Groundskeeper boss", () => {
   assert.equal(PUBLIC_PARK_MAP.bossSpawnTime, 120);
   assert.equal(PUBLIC_PARK_MAP.boss.mowCooldown, 5);
   assert.equal(PUBLIC_PARK_MAP.boss.clippingCooldown, 1);
+  assert.equal(PUBLIC_PARK_MAP.boss.shieldRegeneration, 10);
 });
 
 test("Public Park is a large obstacle-filled fourth map", () => {
@@ -68,8 +84,24 @@ test("Lake Elizabeth has a central lake and two timed bosses", () => {
   assert.equal(LAKE_ELIZABETH_MAP.bossSpawnTime, 90);
   assert.equal(LAKE_ELIZABETH_MAP.bosses.length, 2);
   assert.equal(LAKE_ELIZABETH_MAP.bosses[1].type, "pondfather");
+  assert.equal(LAKE_ELIZABETH_MAP.bosses[1].shieldRegeneration, 50);
   assert.ok(LAKE_ELIZABETH_MAP.obstacles.some((obstacle) => obstacle.kind === "lake" && obstacle.solid === true));
   assert.equal(mapById("lake-elizabeth"), LAKE_ELIZABETH_MAP);
+});
+
+test("Golf Course is the sixth map with a Groundskeeper and Pro Golfer", () => {
+  assert.equal(MAP_SLOTS[5], GOLF_COURSE_MAP);
+  assert.equal(GOLF_COURSE_MAP.bossSpawnTime, 90);
+  assert.equal(GOLF_COURSE_MAP.bosses[0].type, "groundskeeper");
+  assert.equal(GOLF_COURSE_MAP.bosses[0].canCrushObstacles, false);
+  assert.equal(GOLF_COURSE_MAP.bosses[1].type, "pro-golfer");
+  assert.equal(GOLF_COURSE_MAP.bosses[1].health, 3500);
+  assert.equal(GOLF_COURSE_MAP.preBossGooseSpawnChance, 0.32);
+  assert.equal(GOLF_COURSE_MAP.preBossGopherSpawnChance, 0.60);
+  assert.equal(GOLF_COURSE_MAP.golferSpawnChance, 0.20);
+  assert.equal(GOLF_COURSE_MAP.postBossSquirrelSpawnChance, 0.16);
+  assert.equal(GOLF_COURSE_MAP.postBossGopherSpawnChance, 0.16);
+  assert.equal(mapById("golf-course"), GOLF_COURSE_MAP);
 });
 
 test("yard fences span the full map beside the house edge", () => {

@@ -1,18 +1,19 @@
 export class CommonWeed {
-  constructor({ x, y, lifetime = 5, copyInterval = 0.4 }) {
+  constructor({ x, y, lifetime = 5, copyInterval = 0.4, bossMode = false }) {
     this.x = x;
     this.y = y;
     this.radius = 15;
-    this.maxHealth = 10;
-    this.health = 10;
+    this.bossMode = bossMode;
+    this.maxHealth = bossMode ? 200 : 10;
+    this.health = this.maxHealth;
     this.damage = 4;
     this.coinValue = 1;
     this.coinDropChance = 0.5;
     this.xpValue = 10;
     this.xpDropChance = 0.5;
-    this.lifetime = lifetime;
-    this.copyInterval = copyInterval;
-    this.copyTimer = copyInterval;
+    this.lifetime = bossMode ? Number.POSITIVE_INFINITY : lifetime;
+    this.copyInterval = bossMode ? Number.POSITIVE_INFINITY : copyInterval;
+    this.copyTimer = this.copyInterval;
     this.hasCloned = false;
     this.hasLateCloned = false;
     this.hitFlash = 0;
@@ -21,12 +22,24 @@ export class CommonWeed {
     this.enemyType = "common-weed";
   }
 
-  get active() { return this.health > 0 && this.lifetime > 0; }
+  get active() { return this.health > 0 && (this.bossMode || this.lifetime > 0); }
+
+  enterBossMode() {
+    this.bossMode = true;
+    this.maxHealth = 200;
+    this.health = this.maxHealth;
+    this.lifetime = Number.POSITIVE_INFINITY;
+    this.copyInterval = Number.POSITIVE_INFINITY;
+    this.copyTimer = this.copyInterval;
+    this.hasCloned = true;
+    this.hasLateCloned = true;
+  }
 
   update(deltaTime, target) {
     this.hitFlash = Math.max(0, this.hitFlash - deltaTime);
     this.slowTime = Math.max(0, this.slowTime - deltaTime);
     if (!this.active) return {};
+    if (this.bossMode) return {};
     if (this.freezeTime > 0) return {};
     this.lifetime -= deltaTime;
     if (this.lifetime <= 0) return {};

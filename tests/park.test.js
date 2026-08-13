@@ -62,6 +62,19 @@ test("Groundskeeper clipping fan centers on the player", () => {
   assert.equal(Math.round(events.fireClippings.directionY * 100), 100);
 });
 
+test("Groundskeeper regenerates ten shield per second", () => {
+  const boss = new GroundskeeperBoss({ x: 0, y: 0, world: { width: 1000, height: 800 }, config: {
+    name: "The Groundskeeper", health: 2000, damage: 50, speed: 220, mowCooldown: 5, clippingCooldown: 1,
+    shieldStrength: 200, shieldRegeneration: 10,
+  } });
+  boss.shield = 0;
+  boss.update(1, { x: 500, y: 500 }, []);
+  assert.equal(boss.shield, 10);
+  boss.takeDamage(15);
+  assert.equal(boss.health, 1995);
+  assert.equal(boss.shield, 0);
+});
+
 test("Boss presence triples damage dealt to minions", () => {
   const game = Object.create(Game.prototype);
   game.bossSpawned = true;
@@ -90,7 +103,8 @@ test("Goose has 40 health, 250 speed, and lake rewards", () => {
 });
 
 test("Pondfather starts in water, divebombs, then summons geese", () => {
-  const boss = new PondfatherBoss({ x: 500, y: 500, world: { width: 1000, height: 800 }, config: { name: "The Pondfather", health: 2500 } });
+  const boss = new PondfatherBoss({ x: 500, y: 500, world: { width: 1000, height: 800 }, config: { name: "The Pondfather", health: 2500, shieldRegeneration: 50 } });
+  assert.equal(boss.shieldRegeneration, 50);
   boss.regenTime = 5;
   boss.update(0.01, { x: 700, y: 500 });
   assert.equal(boss.phase, "warning");

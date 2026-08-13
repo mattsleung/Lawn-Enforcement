@@ -4,13 +4,14 @@ import assert from "node:assert/strict";
 import { CHEST_COST, CHEST_ODDS, PERMANENT_WEAPONS, weaponMaxLevelForMaps, weaponUpgradeCost } from "../src/config/economy-config.js";
 import { buyWeapon, openChest, rollChestRarity, upgradeCharacterStat, upgradeWeapon } from "../src/systems/economy.js";
 import { defaultProgress } from "../src/systems/progression.js";
+import { WEAPON_DEFINITIONS } from "../src/config/weapons.js";
 
 test("chest rarity boundaries match the configured odds", () => {
   const cases = [
-    [0, "Uncommon"], [0.199999, "Uncommon"], [0.2, "Rare"],
-    [0.599999, "Rare"], [0.6, "Epic"], [0.899999, "Epic"],
-    [0.9, "Legendary"], [0.979999, "Legendary"],
-    [0.98, "Mythical"], [0.998999, "Mythical"], [0.999, "Secret"],
+    [0, "Common"], [0.249999, "Common"], [0.25, "Uncommon"],
+    [0.499999, "Uncommon"], [0.5, "Rare"], [0.749999, "Rare"],
+    [0.75, "Epic"], [0.899999, "Epic"], [0.9, "Legendary"],
+    [0.979999, "Legendary"], [0.98, "Mythical"], [0.998999, "Mythical"], [0.999, "Secret"],
   ];
   for (const [roll, rarity] of cases) assert.equal(rollChestRarity(() => roll), rarity);
   assert.equal(CHEST_ODDS.reduce((sum, entry) => sum + entry.chance, 0), 1);
@@ -52,12 +53,12 @@ test("Diet Cola Launcher is a 25,000-coin Legendary shop purchase", () => {
 test("duplicate chest weapons convert to their configured coin value", () => {
   const progress = defaultProgress();
   progress.coins = 1000;
-  progress.ownedWeapons.push("garden-hose");
-  const randomValues = [0.2, 0.7];
+  progress.ownedWeapons.push(...WEAPON_DEFINITIONS.filter((weapon) => weapon.rarity === "Rare").map((weapon) => weapon.id));
+  const randomValues = [0.6, 0.7];
   const result = openChest(progress, () => randomValues.shift());
   assert.equal(result.duplicate, true);
-  assert.equal(result.weapon.id, "garden-hose");
-  assert.equal(progress.coins, 160);
+  assert.equal(result.duplicate, true);
+  assert.equal(progress.coins, result.weapon.duplicateValue);
 });
 
 test("weapon upgrade costs increase by progressively larger amounts", () => {

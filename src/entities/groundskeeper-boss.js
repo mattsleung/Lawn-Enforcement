@@ -4,6 +4,11 @@ export class GroundskeeperBoss {
     this.name = config.name; this.maxHealth = config.health; this.health = config.health;
     this.damage = config.damage; this.speed = config.speed; this.world = world;
     this.mowCooldown = config.mowCooldown; this.clippingCooldown = config.clippingCooldown;
+    this.shieldStrength = config.shieldStrength ?? 200;
+    this.shieldRegeneration = config.shieldRegeneration ?? 10;
+    this.shield = this.shieldStrength;
+    this.canCrushObstacles = config.canCrushObstacles ?? true;
+    this.summonSquirrels = config.summonSquirrels ?? true;
     this.mowTimer = this.mowCooldown; this.clippingTimer = this.clippingCooldown;
     this.warningTime = 0; this.chargeTime = 0; this.mowVector = { x: 1, y: 0 };
     this.hitFlash = 0; this.slowTime = 0; this.isBoss = true; this.enemyType = "groundskeeper";
@@ -15,6 +20,7 @@ export class GroundskeeperBoss {
     this.hitFlash = Math.max(0, this.hitFlash - deltaTime);
     this.slowTime = Math.max(0, this.slowTime - deltaTime);
     if (!this.active) return events;
+    this.shield = Math.min(this.shieldStrength, this.shield + this.shieldRegeneration * deltaTime);
     const slow = this.slowTime > 0 ? 0.5 : 1;
     this.mowTimer -= deltaTime; this.clippingTimer -= deltaTime;
     if (this.warningTime > 0) {
@@ -26,10 +32,12 @@ export class GroundskeeperBoss {
       this.y += this.mowVector.y * 560 * slow * deltaTime;
       this.x = Math.max(this.radius, Math.min(this.world.width - this.radius, this.x));
       this.y = Math.max(this.radius, Math.min(this.world.height - this.radius, this.y));
-      for (const obstacle of obstacles) {
-        if (this.crushedObstacles.has(obstacle)) continue;
-        if (Math.hypot(obstacle.x + obstacle.width / 2 - this.x, obstacle.y + obstacle.height / 2 - this.y) < Math.max(obstacle.width, obstacle.height) * 0.65 + this.radius) {
-          this.crushedObstacles.add(obstacle); events.crushObstacles.push(obstacle);
+      if (this.canCrushObstacles) {
+        for (const obstacle of obstacles) {
+          if (this.crushedObstacles.has(obstacle)) continue;
+          if (Math.hypot(obstacle.x + obstacle.width / 2 - this.x, obstacle.y + obstacle.height / 2 - this.y) < Math.max(obstacle.width, obstacle.height) * 0.65 + this.radius) {
+            this.crushedObstacles.add(obstacle); events.crushObstacles.push(obstacle);
+          }
         }
       }
     } else {
@@ -54,7 +62,18 @@ export class GroundskeeperBoss {
     }
     return events;
   }
-  takeDamage(amount) { if (!this.active) return false; this.health = Math.max(0, this.health - Math.max(0, amount)); this.hitFlash = 0.12; return this.health === 0; }
+  takeDamage(amount) {
+    if (!this.active) return false;
+    let remaining = Math.max(0, amount);
+    if (this.shield > 0) {
+      const absorbed = Math.min(this.shield, remaining);
+      this.shield -= absorbed;
+      remaining -= absorbed;
+    }
+    if (remaining > 0) this.health = Math.max(0, this.health - remaining);
+    this.hitFlash = 0.12;
+    return this.health === 0;
+  }
   render(context, camera) {
     if (!this.active) return;
     const x = Math.round(this.x - camera.x); const y = Math.round(this.y - camera.y);
@@ -63,6 +82,8 @@ export class GroundskeeperBoss {
       context.fillStyle = "rgba(244, 207, 89, 0.28)"; context.fillRect(0, -26, 900, 52);
       context.strokeStyle = "rgba(255, 231, 130, 0.9)"; context.setLineDash([12, 10]); context.strokeRect(0, -26, 900, 52); context.setLineDash([]); context.restore();
     }
-    context.save(); context.translate(x, y); context.fillStyle = "#27302a"; context.fillRect(-42, -18, 84, 42); context.fillStyle = this.hitFlash > 0 ? "#fff3cd" : "#4c8b53"; context.fillRect(-32, -34, 64, 24); context.fillStyle = "#171b17"; context.fillRect(-36, 20, 22, 18); context.fillRect(14, 20, 22, 18); context.fillStyle = "#c88f52"; context.fillRect(-16, -54, 32, 20); context.fillStyle = "#211d19"; context.fillRect(-9, -47, 5, 5); context.fillRect(5, -47, 5, 5); context.restore();
+    context.save(); context.translate(x, y);
+    if (this.shield > 0) { context.strokeStyle = "rgba(137, 224, 255, 0.82)"; context.lineWidth = 7; context.beginPath(); context.arc(0, -8, 58, 0, Math.PI * 2); context.stroke(); }
+    context.fillStyle = "#27302a"; context.fillRect(-42, -18, 84, 42); context.fillStyle = this.hitFlash > 0 ? "#fff3cd" : "#4c8b53"; context.fillRect(-32, -34, 64, 24); context.fillStyle = "#171b17"; context.fillRect(-36, 20, 22, 18); context.fillRect(14, 20, 22, 18); context.fillStyle = "#c88f52"; context.fillRect(-16, -54, 32, 20); context.fillStyle = "#211d19"; context.fillRect(-9, -47, 5, 5); context.fillRect(5, -47, 5, 5); context.restore();
   }
 }

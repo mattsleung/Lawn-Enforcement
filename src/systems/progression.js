@@ -1,4 +1,4 @@
-import { weaponById } from "../config/weapons.js";
+import { WEAPON_DEFINITIONS, weaponById } from "../config/weapons.js";
 import { ENEMY_GLOSSARY } from "../config/glossary-config.js";
 import { weaponMaxLevelForMaps } from "../config/economy-config.js";
 import { MAPS_BY_ID } from "../config/map-config.js";
@@ -18,20 +18,31 @@ export const RUN_UPGRADES = Object.freeze([
   upgrade("explosive-projectiles", "Explosive Projectiles", "Gold", "All ranged projectiles explode on impact"),
   upgrade("second-wind", "Second Wind", "Gold", "Restore health to its current maximum"),
   weaponUpgrade("weedwacker-range", "Long Handle", "Weedwacker: +40% range", "weedwacker-9000"),
+  weaponUpgrade("vampire-fang-reach", "Bloodied Edge", "Vampire Fang: +35% range", "vampire-fang"),
+  weaponUpgrade("shears-sharpening", "Sharpened Shears", "Garden Shears: +40% snip hitbox", "garden-shears"),
   weaponUpgrade("clipper-jaw", "Wide Jaw", "Hedge Clippers: +50% cutting angle", "hedge-clippers"),
+  weaponUpgrade("barrow-bigger", "Bigger Barrow", "Wheelbarrow: +35% shove width", "wheelbarrow"),
   weaponUpgrade("shovel-impact", "Gravedigger", "Garden Shovel: +25% damage and +50% knockback", "garden-shovel"),
   weaponUpgrade("rake-tines", "Extra Tines", "Golden Rake: +40% branch width", "golden-rake"),
   weaponUpgrade("mower-deck", "Wide Deck", "Turbo Mower: +35% lane width", "turbo-mower"),
   weaponUpgrade("racket-reach", "Long Grip", "Tennis Racket: +30% swing range", "tennis-racket"),
   weaponUpgrade("apple-projectile", "Double Trouble", "Apples: +1 projectile", "apples"),
+  weaponUpgrade("sprayer-nozzle", "Wider Nozzle", "Garden Sprayer: +3 projectiles", "garden-sprayer"),
   weaponUpgrade("tennis-bounce", "Championship Felt", "Tennis Balls: +1 bounce", "tennis-balls"),
   weaponUpgrade("acorn-pierce", "Squirrel Special", "Acorn Slingshot: +1 pierce", "acorn-slingshot"),
+  weaponUpgrade("nail-magazine", "Extended Magazine", "Nail Gun: +50% range", "nail-gun"),
+  weaponUpgrade("salt-buckshot", "Buckshot", "Rock Salt Blaster: +2 pellets", "rock-salt-blaster"),
   weaponUpgrade("hose-pressure", "Pressure Nozzle", "Garden Hose: +35% stream reach", "garden-hose"),
   weaponUpgrade("bowling-spin", "Hook Shot", "Bowling Ball: +1 pierce", "bowling-ball"),
   weaponUpgrade("cola-blast", "Shaken Can", "Diet Cola Launcher: +40% blast radius", "diet-cola-launcher"),
   weaponUpgrade("leaf-gale", "Industrial Fan", "Leaf Blower: +50% pushback", "leaf-blower"),
   weaponUpgrade("storm-barrels", "Rain Dance", "Storm Sprinkler: +1 water bolt", "storm-sprinkler"),
   weaponUpgrade("flamethrower-nozzle", "Extended Nozzle", "Backyard Flamethrower: +35% flame reach", "backyard-flamethrower"),
+  weaponUpgrade("plastic-ghost-haunting", "Extended Haunting", "Plastic Ghost: +40% stream range and +20% stream width", "plastic-ghost"),
+  weaponUpgrade("beach-ball-air", "Extra Air", "Beach Ball: +2 bounces before exploding", "beach-ball"),
+  weaponUpgrade("shuriken-triple", "Triple Throw", "Shurikens: +1 additional projectile", "shurikens"),
+  weaponUpgrade("gravity-core", "Dense Core", "Gravity Freezer: +35% portal radius", "gravity-freezer"),
+  weaponUpgrade("firecracker-pack", "Extra Fuse", "Firecracker: +2 secondary projectiles", "firecracker"),
   weaponUpgrade("undefined-overflow", "Overflow Error", "Ordinance Undefined: +1 projectile and bounce", "ordinance-undefined"),
 ]);
 
@@ -80,21 +91,31 @@ export function applyRunUpgrade(player, upgradeId) {
     "freeze-pulse": () => { player.freezePulse = true; },
     "scarecrow-pulse": () => { player.scarecrowPulse = true; },
     "apple-projectile": () => addWeaponBonus(player, "apples", { projectileCountAdd: 1 }),
+    "sprayer-nozzle": () => addWeaponBonus(player, "garden-sprayer", { projectileCountAdd: 3 }),
     "steel-toes": () => { player.damageTakenMultiplier *= 0.75; },
     "weedwacker-range": () => addWeaponBonus(player, "weedwacker-9000", { rangeMultiplier: 1.4 }),
+    "shears-sharpening": () => addWeaponBonus(player, "garden-shears", { widthMultiplier: 1.4 }),
     "clipper-jaw": () => addWeaponBonus(player, "hedge-clippers", { arcMultiplier: 1.5 }),
+    "barrow-bigger": () => addWeaponBonus(player, "wheelbarrow", { widthMultiplier: 1.35 }),
     "shovel-impact": () => addWeaponBonus(player, "garden-shovel", { damageMultiplier: 1.25, knockbackMultiplier: 1.5 }),
     "rake-tines": () => addWeaponBonus(player, "golden-rake", { widthMultiplier: 1.4 }),
     "mower-deck": () => addWeaponBonus(player, "turbo-mower", { widthMultiplier: 1.35 }),
     "racket-reach": () => addWeaponBonus(player, "tennis-racket", { rangeMultiplier: 1.3 }),
     "tennis-bounce": () => addWeaponBonus(player, "tennis-balls", { bouncesAdd: 1 }),
     "acorn-pierce": () => addWeaponBonus(player, "acorn-slingshot", { piercesAdd: 1 }),
+    "nail-magazine": () => addWeaponBonus(player, "nail-gun", { lifetimeMultiplier: 1.5 }),
+    "salt-buckshot": () => addWeaponBonus(player, "rock-salt-blaster", { projectileCountAdd: 2 }),
     "hose-pressure": () => addWeaponBonus(player, "garden-hose", { lifetimeMultiplier: 1.35 }),
     "bowling-spin": () => addWeaponBonus(player, "bowling-ball", { piercesAdd: 1 }),
     "cola-blast": () => addWeaponBonus(player, "diet-cola-launcher", { splashRadiusMultiplier: 1.4 }),
     "leaf-gale": () => addWeaponBonus(player, "leaf-blower", { knockbackMultiplier: 1.5 }),
     "storm-barrels": () => addWeaponBonus(player, "storm-sprinkler", { projectileCountAdd: 1 }),
     "flamethrower-nozzle": () => addWeaponBonus(player, "backyard-flamethrower", { lifetimeMultiplier: 1.35 }),
+    "plastic-ghost-haunting": () => addWeaponBonus(player, "plastic-ghost", { lifetimeMultiplier: 1.4, projectileRadiusMultiplier: 1.2 }),
+    "beach-ball-air": () => addWeaponBonus(player, "beach-ball", { bouncesAdd: 2 }),
+    "shuriken-triple": () => addWeaponBonus(player, "shurikens", { projectileCountAdd: 1 }),
+    "gravity-core": () => addWeaponBonus(player, "gravity-freezer", { splashRadiusMultiplier: 1.35 }),
+    "firecracker-pack": () => addWeaponBonus(player, "firecracker", { splitCountAdd: 2 }),
     "undefined-overflow": () => addWeaponBonus(player, "ordinance-undefined", { projectileCountAdd: 1, bouncesAdd: 1 }),
     "explosive-projectiles": () => { player.rangedExplosion = true; },
     "second-wind": () => {
@@ -187,7 +208,7 @@ function isRecord(value) {
 function validEquippedWeapon(id, slot, ownedWeapons) {
   const migratedId = typeof id === "string" ? migrateWeaponId(id) : null;
   const weapon = weaponById(migratedId);
-  return weapon?.slot === slot && ownedWeapons.includes(migratedId) ? migratedId : null;
+  return weapon && ownedWeapons.includes(migratedId) ? migratedId : null;
 }
 
 function migrateWeaponId(id) {
@@ -236,4 +257,12 @@ export function defaultProgress() {
     equippedWeapons: { melee: "weedwacker-9000", ranged: "apples" },
     defeatedEnemies: Object.fromEntries(ENEMY_GLOSSARY.map((enemy) => [enemy.id, 0])),
   };
+}
+
+export function unlockAllWeapons(progress) {
+  const allWeaponIds = WEAPON_DEFINITIONS.map((weapon) => weapon.id);
+  progress.ownedWeapons = [...new Set([...(progress.ownedWeapons ?? []), ...allWeaponIds])];
+  progress.weaponLevels ??= {};
+  for (const weaponId of progress.ownedWeapons) progress.weaponLevels[weaponId] ??= 1;
+  return progress;
 }

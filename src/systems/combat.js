@@ -9,7 +9,8 @@ export function nearestBounceTarget(projectile, enemies, excludedEnemy) {
   let nearest = null;
   let nearestDistance = Infinity;
   for (const enemy of enemies) {
-    if (!enemy.active || enemy.targetable === false || enemy === excludedEnemy || projectile.hitEnemies.has(enemy)) continue;
+    if (!enemy.active || enemy.targetable === false || enemy === excludedEnemy
+      || (!projectile.allowRepeatBounces && projectile.hitEnemies.has(enemy))) continue;
     const distance = Math.hypot(enemy.x - projectile.x, enemy.y - projectile.y);
     if (distance < nearestDistance) {
       nearest = enemy;
