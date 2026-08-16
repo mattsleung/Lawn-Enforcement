@@ -66,12 +66,21 @@ export class Gnome {
     context.fillStyle = "#29231f";
     context.fillRect(-5, -13, 3, 3);
     context.fillRect(3, -13, 3, 3);
+    context.fillStyle = flash ? "#ffffff" : "#bd7d58";
+    context.fillRect(-2, -10, 5, 5);
     context.fillStyle = "#e7ddbd";
     context.fillRect(-8, -4, 16, 13);
+    context.fillStyle = "#c9bea0";
+    context.fillRect(-6, 0, 12, 3);
     context.fillRect(-5, 7, 10, 7);
+    context.fillStyle = "#714a31";
+    context.fillRect(-11, 7, 22, 4);
     context.fillStyle = "#405a74";
     context.fillRect(-10, 9, 8, 8);
     context.fillRect(2, 9, 8, 8);
+    context.fillStyle = "#241d19";
+    context.fillRect(-12, 15, 10, 4);
+    context.fillRect(2, 15, 10, 4);
 
     context.fillStyle = "#211c18";
     context.fillRect(-15, -43, 30, 5);

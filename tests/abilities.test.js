@@ -54,3 +54,30 @@ test("timed abilities wait when their upgrades are not selected", () => {
   assert.equal(game.abilityProjectiles.length, 0);
   assert.equal(game.explosions.length, 0);
 });
+
+test("enemies target the player when every Garden Gnome decoy is farther away", () => {
+  const game = Object.create(Game.prototype);
+  game.player = { x: 100, y: 100 };
+  const enemy = { x: 130, y: 100, isBoss: false };
+  game.gardenDecoys = [{ x: 400, y: 100, active: true }];
+  assert.equal(game.getEnemyTarget(enemy), game.player);
+  game.gardenDecoys[0].x = 140;
+  assert.equal(game.getEnemyTarget(enemy), game.gardenDecoys[0]);
+});
+
+test("Flamingo Tube is an always-active knockback ring around the player", () => {
+  const game = Object.create(Game.prototype);
+  game.player = { x: 100, y: 100, flamingoTube: true };
+  const enemy = { x: 150, y: 100, radius: 16, active: true, targetable: true, isBoss: false };
+  game.enemies = [enemy];
+  game.abilityProjectiles = [];
+  game.explosions = [];
+  game.passiveCooldowns = { mower: 5, battery: 5, freeze: 5, scarecrow: 5, flamingo: 5 };
+  game.world = { width: 400, height: 400 };
+
+  game.updatePassiveAbilities(0.1);
+
+  assert.ok(enemy.x > 150, "the ring continuously pushes nearby enemies away");
+  assert.equal(game.passiveCooldowns.flamingo, 5);
+  assert.equal(game.explosions.length, 0);
+});

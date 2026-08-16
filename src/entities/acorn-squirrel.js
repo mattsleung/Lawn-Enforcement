@@ -47,9 +47,9 @@ export class AcornSquirrel extends Squirrel {
     const y = Math.round(this.y - camera.y);
     if (!this.active) return;
     context.save(); context.translate(x, y);
-    context.fillStyle = "#332a3f"; context.fillRect(-15, -12, 30, 24);
+    context.fillStyle = "#332a3f"; context.fillRect(-27, -14, 12, 27); context.fillRect(-32, -7, 10, 18); context.fillRect(-15, -12, 30, 24);
     context.fillStyle = this.hitFlash > 0 ? "#fff1c8" : "#7e5da8"; context.fillRect(-12, -16, 24, 19); context.fillRect(-8, -23, 16, 10);
-    context.fillStyle = "#d0a76b"; context.fillRect(-8, -12, 16, 11);
+    context.fillStyle = "#d0a76b"; context.fillRect(-8, -12, 16, 11); context.fillRect(-9, -27, 7, 7); context.fillRect(2, -27, 7, 7);
     context.fillStyle = "#211b18"; context.fillRect(-5, -9, 3, 3); context.fillRect(3, -9, 3, 3); context.fillRect(6, -2, 6, 3);
     context.fillStyle = "#4f3c69"; context.fillRect(-19, 7, 15, 8); context.fillRect(4, 7, 15, 8);
     context.fillStyle = "#6b452b"; context.fillRect(-4, -31, 8, 8); context.fillStyle = "#3a2a20"; context.fillRect(-7, -34, 14, 4);

@@ -1,4 +1,5 @@
 import { COLORS, PLAYER, WORLD } from "../config/game-config.js";
+import { renderHeldWeaponVisual } from "./held-weapon.js";
 
 const WALK_FRAMES_PER_SECOND = 6;
 const WALK_BOB = [0, -1, 0, -1];
@@ -26,11 +27,18 @@ export class Player {
     this.batteryPack = false;
     this.freezePulse = false;
     this.scarecrowPulse = false;
+    this.flamingoTube = false;
     this.reducedMotion = false;
     this.maxHealth = 100;
     this.roundStartingMaxHealth = this.maxHealth;
     this.maxHealthCap = this.roundStartingMaxHealth * 2;
     this.health = this.maxHealth;
+    this.maxShield = 0;
+    this.shield = 0;
+    this.shieldRegen = 0;
+    this.healthRegenAmount = 0;
+    this.healthRegenInterval = 0;
+    this.healthRegenTimer = 0;
     this.invulnerability = 0;
     this.hitFlash = 0;
     this.facing = 0;
@@ -53,7 +61,23 @@ export class Player {
     const inSandBunker = obstacles.some((obstacle) => obstacle.kind === "sand-bunker"
       && this.x >= obstacle.x && this.x <= obstacle.x + obstacle.width
       && this.y >= obstacle.y && this.y <= obstacle.y + obstacle.height);
-    const movementSpeed = inSandBunker ? this.speed * 0.5 : this.speed;
+    const inWater = obstacles.some((obstacle) => obstacle.kind === "river"
+      && this.x >= obstacle.x && this.x <= obstacle.x + obstacle.width
+      && this.y >= obstacle.y && this.y <= obstacle.y + obstacle.height);
+    const onRunningTrack = obstacles.some((obstacle) => obstacle.kind === "running-track"
+      && this.x >= obstacle.x && this.x <= obstacle.x + obstacle.width
+      && this.y >= obstacle.y && this.y <= obstacle.y + obstacle.height);
+    const inSlime = obstacles.some((obstacle) => obstacle.kind === "slime"
+      && Math.hypot(this.x - obstacle.x, this.y - obstacle.y) <= obstacle.radius);
+    const movementSpeed = inSlime ? this.speed * 0.4 : (inSandBunker || inWater) ? this.speed * 0.5 : onRunningTrack ? this.speed * 1.2 : this.speed;
+    if (this.maxShield > 0) this.shield = Math.min(this.maxShield, this.shield + this.shieldRegen * deltaTime);
+    if (this.healthRegenAmount > 0 && this.healthRegenInterval > 0) {
+      this.healthRegenTimer += deltaTime;
+      while (this.healthRegenTimer >= this.healthRegenInterval) {
+        this.healthRegenTimer -= this.healthRegenInterval;
+        this.health = Math.min(this.maxHealth, this.health + this.healthRegenAmount);
+      }
+    }
     this.x = clamp(this.x + movement.x * movementSpeed * deltaTime, this.radius, world.width - this.radius);
     this.y = clamp(this.y + movement.y * movementSpeed * deltaTime, this.radius, world.height - this.radius);
     resolveObstacleCollisions(this, obstacles);
@@ -81,17 +105,22 @@ export class Player {
     if (safeAmount === 0) return false;
 
     const multiplier = Number.isFinite(this.damageTakenMultiplier) ? Math.max(0, this.damageTakenMultiplier) : 1;
-    this.health = Math.max(0, this.health - Math.round(safeAmount * multiplier));
+    let adjusted = safeAmount * multiplier;
+    if (this.shield > 0) {
+      const shieldDamage = Math.min(this.shield, adjusted);
+      this.shield -= shieldDamage;
+      adjusted -= shieldDamage;
+    }
+    this.health = Math.max(0, this.health - Math.round(adjusted));
     this.invulnerability = 0.65;
     this.hitFlash = 0.14;
     return true;
   }
 
-  render(context, camera) {
+  render(context, camera, heldWeapon = null) {
     const x = Math.round(this.x - camera.x);
     const y = Math.round(this.y - camera.y);
     const direction = Math.cos(this.facing) >= 0 ? 1 : -1;
-    const localAim = direction === 1 ? this.facing : Math.PI - this.facing;
     const walkPhase = this.isMoving
       ? Math.floor(this.walkTime * WALK_FRAMES_PER_SECOND) % 4
       : 0;
@@ -113,6 +142,7 @@ export class Player {
       context.fillRect(-15, -45, 32, 6);
       context.fillStyle = "#9e342b";
       context.fillRect(-13, -43, 28, 2);
+      this.renderHeldWeapon(context, heldWeapon);
       context.restore();
       return;
     }
@@ -169,20 +199,30 @@ export class Player {
     context.fillStyle = "#9e342b";
     context.fillRect(-16, -53, 34, 3);
 
-    // The forward arm follows the cursor without rotating the whole sprite.
+    // Undo the fallback body's mirror before drawing the cursor-facing arm.
+    context.save();
+    context.scale(direction, 1);
+    this.renderHeldWeapon(context, heldWeapon);
+    context.restore();
+
+    context.restore();
+  }
+
+  renderHeldWeapon(context, heldWeapon) {
     context.save();
     context.translate(4, -14);
-    context.rotate(localAim);
+    context.rotate(this.facing);
     context.fillStyle = COLORS.playerShirt;
     context.fillRect(0, -5, 13, 10);
     context.fillStyle = COLORS.playerSkin;
     context.fillRect(12, -4, 12, 8);
-    context.fillStyle = "#4c4437";
-    context.fillRect(22, -2, 19, 5);
-    context.fillStyle = "#252723";
-    context.fillRect(38, -3, 8, 7);
-    context.restore();
-
+    context.translate(22, 0);
+    if (!renderHeldWeaponVisual(context, heldWeapon)) {
+      context.fillStyle = "#4c4437";
+      context.fillRect(0, -2, 19, 5);
+      context.fillStyle = "#252723";
+      context.fillRect(16, -3, 8, 7);
+    }
     context.restore();
   }
 }

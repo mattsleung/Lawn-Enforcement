@@ -4,7 +4,10 @@ import assert from "node:assert/strict";
 import { Camera } from "../src/core/camera.js";
 import { Game, wrapCenteredText } from "../src/core/game.js";
 import { PLAYER, VIEWPORT, WORLD } from "../src/config/game-config.js";
-import { FIRST_MAP, FRONTYARD_MAP, GARDEN_MAP, GOLF_COURSE_MAP, LAKE_ELIZABETH_MAP, MAP_SLOTS, PUBLIC_PARK_MAP, mapById } from "../src/config/map-config.js";
+import { AQUATIC_GARDEN_MAP, FIRST_MAP, FRONTYARD_MAP, GARDEN_MAP, GOLF_COURSE_MAP, LAKE_ELIZABETH_MAP, MAP_SLOTS, PUBLIC_PARK_MAP, REDWOOD_TRAIL_MAP, SCHOOL_FIELD_MAP, mapById } from "../src/config/map-config.js";
+import { RogueSoccerBall, Sprinter, Backpack, SchoolBasketball } from "../src/entities/school-field-enemies.js";
+import { PeTeacherBoss } from "../src/entities/pe-teacher-boss.js";
+import { BallLauncherBoss } from "../src/entities/ball-launcher-boss.js";
 import { Player } from "../src/entities/player.js";
 
 test("Backyard is slightly smaller and Frontyard is slightly taller", () => {
@@ -30,6 +33,22 @@ test("The Frontyard is a distinct smaller second map", () => {
   assert.equal(FRONTYARD_MAP.bossThrownEnemy, "gopher");
   assert.equal(FRONTYARD_MAP.unlocks, "garden");
   assert.equal(mapById("frontyard"), FRONTYARD_MAP);
+});
+
+test("permanent regeneration restores one health every three seconds", () => {
+  const player = new Player();
+  player.health = 80;
+  player.healthRegenAmount = 1;
+  player.healthRegenInterval = 3;
+  const movement = { x: 0, y: 0 };
+  const aimPoint = { x: player.x + 10, y: player.y };
+  player.update(2.99, movement, aimPoint, WORLD, []);
+  assert.equal(player.health, 80);
+  player.update(0.01, movement, aimPoint, WORLD, []);
+  assert.equal(player.health, 81);
+  player.health = player.maxHealth;
+  player.update(3, movement, aimPoint, WORLD, []);
+  assert.equal(player.health, player.maxHealth);
 });
 
 test("Bestiary descriptions wrap within their card width", () => {
@@ -104,6 +123,156 @@ test("Golf Course is the sixth map with a Groundskeeper and Pro Golfer", () => {
   assert.equal(mapById("golf-course"), GOLF_COURSE_MAP);
 });
 
+test("Aquatic Garden follows Golf Course with a river, lilypads, and Lily Queen", () => {
+  assert.equal(MAP_SLOTS[6], AQUATIC_GARDEN_MAP);
+  assert.equal(GOLF_COURSE_MAP.unlocks, "aquatic-garden");
+  assert.equal(AQUATIC_GARDEN_MAP.world, GARDEN_MAP.world);
+  assert.equal(AQUATIC_GARDEN_MAP.normalEnemyType, "aquatic-garden");
+  assert.equal(AQUATIC_GARDEN_MAP.bossSpawnTime, 60);
+  assert.equal(AQUATIC_GARDEN_MAP.nextBossSpawnDelay, 90);
+  assert.equal(AQUATIC_GARDEN_MAP.lilypadCount, 3);
+  assert.ok(AQUATIC_GARDEN_MAP.obstacles.some((obstacle) => obstacle.kind === "river" && obstacle.solid === false));
+  assert.equal(AQUATIC_GARDEN_MAP.bosses[0].type, "dandelion");
+  assert.equal(AQUATIC_GARDEN_MAP.bosses[1].type, "lily-queen");
+  assert.equal(AQUATIC_GARDEN_MAP.bosses[1].health, 5000);
+  assert.equal(AQUATIC_GARDEN_MAP.bosses[1].shieldRegeneration, 5);
+  assert.equal(AQUATIC_GARDEN_MAP.bosses[1].strongweedLaunchChance, 0.5);
+  assert.equal(mapById("aquatic-garden"), AQUATIC_GARDEN_MAP);
+});
+
+test("Redwood Trail gives the Ancient Snail a faster boss pace", () => {
+  assert.equal(MAP_SLOTS[7], REDWOOD_TRAIL_MAP);
+  assert.equal(REDWOOD_TRAIL_MAP.boss.type, "ancient-snail");
+  assert.equal(REDWOOD_TRAIL_MAP.boss.speed, 30);
+});
+
+test("School Field is an exclusive edge-spawn map with two sports bosses", () => {
+  assert.equal(MAP_SLOTS[8], SCHOOL_FIELD_MAP);
+  assert.equal(SCHOOL_FIELD_MAP.normalEnemyType, "school-field");
+  assert.equal(SCHOOL_FIELD_MAP.bossSpawnTime, 120);
+  assert.equal(SCHOOL_FIELD_MAP.bosses.length, 2);
+  assert.equal(SCHOOL_FIELD_MAP.bosses[0].type, "pe-teacher");
+  assert.equal(SCHOOL_FIELD_MAP.bosses[1].type, "ball-launcher");
+  assert.equal(SCHOOL_FIELD_MAP.bosses[1].health, 10000);
+  assert.equal(SCHOOL_FIELD_MAP.obstacles.filter((obstacle) => obstacle.kind === "running-track").length, 4);
+  assert.equal(mapById("school-field"), SCHOOL_FIELD_MAP);
+});
+
+test("School Field enemies expose their distinct movement identities", () => {
+  const target = { x: 500, y: 500, radius: 18 };
+  const enemies = [
+    new RogueSoccerBall({ x: 100, y: 500 }),
+    new Sprinter({ x: 100, y: 500 }),
+    new Backpack({ x: 100, y: 500 }),
+    new SchoolBasketball({ x: 100, y: 500 }),
+  ];
+  for (const enemy of enemies) enemy.update(0.1, target);
+  assert.deepEqual(enemies.map((enemy) => enemy.enemyType), ["rogue-soccer-ball", "sprinter", "backpack", "basketball"]);
+  assert.deepEqual(enemies.map((enemy) => enemy.maxHealth), [200, 200, 550, 150]);
+  const teacher = new PeTeacherBoss({ x: 300, y: 300, config: SCHOOL_FIELD_MAP.bosses[0], world: SCHOOL_FIELD_MAP.world });
+  const launcher = new BallLauncherBoss({ x: 300, y: 300, config: SCHOOL_FIELD_MAP.bosses[1] });
+  assert.equal(teacher.maxHealth, 8000);
+  assert.equal(launcher.maxHealth, 10000);
+});
+
+test("Sprinters run the track and only chase when the player gets close", () => {
+  const world = SCHOOL_FIELD_MAP.world;
+  const sprinter = new Sprinter({ x: 100, y: 100, world, random: () => 0 });
+  const startY = sprinter.y;
+  sprinter.update(0.5, { x: world.width / 2, y: world.height / 2, radius: 18 });
+  assert.equal(sprinter.chasing, false);
+  assert.notEqual(sprinter.y, world.height / 2, "a distant player should not pull the sprinter into the center");
+  assert.ok(sprinter.x >= 55 && sprinter.x <= world.width - 55);
+  assert.notEqual(sprinter.y, startY);
+  assert.equal(sprinter.trackSpeedMultiplier, 3);
+  sprinter.update(0.01, { x: sprinter.x + 20, y: sprinter.y + 20, radius: 18 });
+  assert.equal(sprinter.chasing, true);
+  assert.equal(sprinter.chaseSpeedMultiplier, 2);
+});
+
+test("School Field stages sprinters and backpacks after the first boss", () => {
+  const weights = SCHOOL_FIELD_MAP.schoolFieldSpawnWeights;
+  assert.equal(weights.sprinter, 0.1823 / 4);
+  assert.equal(weights.backpack, 0.1542 / 4);
+  assert.ok(Math.abs(Object.values(weights).reduce((sum, value) => sum + value, 0) - 1) < 0.0001);
+  assert.equal(SCHOOL_FIELD_MAP.schoolFieldPreBossSpawnWeights.sprinter, 0);
+  assert.equal(SCHOOL_FIELD_MAP.schoolFieldPreBossSpawnWeights.backpack, 0);
+});
+
+test("PE Teacher can emit a dodgeball event without crashing the update", () => {
+  const teacher = new PeTeacherBoss({ x: 300, y: 300, config: SCHOOL_FIELD_MAP.bosses[0], world: SCHOOL_FIELD_MAP.world });
+  teacher.dodgeballTimer = 0;
+  const events = teacher.update(0.01, { x: 500, y: 500, radius: 18 });
+  assert.ok(events.throwDodgeball);
+  assert.equal(events.throwDodgeball.x, teacher.x);
+  assert.equal(events.throwDodgeball.targetX, 500);
+  assert.equal(events.throwDodgeball.speed, SCHOOL_FIELD_MAP.bosses[0].dodgeballSpeed);
+  assert.equal(events.throwDodgeball.damage, SCHOOL_FIELD_MAP.bosses[0].dodgeballDamage);
+  const game = Object.create(Game.prototype);
+  game.bossProjectiles = [];
+  game.fireSchoolBall(events.throwDodgeball, "dodgeball");
+  assert.equal(game.bossProjectiles.length, 1);
+  assert.ok(Number.isFinite(game.bossProjectiles[0].velocityX));
+  assert.ok(Number.isFinite(game.bossProjectiles[0].velocityY));
+});
+
+test("PE Teacher leaves the perimeter lap when it reaches the player", () => {
+  const teacher = new PeTeacherBoss({ x: 300, y: 300, config: SCHOOL_FIELD_MAP.bosses[0], world: SCHOOL_FIELD_MAP.world });
+  teacher.lapTime = 1;
+  teacher.lapTimer = 0;
+  teacher.update(0.01, { x: 350, y: 350, radius: 18 });
+  assert.equal(teacher.lapTime, 0);
+  assert.equal(teacher.lapTimer, teacher.lapCooldown);
+});
+
+test("Ball Launcher has five-percent basketball and soccer-ball enemy shots", () => {
+  const game = Object.create(Game.prototype);
+  game.enemies = [];
+  game.world = SCHOOL_FIELD_MAP.world;
+  game.currentMap = SCHOOL_FIELD_MAP;
+  game.firstBossDefeated = true;
+  game.random = () => 0.01;
+  const event = { x: 500, y: 500, targetX: 700, targetY: 500 };
+  assert.equal(game.fireBallLauncherShot(event, SCHOOL_FIELD_MAP.bosses[1]), "basketball-enemy");
+  assert.equal(game.enemies.at(-1).enemyType, "basketball");
+  game.random = () => 0.06;
+  assert.equal(game.fireBallLauncherShot(event, SCHOOL_FIELD_MAP.bosses[1]), "soccer-ball-enemy");
+  assert.equal(game.enemies.at(-1).enemyType, "rogue-soccer-ball");
+  assert.equal(game.enemies.every((enemy) => enemy.bossMinion), true);
+});
+
+test("Rogue Soccer Ball cannot turn sharply and slows when juked", () => {
+  const ball = new RogueSoccerBall({ x: 100, y: 500 });
+  ball.update(0.1, { x: 500, y: 500, radius: 18 });
+  const speedBeforeJuke = ball.currentSpeed;
+  ball.update(0.1, { x: 100, y: 100, radius: 18 });
+  assert.ok(ball.headingY > -0.5, "heading should turn gradually instead of snapping");
+  assert.ok(ball.currentSpeed < speedBeforeJuke, "sharp jukes should decelerate the ball");
+  assert.equal(ball.maxSpeed, 688);
+});
+
+test("Basketballs move faster with unpredictable steering", () => {
+  const basketball = new SchoolBasketball({ x: 100, y: 500, random: () => 0 });
+  basketball.update(0.1, { x: 500, y: 500, radius: 18 });
+  assert.equal(basketball.speed, 280);
+  assert.ok(basketball.steeringAngle < -1);
+  assert.equal(basketball.jumpHeight, 32);
+  assert.ok(basketball.y < 500, "steering should move the basketball off a straight approach");
+});
+
+test("Basketballs retarget toward the player after each visual bounce", () => {
+  const basketball = new SchoolBasketball({ x: 100, y: 500, random: () => 0.5 });
+  basketball.update(0.1, { x: 500, y: 500, radius: 18 });
+  const firstDirection = basketball.travelAngle;
+  // The first arc lands after roughly 0.4 seconds. The next update performs
+  // the landing correction using the player's new position.
+  basketball.update(0.3, { x: 100, y: 100, radius: 18 });
+  basketball.update(0.01, { x: 100, y: 100, radius: 18 });
+  assert.notEqual(basketball.travelAngle, firstDirection);
+  assert.ok(basketball.travelAngle < -1, "the next jump should turn toward the repositioned player");
+  assert.ok(basketball.targetSnapshot && basketball.targetSnapshot.y === 100);
+});
+
 test("yard fences span the full map beside the house edge", () => {
   for (const map of [FIRST_MAP, FRONTYARD_MAP]) {
     const game = Object.create(Game.prototype);
@@ -141,6 +310,19 @@ test("camera follows a target without leaving world bounds", () => {
     { x: camera.x, y: camera.y },
     { x: WORLD.width - 1000, y: WORLD.height - 600 },
   );
+});
+
+test("camera eases toward a moving target when a frame delta is supplied", () => {
+  const camera = new Camera(1000, 600, WORLD.width, WORLD.height);
+  camera.follow({ x: 0, y: 0 });
+  const target = { x: WORLD.width, y: WORLD.height };
+  const maxX = WORLD.width - 1000;
+  const maxY = WORLD.height - 600;
+  camera.follow(target, 1 / 60);
+  assert.ok(camera.x > 0 && camera.x < maxX);
+  assert.ok(camera.y > 0 && camera.y < maxY);
+  camera.follow(target);
+  assert.deepEqual({ x: camera.x, y: camera.y }, { x: maxX, y: maxY });
 });
 
 test("camera converts screen coordinates to world coordinates", () => {

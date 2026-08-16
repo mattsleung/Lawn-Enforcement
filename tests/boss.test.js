@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { FIRST_MAP, FRONTYARD_MAP } from "../src/config/map-config.js";
 import { Game } from "../src/core/game.js";
 import { Boss } from "../src/entities/boss.js";
+import { CommonWeed } from "../src/entities/common-weed.js";
 import { Gopher } from "../src/entities/gopher.js";
 import { ThrownGnome } from "../src/entities/thrown-gnome.js";
 
@@ -50,6 +51,27 @@ test("Frontyard throw becomes an above-ground gopher on landing", () => {
   game.spawnLandedEnemy(thrown.enemyType, thrown.x, thrown.y);
   assert.equal(game.enemies[0] instanceof Gopher, true);
   assert.equal(game.enemies[0].burrowed, false);
+});
+
+test("Lily Queen launches half of its Strongweeds at the player", () => {
+  const game = Object.create(Game.prototype);
+  game.player = { x: 500, y: 400 };
+  game.random = () => 0.4;
+  game.thrownGnomes = [];
+  game.enemies = [];
+  game.spawnLilyQueenStrongweed({ x: 100, y: 100, strongweedLaunchChance: 0.5, strongweedLaunchSpeed: 900 });
+  assert.equal(game.thrownGnomes.length, 1);
+  assert.equal(game.thrownGnomes[0].enemyType, "strongweed");
+  assert.equal(game.thrownGnomes[0].speed, 900);
+  assert.equal(game.thrownGnomes[0].damage, 20);
+  assert.deepEqual({ x: game.thrownGnomes[0].targetX, y: game.thrownGnomes[0].targetY }, { x: 500, y: 400 });
+
+  game.random = () => 0.9;
+  game.thrownGnomes = [];
+  game.spawnStrongweedAt = (x, y) => game.enemies.push(new CommonWeed({ x, y, bossMode: true }));
+  game.spawnLilyQueenStrongweed({ x: 100, y: 100, strongweedLaunchChance: 0.5 });
+  assert.equal(game.thrownGnomes.length, 0);
+  assert.equal(game.enemies.length, 1);
 });
 
 test("first-map boss has a fixed health pool and reports defeat once", () => {

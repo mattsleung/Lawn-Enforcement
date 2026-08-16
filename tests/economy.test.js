@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { CHEST_COST, CHEST_ODDS, PERMANENT_WEAPONS, weaponMaxLevelForMaps, weaponUpgradeCost } from "../src/config/economy-config.js";
-import { buyWeapon, openChest, rollChestRarity, upgradeCharacterStat, upgradeWeapon } from "../src/systems/economy.js";
+import { buyWeapon, chestCost, openChest, rollChestRarity, shopWeaponPrice, upgradeCharacterStat, upgradeWeapon } from "../src/systems/economy.js";
 import { defaultProgress } from "../src/systems/progression.js";
 import { WEAPON_DEFINITIONS } from "../src/config/weapons.js";
 
@@ -34,8 +34,39 @@ test("purchases and upgrades never create negative balances", () => {
   assert.equal(progress.coins, 0);
 });
 
-test("weapon chest costs 1,000 coins", () => {
-  assert.equal(CHEST_COST, 1000);
+test("Regeneration unlocks after Golf Course and has only one level", () => {
+  const progress = defaultProgress();
+  progress.coins = 1000;
+  assert.equal(upgradeCharacterStat(progress, "regeneration", 10), false);
+  progress.unlockedMaps.push("aquatic-garden");
+  assert.equal(upgradeCharacterStat(progress, "regeneration", 10), true);
+  assert.equal(progress.characterStats.regeneration, 1);
+  assert.equal(upgradeCharacterStat(progress, "regeneration", 10), false);
+});
+
+test("weapon chest costs 2,000 coins", () => {
+  assert.equal(CHEST_COST, 2000);
+});
+
+test("weapon chest price rises by 200 per purchase and caps at 10,000", () => {
+  const progress = defaultProgress();
+  progress.coins = 100000;
+  assert.equal(chestCost(progress), 2000);
+  assert.ok(openChest(progress, () => 0));
+  assert.equal(chestCost(progress), 2200);
+  progress.chestPurchases = 40;
+  assert.equal(chestCost(progress), 10000);
+  progress.chestPurchases = 400;
+  assert.equal(chestCost(progress), 10000);
+});
+
+test("shop weapon prices are fixed by rarity", () => {
+  assert.equal(shopWeaponPrice({ rarity: "Common" }), 1000);
+  assert.equal(shopWeaponPrice({ rarity: "Uncommon" }), 3000);
+  assert.equal(shopWeaponPrice({ rarity: "Rare" }), 10000);
+  assert.equal(shopWeaponPrice({ rarity: "Epic" }), 20000);
+  assert.equal(shopWeaponPrice({ rarity: "Legendary" }), 60000);
+  assert.equal(shopWeaponPrice({ rarity: "Mythical" }), null);
 });
 
 test("Diet Cola Launcher is a 25,000-coin Legendary shop purchase", () => {
@@ -50,9 +81,34 @@ test("Diet Cola Launcher is a 25,000-coin Legendary shop purchase", () => {
   assert.equal(progress.ownedWeapons.includes(weapon.id), true);
 });
 
+test("Developer weapons cannot be purchased or obtained from chests", () => {
+  const progress = defaultProgress();
+  progress.coins = 100000;
+  assert.equal(buyWeapon(progress, "ordinance-undefined"), false);
+  const ordinance = PERMANENT_WEAPONS.find((weapon) => weapon.id === "ordinance-undefined");
+  assert.equal(ordinance.rarity, "Developer");
+  assert.equal(ordinance.developerOnly, true);
+  assert.equal(openChest(progress, () => 0.9995).weapon.id !== ordinance.id, true);
+});
+
+test("Limited weapons cannot be obtained from chests", () => {
+  const limitedWeapons = PERMANENT_WEAPONS.filter((weapon) => weapon.limited);
+  assert.ok(limitedWeapons.length >= 2);
+
+  for (const rarityRoll of [0, 0.91]) {
+    for (let candidateRoll = 0; candidateRoll < 1; candidateRoll += 0.01) {
+      const progress = defaultProgress();
+      progress.coins = 2000;
+      const randomValues = [rarityRoll, candidateRoll];
+      const result = openChest(progress, () => randomValues.shift());
+      assert.notEqual(result.weapon.limited, true, `${result.weapon.name} must not be Limited`);
+    }
+  }
+});
+
 test("duplicate chest weapons convert to their configured coin value", () => {
   const progress = defaultProgress();
-  progress.coins = 1000;
+  progress.coins = 2000;
   progress.ownedWeapons.push(...WEAPON_DEFINITIONS.filter((weapon) => weapon.rarity === "Rare").map((weapon) => weapon.id));
   const randomValues = [0.6, 0.7];
   const result = openChest(progress, () => randomValues.shift());

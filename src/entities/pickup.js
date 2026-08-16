@@ -8,12 +8,12 @@ export class Pickup {
     this.active = true;
   }
 
-  update(deltaTime, player) {
+  update(deltaTime, player, { attractAll = false } = {}) {
     const offsetX = player.x - this.x;
     const offsetY = player.y - this.y;
     const distance = Math.hypot(offsetX, offsetY) || 1;
-    if (distance <= player.pickupRadius) {
-      const speed = 430;
+    if (attractAll || distance <= player.pickupRadius) {
+      const speed = attractAll ? 860 : 430;
       this.x += offsetX / distance * Math.min(distance, speed * deltaTime);
       this.y += offsetY / distance * Math.min(distance, speed * deltaTime);
     }
@@ -25,6 +25,16 @@ export class Pickup {
   render(context, camera) {
     const x = Math.round(this.x - camera.x);
     const y = Math.round(this.y - camera.y);
+    if (this.type === "magnet") {
+      context.fillStyle = "#e35d72";
+      context.fillRect(x - 8, y - 8, 5, 14);
+      context.fillRect(x + 3, y - 8, 5, 14);
+      context.fillRect(x - 3, y + 3, 6, 5);
+      context.fillStyle = "#f5d9dd";
+      context.fillRect(x - 6, y - 7, 2, 7);
+      context.fillRect(x + 4, y - 7, 2, 7);
+      return;
+    }
     context.fillStyle = this.type === "xp" ? "#71d98b" : "#edcc4f";
     if (this.type === "xp") {
       context.fillRect(x - 6, y - 6, 12, 12);

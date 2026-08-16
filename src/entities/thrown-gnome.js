@@ -1,5 +1,5 @@
 export class ThrownGnome {
-  constructor({ x, y, targetX, targetY, speed, enemyType = "gnome" }) {
+  constructor({ x, y, targetX, targetY, speed, enemyType = "gnome", damage = 0 }) {
     this.x = x;
     this.y = y;
     this.targetX = targetX;
@@ -8,6 +8,8 @@ export class ThrownGnome {
     this.arrived = false;
     this.rotation = 0;
     this.enemyType = enemyType;
+    this.damage = damage;
+    this.radius = enemyType === "strongweed" ? 15 : 14;
   }
 
   update(deltaTime) {
@@ -41,6 +43,19 @@ export class ThrownGnome {
     context.save();
     context.translate(x, y);
     context.rotate(this.rotation);
+    if (this.enemyType === "strongweed") {
+      context.fillStyle = "#291b36";
+      context.fillRect(-10, -18, 20, 28);
+      context.fillStyle = "#b765d8";
+      context.fillRect(-5, -16, 10, 22);
+      context.fillRect(-14, -10, 9, 7);
+      context.fillRect(5, -8, 10, 7);
+      context.fillStyle = "#f0a4ff";
+      context.fillRect(-9, -11, 4, 3);
+      context.fillRect(5, -9, 4, 3);
+      context.restore();
+      return;
+    }
     if (this.enemyType === "gopher") {
       context.fillStyle = "#3a2d21";
       context.fillRect(-11, -10, 22, 22);

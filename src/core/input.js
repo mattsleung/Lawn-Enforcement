@@ -19,6 +19,9 @@ export class Input {
     this.rebindingAction = null;
     this.completedRebind = null;
     this.scrollRequested = 0;
+    this.textCaptureEnabled = false;
+    this.textInputRequested = [];
+    this.backspaceRequested = 0;
 
     window.addEventListener("keydown", (event) => this.handleKeyDown(event));
     window.addEventListener("keyup", (event) => this.keys.delete(event.code));
@@ -58,6 +61,18 @@ export class Input {
       this.completedRebind = { action: this.rebindingAction, code: event.code };
       this.rebindingAction = null;
       return;
+    }
+    if (this.textCaptureEnabled && !event.repeat) {
+      if (event.key === "Backspace") {
+        event.preventDefault();
+        this.backspaceRequested += 1;
+        return;
+      }
+      if (event.key.length === 1 && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        event.preventDefault();
+        this.textInputRequested.push(event.key);
+        return;
+      }
     }
     if (MOVEMENT_KEYS.has(event.code)) {
       event.preventDefault();
@@ -200,5 +215,21 @@ export class Input {
     const direction = Math.sign(this.scrollRequested);
     this.scrollRequested = 0;
     return direction;
+  }
+
+  setTextCapture(enabled) {
+    this.textCaptureEnabled = enabled;
+  }
+
+  consumeTextInput() {
+    const value = this.textInputRequested.join("");
+    this.textInputRequested = [];
+    return value;
+  }
+
+  consumeBackspaceRequest() {
+    const count = this.backspaceRequested;
+    this.backspaceRequested = 0;
+    return count;
   }
 }

@@ -6,6 +6,11 @@ export class Projectile {
     fireDamagePerSecond = 0, fireDuration = 0, fireMaxStacks = 1, freezeDuration = 0,
     endSpeedMultiplier = 1, speedCurve = "linear", lifesteal = 0, boundaryBounces = false, allowRepeatBounces = false,
     gravityPull = 0, splitCount = 0, splitDamage = 0, splitRadius = 0, detonateOnExpiry = false,
+    puddleDuration = 0, puddleRadius = 0,
+    boomerang = false, boomerangRange = 0, returnSpeed = 0, returnDamageMultiplier = 1,
+    fertilizerCloudRadius = 0, fertilizerCloudDuration = 0, fertilizerTickInterval = 0.5,
+    polarity = "pull", polarityRadius = 0, polarityForce = 0, bossDamageMultiplier = 1,
+    horseshoe = false, horseshoeRange = 0, horseshoeArc = 0, weaponId = null,
   }) {
     this.x = x;
     this.y = y;
@@ -21,6 +26,15 @@ export class Projectile {
     this.allowRepeatBounces = allowRepeatBounces;
     this.gravityPull = gravityPull; this.splitCount = splitCount; this.splitDamage = splitDamage; this.splitRadius = splitRadius;
     this.detonateOnExpiry = detonateOnExpiry;
+    this.puddleDuration = puddleDuration; this.puddleRadius = puddleRadius;
+    this.boomerang = boomerang; this.boomerangRange = boomerangRange; this.returnSpeed = returnSpeed;
+    this.returnDamageMultiplier = returnDamageMultiplier; this.returning = false;
+    this.horseshoe = horseshoe; this.horseshoeRange = horseshoeRange; this.horseshoeArc = horseshoeArc;
+    this.weaponId = weaponId;
+    this.polarity = polarity; this.polarityRadius = polarityRadius; this.polarityForce = polarityForce;
+    this.bossDamageMultiplier = bossDamageMultiplier;
+    this.fertilizerCloudRadius = fertilizerCloudRadius; this.fertilizerCloudDuration = fertilizerCloudDuration; this.fertilizerTickInterval = fertilizerTickInterval;
+    this.originX = x; this.originY = y;
     this.kind = kind;
     this.color = color;
     this.radius = radius;
@@ -32,12 +46,16 @@ export class Projectile {
     this.slowDuration = slowDuration;
     this.bouncesRemaining = bounces;
     this.piercesRemaining = pierces;
+    this.initialBounces = bounces;
+    this.initialPierces = pierces;
+    this.reflected = false;
     this.knockback = knockback;
     this.fireDamagePerSecond = fireDamagePerSecond;
     this.fireDuration = fireDuration;
     this.fireMaxStacks = fireMaxStacks;
     this.freezeDuration = freezeDuration;
     this.hitEnemies = new Set();
+    this.hitCounts = new Map();
     this.rehitCooldown = 0;
   }
 
@@ -79,6 +97,21 @@ export class Projectile {
 }
 
 function renderProjectileShape(context, projectile) {
+  if (projectile.kind === "rainbow-apple") {
+    const hue = typeof performance === "undefined" ? 0 : performance.now() / 10 % 360;
+    context.fillStyle = `hsl(${hue} 90% 58%)`;
+    context.fillRect(-7, -7, 14, 14);
+    context.fillStyle = `hsl(${(hue + 120) % 360} 85% 55%)`;
+    context.fillRect(1, -11, 3, 5);
+    return;
+  }
+  if (projectile.kind === "confetti") {
+    context.fillStyle = projectile.color;
+    context.fillRect(-6, -3, 12, 6);
+    context.fillStyle = "rgba(255,255,255,0.7)";
+    context.fillRect(-3, -2, 3, 2);
+    return;
+  }
   if (projectile.kind === "flame") {
     context.fillStyle = "#ffe36a";
     context.fillRect(-8, -4, 8, 8);
@@ -96,6 +129,41 @@ function renderProjectileShape(context, projectile) {
     context.fillStyle = "#f2ffff";
     context.fillRect(2, -3, 8, 3);
     return;
+  }
+  if (projectile.kind === "pebble") {
+    context.fillStyle = "#302a25"; context.fillRect(-5, -4, 10, 8);
+    context.fillStyle = projectile.color; context.fillRect(-4, -3, 8, 6); return;
+  }
+  if (projectile.kind === "sprinkler-mine") {
+    context.fillStyle = "#223b42"; context.fillRect(-10, -7, 20, 14);
+    context.fillStyle = projectile.color; context.fillRect(-6, -4, 12, 8); return;
+  }
+  if (projectile.kind === "trash-can-lid") {
+    context.fillStyle = "#313738"; context.fillRect(-14, -5, 28, 10);
+    context.fillStyle = projectile.color; context.fillRect(-10, -3, 20, 6); return;
+  }
+  if (projectile.kind === "fertilizer-bag") {
+    context.fillStyle = "#3b281b"; context.fillRect(-11, -8, 22, 16);
+    context.fillStyle = projectile.color; context.fillRect(-8, -6, 16, 12); return;
+  }
+  if (projectile.kind === "leaf-tornado") {
+    context.fillStyle = "rgba(182,201,87,0.22)"; context.fillRect(-projectile.radius, -projectile.radius, projectile.radius * 2, projectile.radius * 2);
+    context.fillStyle = projectile.color;
+    context.fillRect(-projectile.radius * 0.7, -4, projectile.radius * 1.4, 5);
+    context.fillRect(-4, -projectile.radius * 0.7, 5, projectile.radius * 1.4); return;
+  }
+  if (projectile.kind === "polarity") {
+    context.fillStyle = projectile.polarity === "pull" ? "#b98cff" : "#ff9a75";
+    context.fillRect(-9, -9, 18, 18);
+    context.fillStyle = "#241d32"; context.fillRect(-3, -3, 6, 6); return;
+  }
+  if (projectile.kind === "horseshoe") {
+    context.strokeStyle = projectile.color; context.lineWidth = 6; context.beginPath();
+    context.arc(0, 0, 10, Math.PI * 0.18, Math.PI * 1.82); context.stroke(); return;
+  }
+  if (projectile.kind === "orbital-water") {
+    context.fillStyle = projectile.color; context.fillRect(-9, -3, 18, 6);
+    context.fillStyle = "#e2fbff"; context.fillRect(-3, -2, 8, 2); return;
   }
   if (projectile.kind === "gravity-portal") {
     const diameter = projectile.splashRadius * 2;
