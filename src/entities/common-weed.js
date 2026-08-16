@@ -1,10 +1,12 @@
 export class CommonWeed {
-  constructor({ x, y, lifetime = 5, copyInterval = 0.4, bossMode = false }) {
+  constructor({ x, y, lifetime = 4, copyInterval = 0.4, bossMode = false }) {
     this.x = x;
     this.y = y;
+    // Strongweeds use the same collision footprint as Common Weeds. Their
+    // tougher identity is communicated through color and health, not size.
     this.radius = 15;
     this.bossMode = bossMode;
-    this.maxHealth = bossMode ? 200 : 10;
+    this.maxHealth = bossMode ? 150 : 10;
     this.health = this.maxHealth;
     this.damage = 4;
     this.coinValue = 1;
@@ -19,14 +21,19 @@ export class CommonWeed {
     this.hitFlash = 0;
     this.slowTime = 0;
     this.freezeTime = 0;
-    this.enemyType = "common-weed";
+    this.shuffleTimer = 0;
+    this.shuffleVelocityX = 0;
+    this.shuffleVelocityY = 0;
+    this.enemyType = bossMode ? "strongweed" : "common-weed";
   }
 
   get active() { return this.health > 0 && (this.bossMode || this.lifetime > 0); }
 
   enterBossMode() {
     this.bossMode = true;
-    this.maxHealth = 200;
+    this.enemyType = "strongweed";
+    this.radius = 15;
+    this.maxHealth = 150;
     this.health = this.maxHealth;
     this.lifetime = Number.POSITIVE_INFINITY;
     this.copyInterval = Number.POSITIVE_INFINITY;
@@ -39,7 +46,20 @@ export class CommonWeed {
     this.hitFlash = Math.max(0, this.hitFlash - deltaTime);
     this.slowTime = Math.max(0, this.slowTime - deltaTime);
     if (!this.active) return {};
-    if (this.bossMode) return {};
+    if (this.bossMode) {
+      if (this.freezeTime > 0) return {};
+      this.shuffleTimer -= deltaTime;
+      if (this.shuffleTimer <= 0) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 14 + Math.random() * 18;
+        this.shuffleVelocityX = Math.cos(angle) * speed;
+        this.shuffleVelocityY = Math.sin(angle) * speed;
+        this.shuffleTimer = 0.2 + Math.random() * 0.35;
+      }
+      this.x += this.shuffleVelocityX * deltaTime;
+      this.y += this.shuffleVelocityY * deltaTime;
+      return {};
+    }
     if (this.freezeTime > 0) return {};
     this.lifetime -= deltaTime;
     if (this.lifetime <= 0) return {};
@@ -89,15 +109,18 @@ export class CommonWeed {
     context.fillRect(-13, -8, 11, 13);
     context.fillRect(-20, 2, 40, 12);
 
-    context.fillStyle = this.hitFlash > 0 ? "#fff7c7" : "#70c94b";
+    const stemColor = this.bossMode ? "#b765d8" : "#70c94b";
+    const leafColor = this.bossMode ? "#713b9e" : "#3f8e36";
+    const highlightColor = this.bossMode ? "#f0a4ff" : "#d7ef62";
+    context.fillStyle = this.hitFlash > 0 ? "#fff7c7" : stemColor;
     context.fillRect(-4, -22, 8, 28);
     context.fillRect(-14, -15, 10, 7);
     context.fillRect(4, -12, 13, 7);
     context.fillRect(-10, -5, 8, 7);
-    context.fillStyle = this.hitFlash > 0 ? "#fff7c7" : "#3f8e36";
+    context.fillStyle = this.hitFlash > 0 ? "#fff7c7" : leafColor;
     context.fillRect(-17, 4, 34, 7);
     context.fillRect(-11, 10, 22, 5);
-    context.fillStyle = this.hitFlash > 0 ? "#ffffff" : "#d7ef62";
+    context.fillStyle = this.hitFlash > 0 ? "#ffffff" : highlightColor;
     context.fillRect(-14, -15, 5, 3);
     context.fillRect(11, -12, 5, 3);
     context.fillRect(-3, -22, 5, 4);

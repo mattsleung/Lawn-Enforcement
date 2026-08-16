@@ -186,7 +186,7 @@
     bossSpawnTime: 90,
     victoryCoinBonus: 3000,
     bossThrownEnemy: null,
-    unlocks: null,
+    unlocks: "aquatic-garden",
     obstacles: Object.freeze([
       Object.freeze({ x: 220, y: 210, width: 250, height: 120, kind: "sand-bunker", solid: false }),
       Object.freeze({ x: 1050, y: 180, width: 230, height: 105, kind: "sand-bunker", solid: false }),
@@ -205,7 +205,128 @@
     boss: Object.freeze({ type: "groundskeeper", name: "The Groundskeeper", health: 2000, damage: 50, speed: 440, mowCooldown: 5, clippingCooldown: 1, shieldStrength: 200, shieldRegeneration: 10, canCrushObstacles: false, summonSquirrels: false }),
   });
 
-  const MAP_SLOTS = Object.freeze([FIRST_MAP, FRONTYARD_MAP, GARDEN_MAP, PUBLIC_PARK_MAP, LAKE_ELIZABETH_MAP, GOLF_COURSE_MAP]);
+  const AQUATIC_GARDEN_MAP = Object.freeze({
+    id: "aquatic-garden",
+    name: "Aquatic Garden",
+    world: GARDEN_MAP.world,
+    lawnColors: Object.freeze({ primary: "#64743b", secondary: "#5b6d35" }),
+    houseSide: null,
+    normalEnemyType: "aquatic-garden",
+    gopherSpawnChance: 0,
+    gopherSpawnTime: Number.POSITIVE_INFINITY,
+    bossSpawnTime: 60,
+    nextBossSpawnDelay: 90,
+    victoryCoinBonus: 3500,
+    bossThrownEnemy: null,
+    unlocks: "redwood-trail",
+    obstacles: Object.freeze([
+      Object.freeze({ x: 0, y: GARDEN_MAP.world.height / 2 - 140, width: GARDEN_MAP.world.width, height: 280, kind: "river", solid: false }),
+    ]),
+    lilypadCount: 3,
+    bosses: Object.freeze([
+      Object.freeze({
+        type: "dandelion", name: "Dandelion", health: 800, damage: 0, speed: 34,
+        sporeCooldown: 0.5, aimedSporeCooldown: 0.5, sporeSpeed: 280, sporeDamage: 20, sporeLifetime: 1.6,
+        shieldThreshold: 100, shieldStrength: 200, shieldCooldown: 5, maxShieldActivations: 5, healthRegeneration: 15,
+      }),
+      Object.freeze({
+        type: "lily-queen", name: "Lily Queen", health: 5000, damage: 0, speed: 0,
+        shieldStrength: 200, shieldRegeneration: 5, strongweedCooldown: 0.3, strongweedLaunchChance: 0.5, strongweedLaunchSpeed: 900, riverbankWeedCooldown: 1,
+      }),
+    ]),
+    boss: Object.freeze({
+      type: "dandelion", name: "Dandelion", health: 800, damage: 0, speed: 34,
+      sporeCooldown: 0.5, aimedSporeCooldown: 0.5, sporeSpeed: 280, sporeDamage: 20, sporeLifetime: 1.6,
+      shieldThreshold: 100, shieldStrength: 200, shieldCooldown: 5, maxShieldActivations: 5, healthRegeneration: 15,
+    }),
+  });
+
+  const REDWOOD_TRAIL_MAP = Object.freeze({
+    id: "redwood-trail",
+    name: "Redwood Trail",
+    world: Object.freeze({
+      width: VIEWPORT.designWidth * 1.8,
+      height: VIEWPORT.designHeight * 1.8,
+      gridSize: 96,
+    }),
+    lawnColors: Object.freeze({ primary: "#46683b", secondary: "#3d5d35" }),
+    houseSide: null,
+    normalEnemyType: "redwood-trail",
+    gopherSpawnChance: 0,
+    gopherSpawnTime: Number.POSITIVE_INFINITY,
+    bossSpawnTime: 120,
+    victoryCoinBonus: 4000,
+    bossThrownEnemy: null,
+    unlocks: "school-field",
+    obstacles: Object.freeze([
+      Object.freeze({ x: 300, y: 260, width: 150, height: 220, kind: "redwood-trunk", solid: true }),
+      Object.freeze({ x: 840, y: 180, width: 170, height: 220, kind: "redwood-trunk", solid: true }),
+      Object.freeze({ x: 1510, y: 290, width: 145, height: 230, kind: "redwood-trunk", solid: true }),
+      Object.freeze({ x: 520, y: 760, width: 180, height: 220, kind: "redwood-trunk", solid: true }),
+      Object.freeze({ x: 1180, y: 700, width: 160, height: 250, kind: "redwood-trunk", solid: true }),
+      Object.freeze({ x: 1830, y: 1000, width: 150, height: 220, kind: "redwood-trunk", solid: true }),
+      Object.freeze({ x: 980, y: 1110, width: 180, height: 180, kind: "redwood-trunk", solid: true }),
+    ]),
+    redwoodSpawnWeights: Object.freeze({ snail: 0.5, mosquito: 0.34, deer: 0.16 }),
+    boss: Object.freeze({
+      type: "ancient-snail",
+      name: "The Ancient Snail",
+      health: 5000,
+      shieldStrength: 2000,
+      shieldRegeneration: 40,
+      speed: 30,
+      spitCooldown: 2,
+      spitDamage: 35,
+      spitSpeed: 360,
+      spitLifetime: 4,
+      spitSplashRadius: 42,
+      shellSlamCooldown: 5,
+      shellSlamDamage: 50,
+      shellSlamRadius: 260,
+      shellSlamPushback: 150,
+      snailArmyCooldown: 3,
+    }),
+  });
+
+  const SCHOOL_FIELD_MAP = Object.freeze({
+    id: "school-field",
+    name: "School Field",
+    world: Object.freeze({
+      width: VIEWPORT.designWidth * 1.8,
+      height: VIEWPORT.designHeight * 1.5,
+      gridSize: 96,
+    }),
+    lawnColors: Object.freeze({ primary: "#6b9149", secondary: "#638643" }),
+    houseSide: null,
+    normalEnemyType: "school-field",
+    // Sprinters and backpacks only enter the pool after the PE Teacher is
+    // defeated. Their post-boss chances are one quarter of their old shares;
+    // the remaining weight goes to the other School Field enemies.
+    schoolFieldPreBossSpawnWeights: Object.freeze({ rogueSoccerBall: 0.2035, sprinter: 0, backpack: 0, basketball: 0.7965 }),
+    schoolFieldSpawnWeights: Object.freeze({ rogueSoccerBall: 0.2035, sprinter: 0.045575, backpack: 0.03855, basketball: 0.712375 }),
+    bossSpawnTime: 120,
+    nextBossSpawnDelay: 60,
+    victoryCoinBonus: 5000,
+    bossThrownEnemy: null,
+    unlocks: null,
+    obstacles: Object.freeze([
+      Object.freeze({ x: 0, y: 0, width: VIEWPORT.designWidth * 1.8, height: 110, kind: "running-track", solid: false, speedMultiplier: 1.2 }),
+      Object.freeze({ x: 0, y: VIEWPORT.designHeight * 1.5 - 110, width: VIEWPORT.designWidth * 1.8, height: 110, kind: "running-track", solid: false, speedMultiplier: 1.2 }),
+      Object.freeze({ x: 0, y: 0, width: 110, height: VIEWPORT.designHeight * 1.5, kind: "running-track", solid: false, speedMultiplier: 1.2 }),
+      Object.freeze({ x: VIEWPORT.designWidth * 1.8 - 110, y: 0, width: 110, height: VIEWPORT.designHeight * 1.5, kind: "running-track", solid: false, speedMultiplier: 1.2 }),
+      Object.freeze({ x: 260, y: 270, width: 170, height: 30, kind: "soccer-goal", solid: false }),
+      Object.freeze({ x: 1500, y: 760, width: 170, height: 30, kind: "soccer-goal", solid: false }),
+      Object.freeze({ x: 530, y: 560, width: 170, height: 28, kind: "bench", solid: true }),
+      Object.freeze({ x: 1180, y: 450, width: 170, height: 28, kind: "bench", solid: true }),
+    ]),
+    bosses: Object.freeze([
+      Object.freeze({ type: "pe-teacher", name: "The PE Teacher", health: 8000, speed: 340, dodgeballCooldown: 2, dodgeballSpeed: 520, dodgeballDamage: 28, dodgeballKnockback: 55, whistleCooldown: 3, whistleDamage: 35, whistleRadius: 240, whistleKnockback: 130, lapCooldown: 8 }),
+      Object.freeze({ type: "ball-launcher", name: "The Ball Launcher", health: 10000, speed: 0, ballCooldown: 0.5, dumpCooldown: 5, ballDamage: 18, ballSpeed: 440, dumpDamage: 22, dumpSpeed: 360 }),
+    ]),
+    boss: Object.freeze({ type: "pe-teacher", name: "The PE Teacher", health: 8000, speed: 340, dodgeballCooldown: 2, dodgeballSpeed: 520, dodgeballDamage: 28, dodgeballKnockback: 55, whistleCooldown: 3, whistleDamage: 35, whistleRadius: 240, whistleKnockback: 130, lapCooldown: 8 }),
+  });
+
+  const MAP_SLOTS = Object.freeze([FIRST_MAP, FRONTYARD_MAP, GARDEN_MAP, PUBLIC_PARK_MAP, LAKE_ELIZABETH_MAP, GOLF_COURSE_MAP, AQUATIC_GARDEN_MAP, REDWOOD_TRAIL_MAP, SCHOOL_FIELD_MAP]);
   const MAPS_BY_ID = Object.freeze(Object.fromEntries(MAP_SLOTS.map((map) => [map.id, map])));
 
   function mapById(id) {
@@ -218,36 +339,51 @@
     Object.freeze({ id: "gopher", name: "Gopher", description: "A durable burrower that resurfaces at full health." }),
     Object.freeze({ id: "king-gnomulus", name: "King Gnomulus", description: "The Backyard boss who summons and throws gnomes." }),
     Object.freeze({ id: "common-weed", name: "Common Weed", description: "A short-lived plant that grows two children toward the player." }),
+    Object.freeze({ id: "strongweed", name: "Strongweed", description: "A Dandelion-forged weed with 150 HP that does not expire or reproduce during the boss fight." }),
     Object.freeze({ id: "squirrel", name: "Squirrel", description: "A very fast park pest that bursts toward the player and sometimes jumps sideways. 80 HP, 10 XP, 1 coin." }),
     Object.freeze({ id: "acorn-squirrel", name: "Acorn Squirrel", description: "A cautious squirrel that keeps its distance, throws acorns at your last position, then repositions. 120 HP." }),
     Object.freeze({ id: "dandelion", name: "Dandelion", description: "The Community Garden boss; its spores grow weeds and its low-health shield absorbs damage." }),
+    Object.freeze({ id: "lily-queen", name: "Lily Queen", description: "A stationary Aquatic Garden boss with 5,000 HP, a regenerating shield, and relentless riverbank weed growth." }),
     Object.freeze({ id: "groundskeeper", name: "The Groundskeeper", description: "The Public Park boss on a ride-on mower. Charges across the arena, destroys obstacles, fires grass clippings, and releases both squirrel variants." }),
     Object.freeze({ id: "goose", name: "Goose", description: "A 40-health lake pest that charges quickly at 250 speed. Drops 1 coin and 10 XP." }),
     Object.freeze({ id: "pondfather", name: "The Pondfather", description: "A gigantic goose that alternates between the lake and land, divebombing and spawning geese." }),
     Object.freeze({ id: "golfer", name: "Golfer", description: "A 300-health golfer that pauses at range to fire quick 8-damage balls, but charges with its club when approached." }),
     Object.freeze({ id: "pro-golfer", name: "The Pro Golfer", description: "The Golf Course boss who retreats quickly and alternates regular balls, fan shots, and bunker bombs." }),
+    Object.freeze({ id: "snail", name: "Snail", description: "A slow 400-health forest crawler that leaves slime trails which fade after five seconds." }),
+    Object.freeze({ id: "mosquito", name: "Mosquito", description: "A fast flying 50-health pest that ignores trees and periodically dashes." }),
+    Object.freeze({ id: "deer", name: "Deer", description: "A 500-health forest enemy that warns before charging in a straight line." }),
+    Object.freeze({ id: "ancient-snail", name: "The Ancient Snail", description: "A huge Redwood Trail boss with permanent slime, spit projectiles, shell slams, and snail reinforcements." }),
+    Object.freeze({ id: "rogue-soccer-ball", name: "Rogue Soccer Ball", description: "A 200-health rolling ball that accelerates toward you, passes by, and turns around for another approach." }),
+    Object.freeze({ id: "sprinter", name: "Sprinter", description: "A 200-health runner that sprints for three seconds, then becomes visibly exhausted for one second." }),
+    Object.freeze({ id: "backpack", name: "Angry Backpack", description: "A hopping 550-health tank that occasionally falls over before standing up again." }),
+    Object.freeze({ id: "basketball", name: "Basketball", description: "A 100-health bouncing ball whose contact damage is most dangerous when it is near the ground." }),
+    Object.freeze({ id: "pe-teacher", name: "The PE Teacher", description: "An 8,000-health School Field boss with dodgeballs, whistle shockwaves, and rapid track laps." }),
+    Object.freeze({ id: "ball-launcher", name: "The Ball Launcher", description: "A stationary 10,000-health machine that fires mixed sports balls and radial ball dumps." }),
   ]);
 
 
   const MELEE = "melee";
   const RANGED = "ranged";
+  const GENERAL_DAMAGE_MULTIPLIER = 1.1;
+  const SECRET_DAMAGE_MULTIPLIER = 1.2;
+  const SECRET_COOLDOWN_MULTIPLIER = 0.85;
 
   const WEAPON_DEFINITIONS = Object.freeze([
     meleeWeapon({
       id: "weedwacker-9000", name: "Weedwacker 9000", rarity: "Common", price: 0,
-      duplicateValue: 40, damage: 23.8, cooldown: 0.48, range: 73.8, arc: Math.PI,
+      duplicateValue: 40, damage: 26.18, cooldown: 0.48, range: 73.8, arc: Math.PI,
       shape: "arc", color: "#dcc45f", description: "Wide 180° sweep for crowd control.", levelTenFeature: "Reinforced line: +20% range", levelTenRangeMultiplier: 1.2,
     }),
     meleeWeapon({
-      id: "vampire-fang", name: "Vampire Fang", rarity: "Legendary", price: null,
-      duplicateValue: 440, damage: 18, cooldown: 0.18, range: 82, arc: Math.PI / 2,
+      id: "vampire-fang", name: "Vampire Fang", rarity: "Secret", price: null,
+      duplicateValue: 2000, damage: 4.5, cooldown: 0.18, range: 110, arc: Math.PI / 2,
       shape: "arc", color: "#c94b73", lifesteal: 0.01,
       description: "A rapid 90° bite that restores 1% of damage dealt.",
       levelTenFeature: "Blood rush: +25% range", levelTenRangeMultiplier: 1.25,
     }),
     meleeWeapon({
       id: "garden-shears", name: "Garden Shears", rarity: "Common", price: 240,
-      duplicateValue: 40, damage: 8.4, cooldown: 0.22, range: 104, width: 18,
+      duplicateValue: 40, damage: 9.24, cooldown: 0.22, range: 104, width: 18,
       shape: "snip", color: "#c8d5d0", description: "Tiny, rapid snips directly in front of the player.",
       levelTenFeature: "Double Snip: 50% chance to attack again immediately",
       levelTenModifiers: { extraAttackChance: 0.5 },
@@ -319,22 +455,148 @@
     }),
     rangedWeapon({
       id: "shurikens", name: "Shurikens", rarity: "Secret", price: null,
-      duplicateValue: 2000, damage: 28, cooldown: 0.16, projectileSpeed: 1280, projectileLifetime: 1.4,
-      projectileKind: "shuriken", color: "#d9e5ed", projectileRadius: 5, pierces: 99,
+      duplicateValue: 2000, damage: 14, cooldown: 0.42, projectileSpeed: 1280, projectileLifetime: 1.4,
+      projectileKind: "shuriken", color: "#d9e5ed", projectileRadius: 5, pierces: 3,
       perfectAccuracy: true, spread: 0, recoil: 0,
-      description: "Perfectly accurate, rapid blades that pierce every enemy in line.",
+      description: "Perfectly accurate, rapid blades that pierce three enemies in line.",
       levelTenFeature: "Shadow Clone: throws two nearly parallel shurikens", levelTenModifiers: { projectileCount: 2, fanSpacing: 0.018 },
     }),
     rangedWeapon({
       id: "apples", name: "Apples", rarity: "Common", price: 0, duplicateValue: 40,
-      damage: 20, cooldown: 1, projectileSpeed: 680, projectileLifetime: 1.5,
+      damage: 35.2, cooldown: 1, projectileSpeed: 680, projectileLifetime: 1.5,
       projectileKind: "apple", color: "#b83b32", description: "Reliable unlimited fruit; explosive at level 10.",
       levelTenFeature: "Overripe core: explodes and slows enemies",
       recoil: 0.045, levelTenModifiers: { explosive: true, splashRadius: 72, slowDuration: 2 },
     }),
     rangedWeapon({
+      id: "rainbow-apples", name: "Rainbow Apple", rarity: "Common", limited: true, seasonOnly: true,
+      price: null, duplicateValue: 40, damage: 35.2, cooldown: 1, projectileSpeed: 680, projectileLifetime: 1.5,
+      projectileKind: "rainbow-apple", color: "#ff5f74", description: "A color-changing seasonal apple with the same reliable throw.",
+      levelTenFeature: "Overripe core: explodes and slows enemies", recoil: 0.045,
+      levelTenModifiers: { explosive: true, splashRadius: 72, slowDuration: 2 },
+    }),
+    rangedWeapon({
+      id: "party-hat", name: "Party Hat", rarity: "Mythical", limited: true, seasonOnly: true,
+      price: null, duplicateValue: 440, damage: 21, cooldown: 0.8, projectileSpeed: 760, projectileLifetime: 0.72,
+      projectileKind: "confetti", color: "#ff5f74", projectileCount: 7, fanSpacing: 0.12, spread: 0.04,
+      projectileRadius: 5, recoil: 0.07, description: "Blasts a wide cone of brightly colored confetti.",
+      levelTenFeature: "Grand Finale: fires three additional confetti pieces",
+      levelTenModifiers: { projectileCount: 10 },
+    }),
+    rangedWeapon({
+      id: "pebble-shooter", name: "Pebble Shooter", rarity: "Common", price: 240, duplicateValue: 40,
+      damage: 19.2, cooldown: 0.76, projectileSpeed: 1250, projectileLifetime: 0.82,
+      projectileKind: "pebble", color: "#b6a98d", projectileRadius: 5, burstCount: 3,
+      burstInterval: 0.025, burstSpacing: 0.012, spread: 0.002, recoil: 0.01,
+      description: "A fast, accurate three-pebble burst with a short reset between volleys.",
+      levelTenFeature: "Four-Round Burst: fires four pebbles per burst",
+      levelTenModifiers: { burstCount: 4 },
+    }),
+    rangedWeapon({
+      id: "sprinkler-mine", name: "Sprinkler Mine", rarity: "Uncommon", price: 900, duplicateValue: 100,
+      damage: 100, cooldown: 2, projectileSpeed: 0, projectileLifetime: 0,
+      projectileKind: "sprinkler-mine", color: "#62c7d2", projectileRadius: 10,
+      maxMines: 5, mineTriggerRadius: 34, mineWarningDuration: 0.18, mineExplosionRadius: 90, freezeDuration: 2,
+      description: "Drops delayed mines that burst when enemies enter their trigger radius.",
+      levelTenFeature: "Improved Explosives: +30% mine explosion radius",
+      levelTenModifiers: { mineExplosionRadius: 117 },
+    }),
+    rangedWeapon({
+      id: "bug-zapper", name: "Bug Zapper", rarity: "Rare", price: 1800, duplicateValue: 170,
+      damage: 28, cooldown: 3, projectileSpeed: 0, projectileLifetime: 0,
+      projectileKind: "bug-zapper", color: "#f4df63", projectileRadius: 12,
+      zapperRange: 230, zapperDuration: 8, zapCooldown: 0.75, chainCount: 2, chainDamageMultiplier: 0.45,
+      description: "Deploys a temporary zapper that automatically strikes the nearest enemy.",
+      levelTenFeature: "Chain Lightning: each zap jumps to one additional enemy",
+      levelTenModifiers: { chainCount: 3 },
+    }),
+    rangedWeapon({
+      id: "trash-can-lid", name: "Trash Can Lid", rarity: "Legendary", price: 1000, duplicateValue: 440,
+      damage: 30, cooldown: 1.3, projectileSpeed: 760, projectileLifetime: 3.2,
+      projectileKind: "trash-can-lid", color: "#9ca6a7", projectileRadius: 14, pierces: 99,
+      boomerangRange: 280, returnSpeed: 680, returnDamageMultiplier: 1,
+      description: "A spinning lid that passes through enemies outward, then returns to you.",
+      levelTenFeature: "Reinforced Lid: returning hits deal +50% damage",
+      levelTenModifiers: { returnDamageMultiplier: 1.5 },
+    }),
+    rangedWeapon({
+      id: "garden-gnome", name: "Garden Gnome", rarity: "Rare", price: 2200, duplicateValue: 170,
+      damage: 70, cooldown: 3.5, projectileSpeed: 0, projectileLifetime: 0,
+      projectileKind: "garden-gnome", color: "#d46a49", projectileRadius: 18,
+      decoyHealth: 140, decoyDuration: 8, decoyExplosionDamage: 70, decoyExplosionRadius: 90, decoyCount: 1,
+      description: "Places a decoy gnome that attracts minions before exploding.",
+      levelTenFeature: "Last Laugh: +50% final explosion damage and +20% radius",
+      levelTenModifiers: { decoyExplosionDamage: 105, decoyExplosionRadius: 108 },
+    }),
+    rangedWeapon({
+      id: "fertilizer-bag", name: "Fertilizer Bag", rarity: "Epic", price: 1700, duplicateValue: 260,
+      damage: 12, cooldown: 1.5, projectileSpeed: 620, projectileLifetime: 1.05,
+      projectileKind: "fertilizer-bag", color: "#9f783d", projectileRadius: 11, detonateOnExpiry: true,
+      fertilizerCloudRadius: 90, fertilizerCloudDuration: 4, fertilizerTickInterval: 0.5,
+      description: "Throws a bag that bursts into a lingering damaging fertilizer cloud.",
+      levelTenFeature: "Premium Fertilizer: clouds last 50% longer",
+      levelTenModifiers: { fertilizerCloudDuration: 6 },
+    }),
+    rangedWeapon({
+      id: "leaf-tornado", name: "Leaf Tornado", rarity: "Mythical", price: null, duplicateValue: 800,
+      damage: 8, cooldown: 1.2, projectileSpeed: 260, projectileLifetime: 4, projectileKind: "leaf-tornado", color: "#b6c957", projectileRadius: 34,
+      tornadoPullRadius: 132, tornadoPullForce: 360, tornadoTickInterval: 0.35,
+      description: "Sends a swirling leaf cyclone forward that pulls in and wears down enemies.",
+      levelTenFeature: "Bigger Storm: +30% tornado size and pull radius",
+      levelTenModifiers: { projectileRadius: 44, tornadoPullRadius: 150 },
+    }),
+    rangedWeapon({
+      id: "polarity-gun", name: "Polarity Gun", rarity: "Uncommon", price: 1200, duplicateValue: 100,
+      damage: 42, cooldown: 1.15, projectileSpeed: 600, projectileLifetime: 1.2, projectileKind: "polarity", color: "#c18cff", projectileRadius: 9,
+      polarityRadius: 94, polarityForce: 240, freezeDuration: 1, spread: 0.02, playerKickback: 14,
+      description: "Alternates magnetic pull and push blasts that reposition nearby enemies.",
+      levelTenFeature: "Strong Polarity: +40% push and pull force", levelTenModifiers: { polarityForce: 336 },
+    }),
+    rangedWeapon({
+      id: "horseshoe", name: "Horseshoe", rarity: "Uncommon", price: 1300, duplicateValue: 100,
+      damage: 32, cooldown: 1.3, projectileSpeed: 620, projectileLifetime: 2.8, projectileKind: "horseshoe", color: "#c9cbd0", projectileRadius: 14, pierces: 3,
+      horseshoeRange: 250, horseshoeArc: 1.7,
+      description: "Throws a spinning lucky horseshoe that curves around before returning.",
+      levelTenFeature: "Lucky Horseshoe: +30% flight arc", levelTenModifiers: { horseshoeArc: 2.2 },
+    }),
+    rangedWeapon({
+      id: "jumper-cables", name: "Jumper Cables", rarity: "Epic", price: 2400, duplicateValue: 260,
+      damage: 48, cooldown: 1.6, projectileSpeed: 0, projectileLifetime: 0, projectileKind: "jumper-cables", color: "#5ee6ff", projectileRadius: 8,
+      chainRange: 170, maxChainJumps: 8, chainFalloff: 0.8,
+      description: "An electric chain leaps between nearby enemies with fading damage.",
+      levelTenFeature: "Superconductor: +2 maximum chain jumps", levelTenModifiers: { maxChainJumps: 10 },
+    }),
+    rangedWeapon({
+      id: "lightning-rod", name: "Lightning Rod", rarity: "Rare", price: 2600, duplicateValue: 170,
+      damage: 38, cooldown: 2.2, projectileSpeed: 0, projectileLifetime: 0, projectileKind: "lightning-rod", color: "#e9edff", projectileRadius: 12,
+      rodDuration: 15, rodStrikeInterval: 2.5, rodRadius: 82, rodChainRange: 100, rodChainCount: 10, rodMax: 3,
+      description: "Places a rod that calls down repeated lightning strikes around itself.",
+      levelTenFeature: "Conductive Rod: lightning strikes arrive more frequently", levelTenModifiers: { rodStrikeInterval: 1.7 },
+    }),
+    rangedWeapon({
+      id: "garden-mirror", name: "Garden Mirror", rarity: "Rare", price: 2500, duplicateValue: 170,
+      damage: 1, cooldown: 2.8, projectileSpeed: 0, projectileLifetime: 0, projectileKind: "garden-mirror", color: "#9fdff2", projectileRadius: 18,
+      mirrorDuration: 12, mirrorMax: 5, mirrorDamageMultiplier: 1.25,
+      description: "Places a reflective mirror that redirects ranged shots toward nearby enemies.",
+      levelTenFeature: "Polished Glass: reflected projectiles deal +25% damage", levelTenModifiers: { mirrorDamageMultiplier: 1.25 },
+    }),
+    rangedWeapon({
+      id: "doorbell", name: "Doorbell", rarity: "Uncommon", price: 1100, duplicateValue: 100,
+      damage: 24, cooldown: 2.4, projectileSpeed: 0, projectileLifetime: 0, projectileKind: "doorbell", color: "#e3bb65", projectileRadius: 12,
+      doorbellDuration: 12, doorbellInterval: 2.8, doorbellRadius: 120, doorbellRingCount: 1, doorbellOuterMultiplier: 1.5,
+      description: "Places a bell that sends expanding sound waves through enemies.",
+      levelTenFeature: "Extra Loud: larger waves and stronger outer-edge damage", levelTenModifiers: { doorbellRadius: 145, doorbellOuterMultiplier: 1.8 },
+    }),
+    rangedWeapon({
+      id: "orbital-sprinkler", name: "Orbital Sprinkler", rarity: "Legendary", price: 6500, duplicateValue: 440,
+      damage: 30, cooldown: 4.5, projectileSpeed: 0, projectileLifetime: 0, projectileKind: "orbital-sprinkler", color: "#71d9ff", projectileRadius: 12,
+      orbitalDelay: 0.8, orbitalRadius: 110, radialCount: 12, radialDamage: 24, radialSpeed: 520, radialLifetime: 0.9, orbitalSecondStrike: false, playerKickback: 0,
+      description: "Marks a location for a delayed orbital water blast and radial spray.",
+      levelTenFeature: "Heavy Rain: more radial bolts and a larger water strike", levelTenModifiers: { radialCount: 18, orbitalRadius: 135 },
+    }),
+    rangedWeapon({
       id: "garden-sprayer", name: "Garden Sprayer", rarity: "Common", price: 300, duplicateValue: 40,
-      damage: 7, cooldown: 0.92, projectileSpeed: 620, projectileLifetime: 0.82,
+      damage: 12.32, cooldown: 0.92, projectileSpeed: 620, projectileLifetime: 0.82,
       projectileKind: "water", color: "#63cbe8", projectileCount: 6, fanSpacing: 0.22,
       spread: 0.08, recoil: 0.035,
       description: "A wide six-droplet water cone for forgiving crowd control.",
@@ -343,7 +605,7 @@
     }),
     rangedWeapon({
       id: "tennis-balls", name: "Tennis Balls", rarity: "Rare", price: 800,
-      duplicateValue: 60, damage: 13, cooldown: 1, projectileSpeed: 820,
+      duplicateValue: 60, damage: 15, cooldown: 1, projectileSpeed: 820,
       projectileLifetime: 1.6, projectileKind: "tennis-ball", color: "#d8e85f", bounces: 2, description: "Low damage ball ricochets between two extra enemies.",
       recoil: 0.04, levelTenFeature: "Match point: +2 bounces", levelTenModifiers: { bounces: 4 },
     }),
@@ -362,9 +624,9 @@
     }),
     rangedWeapon({
       id: "rock-salt-blaster", name: "Rock Salt Blaster", rarity: "Epic", price: 1800, duplicateValue: 170,
-      damage: 40, cooldown: 1.12, projectileSpeed: 900, projectileLifetime: 1,
-      projectileKind: "rock-salt", color: "#e7d7a5", projectileCount: 5, fanSpacing: 0.045,
-      spread: 0.015, endSpeedMultiplier: 0.1, speedCurve: "fast-slowdown", knockback: 6, recoil: 0.12,
+      damage: 32, cooldown: 1.25, projectileSpeed: 900, projectileLifetime: 1,
+      projectileKind: "rock-salt", color: "#e7d7a5", projectileCount: 5, fanSpacing: 0.045, playerKickback: 30,
+      spread: 0.015, endSpeedMultiplier: 0.1, speedCurve: "fast-slowdown", knockback: 6, recoil: 0.15,
       description: "A tight five-pellet blast with heavy damage, pushback, and recoil.",
       levelTenFeature: "Double Barrel: fires two rounds per attack at -25% damage",
       levelTenDamageMultiplier: 0.75, levelTenModifiers: { rounds: 2 },
@@ -386,10 +648,19 @@
     }),
     rangedWeapon({
       id: "diet-cola-launcher", name: "Diet Cola Launcher", rarity: "Legendary", price: 25000,
-      duplicateValue: 440, damage: 42, cooldown: 0.72, projectileSpeed: 570,
+      duplicateValue: 440, damage: 50, cooldown: 0.72, projectileSpeed: 570,
       projectileLifetime: 1.7, projectileKind: "diet-cola", color: "#b63b32",
       explosive: true, splashRadius: 58, splashDamageMultiplier: 0.45, description: "Launches shaken cola bottles that burst across a group.",
       recoil: 0.07, levelTenFeature: "Menthol reaction: +55% blast radius", levelTenModifiers: { splashRadius: 90 },
+    }),
+    rangedWeapon({
+      id: "slushie", name: "Slushie", rarity: "Rare", price: 2800,
+      duplicateValue: 160, damage: 28, cooldown: 1, projectileSpeed: 640, projectileLifetime: 1.15,
+      projectileKind: "slushie", color: "#81d9ef", projectileRadius: 10, explosive: true,
+      splashRadius: 62, splashDamageMultiplier: 0.72, freezeDuration: 1,
+      description: "A chilled cup that bursts into a freezing crowd-control splash.",
+      levelTenFeature: "Brain Freeze: leaves a three-second icy puddle",
+      levelTenModifiers: { puddleDuration: 3, puddleRadius: 42 },
     }),
     rangedWeapon({
       id: "leaf-blower", name: "Leaf Blower", rarity: "Epic", price: 2160,
@@ -414,19 +685,20 @@
       levelTenModifiers: { fireDamagePerSecond: 15 },
     }),
     rangedWeapon({
-      id: "plastic-ghost", name: "Plastic Ghost", rarity: "Legendary", price: null,
-      duplicateValue: 800, damage: 2, cooldown: 0.05, projectileSpeed: 760,
+      id: "plastic-ghost", name: "Plastic Ghost", rarity: "Secret", price: null,
+      duplicateValue: 2000, damage: 2.048, cooldown: 0.09765625, projectileSpeed: 760,
       projectileLifetime: 1, projectileKind: "plastic-ghost", color: "#b9f4ed",
-      projectileRadius: 9, pierces: 99, projectileCount: 2, spread: 1, recoil: 0.018, lifesteal: 0.0075,
+      projectileRadius: 9, pierces: 1, projectileCount: 2, spread: 1, recoil: 0.018, lifesteal: 0.0075,
       description: "A broad ghost stream that sustains you through every enemy it touches.",
       levelTenFeature: "Ectoplasmic Reach: +30% stream range",
       levelTenProjectileLifetimeMultiplier: 1.3,
     }),
     rangedWeapon({
-      id: "ordinance-undefined", name: "Ordinance Undefined", rarity: "Secret", price: null,
-      duplicateValue: 2000, damage: 10.85, cooldown: 0.24, projectileSpeed: 1040,
+      id: "ordinance-undefined", name: "Ordinance Undefined", rarity: "Developer", price: null,
+      developerOnly: true, duplicateValue: 2000, damage: 8.88832, cooldown: 0.5859375, projectileSpeed: 1040,
       projectileLifetime: 1.1, projectileKind: "undefined", color: "#e05cff", projectileCount: 2, bounces: 2,
-      pierces: 1, explosive: true, splashRadius: 44, knockback: 10, spread: 0.08, recoil: 0.035, description: "Illegal bouncing, piercing, explosive yard energy.",
+      burstRounds: 2, burstInterval: 0.045,
+      pierces: 1, explosive: true, splashRadius: 44, knockback: 10, spread: 0.08, recoil: 0.035, description: "Fires two illegal rapid bursts of bouncing, piercing, explosive yard energy.",
       levelTenFeature: "Code violation: +2 projectiles", levelTenModifiers: { projectileCount: 3 },
     }),
   ]);
@@ -435,13 +707,18 @@
     WEAPON_DEFINITIONS.map((weapon) => [weapon.id, weapon]),
   ));
 
-  const RARITY_ORDER = Object.freeze(["Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythical", "Secret"]);
+  const RARITY_ORDER = Object.freeze(["Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythical", "Secret", "Developer"]);
   const WEAPONS_SORTED_BY_RARITY = Object.freeze([...WEAPON_DEFINITIONS].sort((left, right) => {
     const rarityDifference = RARITY_ORDER.indexOf(left.rarity) - RARITY_ORDER.indexOf(right.rarity);
     if (rarityDifference !== 0) return rarityDifference;
     const slotDifference = left.slot.localeCompare(right.slot);
     return slotDifference || left.name.localeCompare(right.name);
   }));
+
+  function weaponsVisibleInCollection(ownedWeaponIds = []) {
+    const owned = new Set(ownedWeaponIds);
+    return WEAPONS_SORTED_BY_RARITY.filter((weapon) => !weapon.limited || owned.has(weapon.id));
+  }
 
   const WEAPONS = Object.freeze({
     melee: WEAPONS_BY_ID["weedwacker-9000"],
@@ -473,11 +750,14 @@
   function weaponStatsAtLevel(weapon, level) {
     const safeLevel = Math.max(1, Math.floor(level || 1));
     const steps = safeLevel - 1;
+    const generalDamageMultiplier = weapon.id === "rock-salt-blaster" ? 1 : GENERAL_DAMAGE_MULTIPLIER;
+    const secretDamageMultiplier = weapon.rarity === "Secret" ? SECRET_DAMAGE_MULTIPLIER : 1;
+    const secretCooldownMultiplier = weapon.rarity === "Secret" ? SECRET_COOLDOWN_MULTIPLIER : 1;
     const stats = {
       ...weapon,
       level: safeLevel,
-      damage: Number((weapon.damage * (1 + weapon.damagePerLevel * steps)).toFixed(2)),
-      cooldown: weapon.cooldown * (1 - weapon.cooldownPerLevel * steps),
+      damage: Number((weapon.damage * generalDamageMultiplier * secretDamageMultiplier * (1 + weapon.damagePerLevel * steps)).toFixed(2)),
+      cooldown: weapon.cooldown * secretCooldownMultiplier * (1 - weapon.cooldownPerLevel * steps),
       range: weapon.range ? weapon.range * (1 + weapon.rangePerLevel * steps) : weapon.range,
       levelTenActive: safeLevel >= 10,
     };
@@ -514,6 +794,32 @@
       splashRadius: (weapon.splashRadius ?? 0) * (bonus.splashRadiusMultiplier ?? 1),
       projectileCount: (weapon.projectileCount ?? 0) + (bonus.projectileCountAdd ?? 0),
       splitCount: (weapon.splitCount ?? 0) + (bonus.splitCountAdd ?? 0),
+      burstCount: (weapon.burstCount ?? 0) + (bonus.burstCountAdd ?? 0),
+      maxMines: (weapon.maxMines ?? 0) + (bonus.maxMinesAdd ?? 0),
+      chainCount: (weapon.chainCount ?? 0) + (bonus.chainCountAdd ?? 0),
+      decoyCount: (weapon.decoyCount ?? 0) + (bonus.decoyCountAdd ?? 0),
+      returnDamageMultiplier: (weapon.returnDamageMultiplier ?? 1) * (bonus.returnDamageMultiplier ?? 1),
+      fertilizerCloudRadius: (weapon.fertilizerCloudRadius ?? 0) * (bonus.fertilizerCloudRadiusMultiplier ?? 1),
+      tornadoPullRadius: (weapon.tornadoPullRadius ?? 0) * (bonus.tornadoPullRadiusMultiplier ?? 1),
+      tornadoPullForce: (weapon.tornadoPullForce ?? 0) * (bonus.tornadoPullForceMultiplier ?? 1),
+      polarityRadius: (weapon.polarityRadius ?? 0) * (bonus.polarityRadiusMultiplier ?? 1),
+      polarityForce: (weapon.polarityForce ?? 0) * (bonus.polarityForceMultiplier ?? 1),
+      horseshoeRange: (weapon.horseshoeRange ?? 0) * (bonus.horseshoeRangeMultiplier ?? 1),
+      horseshoeArc: (weapon.horseshoeArc ?? 0) * (bonus.horseshoeArcMultiplier ?? 1),
+      maxChainJumps: (weapon.maxChainJumps ?? 0) + (bonus.maxChainJumpsAdd ?? 0),
+      chainFalloff: bonus.chainFalloffMultiplier === 0 ? 1 : (weapon.chainFalloff ?? 1) * (bonus.chainFalloffMultiplier ?? 1),
+      rodStrikeInterval: (weapon.rodStrikeInterval ?? 0) * (bonus.rodStrikeIntervalMultiplier ?? 1),
+      rodChainRange: (weapon.rodChainRange ?? 0) * (bonus.rodChainRangeMultiplier ?? 1),
+      rodChainCount: (weapon.rodChainCount ?? 0) + (bonus.rodChainCountAdd ?? 0),
+      mirrorMax: (weapon.mirrorMax ?? 0) + (bonus.mirrorMaxAdd ?? 0),
+      mirrorDamageMultiplier: (weapon.mirrorDamageMultiplier ?? 1) * (bonus.mirrorDamageMultiplier ?? 1),
+      doorbellRadius: (weapon.doorbellRadius ?? 0) * (bonus.doorbellRadiusMultiplier ?? 1),
+      doorbellRingCount: (weapon.doorbellRingCount ?? 0) + (bonus.doorbellRingCountAdd ?? 0),
+      radialCount: (weapon.radialCount ?? 0) + (bonus.radialCountAdd ?? 0),
+      orbitalRadius: (weapon.orbitalRadius ?? 0) * (bonus.orbitalRadiusMultiplier ?? 1),
+      orbitalSecondStrike: weapon.orbitalSecondStrike || Boolean(bonus.orbitalSecondStrike),
+      puddleDuration: weapon.puddleDuration ?? 0,
+      puddleRadius: weapon.puddleRadius ?? 0,
       bounces: (weapon.bounces ?? 0) + (bonus.bouncesAdd ?? 0),
       pierces: (weapon.pierces ?? 0) + (bonus.piercesAdd ?? 0),
     };
@@ -582,7 +888,17 @@
 
 
 
-  const CHEST_COST = 1000;
+  const CHEST_COST = 2000;
+  const CHEST_COST_INCREASE = 200;
+  const MAX_CHEST_COST = 10000;
+
+  const SHOP_RARITY_PRICES = Object.freeze({
+    Common: 1000,
+    Uncommon: 3000,
+    Rare: 10000,
+    Epic: 20000,
+    Legendary: 60000,
+  });
 
   const CHEST_ODDS = Object.freeze([
     Object.freeze({ rarity: "Common", chance: 0.25 }),
@@ -653,6 +969,7 @@
   function applyFire(enemy, damagePerSecond = 5, duration = 10, maxStacks = 1) {
     enemy.fireTime = Math.max(enemy.fireTime ?? 0, duration);
     enemy.fireDamagePerStack = Math.max(enemy.fireDamagePerStack ?? 0, damagePerSecond);
+    enemy.fireTickTimer = enemy.fireTickTimer ?? 0;
     const currentStacks = Math.max(0, enemy.fireStacks ?? 0);
     enemy.fireStacks = maxStacks > 1
       ? Math.min(maxStacks, currentStacks + 1)
@@ -665,15 +982,24 @@
   }
 
   function updateEnemyStatus(enemy, deltaTime) {
+    const fireTickInterval = 0.5;
     const frozen = (enemy.freezeTime ?? 0) > 0;
     enemy.freezeTime = Math.max(0, (enemy.freezeTime ?? 0) - deltaTime);
-    const burningTime = Math.min(deltaTime, enemy.fireTime ?? 0);
-    const fireDamage = burningTime * (enemy.fireDamagePerSecond ?? 0);
+    const burningTime = Math.min(Math.max(0, deltaTime), enemy.fireTime ?? 0);
+    enemy.fireTickTimer = (enemy.fireTickTimer ?? 0) + burningTime;
+    let fireDamage = 0;
+    // Fire deals its configured DPS in two readable half-second pulses rather than
+    // scattering fractional damage across every simulation frame.
+    while (enemy.fireTickTimer >= fireTickInterval && (enemy.fireTime ?? 0) > 0) {
+      fireDamage += (enemy.fireDamagePerSecond ?? 0) * fireTickInterval;
+      enemy.fireTickTimer -= fireTickInterval;
+    }
     enemy.fireTime = Math.max(0, (enemy.fireTime ?? 0) - deltaTime);
     if (enemy.fireTime === 0) {
       enemy.fireDamagePerSecond = 0;
       enemy.fireDamagePerStack = 0;
       enemy.fireStacks = 0;
+      enemy.fireTickTimer = 0;
     }
     return { frozen, fireDamage };
   }
@@ -694,6 +1020,7 @@
     upgrade("steel-toes", "Steel-Toed Boots", "Gold", "Take 25% less damage"),
     upgrade("explosive-projectiles", "Explosive Projectiles", "Gold", "All ranged projectiles explode on impact"),
     upgrade("second-wind", "Second Wind", "Gold", "Restore health to its current maximum"),
+    upgrade("flamingo-tube", "Flamingo Tube", "Gold", "Every 5s, create a small knockback ring around the player", { minimumMapId: "lake-elizabeth" }),
     weaponUpgrade("weedwacker-range", "Long Handle", "Weedwacker: +40% range", "weedwacker-9000"),
     weaponUpgrade("vampire-fang-reach", "Bloodied Edge", "Vampire Fang: +35% range", "vampire-fang"),
     weaponUpgrade("shears-sharpening", "Sharpened Shears", "Garden Shears: +40% snip hitbox", "garden-shears"),
@@ -704,6 +1031,8 @@
     weaponUpgrade("mower-deck", "Wide Deck", "Turbo Mower: +35% lane width", "turbo-mower"),
     weaponUpgrade("racket-reach", "Long Grip", "Tennis Racket: +30% swing range", "tennis-racket"),
     weaponUpgrade("apple-projectile", "Double Trouble", "Apples: +1 projectile", "apples"),
+    weaponUpgrade("rainbow-apple-projectile", "Double Rainbow", "Rainbow Apple: +1 projectile", "rainbow-apples"),
+    weaponUpgrade("party-hat-confetti", "Party Popper", "Party Hat: +3 confetti projectiles", "party-hat"),
     weaponUpgrade("sprayer-nozzle", "Wider Nozzle", "Garden Sprayer: +3 projectiles", "garden-sprayer"),
     weaponUpgrade("tennis-bounce", "Championship Felt", "Tennis Balls: +1 bounce", "tennis-balls"),
     weaponUpgrade("acorn-pierce", "Squirrel Special", "Acorn Slingshot: +1 pierce", "acorn-slingshot"),
@@ -720,11 +1049,26 @@
     weaponUpgrade("shuriken-triple", "Triple Throw", "Shurikens: +1 additional projectile", "shurikens"),
     weaponUpgrade("gravity-core", "Dense Core", "Gravity Freezer: +35% portal radius", "gravity-freezer"),
     weaponUpgrade("firecracker-pack", "Extra Fuse", "Firecracker: +2 secondary projectiles", "firecracker"),
+    weaponUpgrade("slushie-extra-large", "Extra Large", "Slushie: +40% explosion radius", "slushie"),
     weaponUpgrade("undefined-overflow", "Overflow Error", "Ordinance Undefined: +1 projectile and bounce", "ordinance-undefined"),
+    weaponUpgrade("pebble-pocket", "Pocket Full of Rocks", "Pebble Shooter: +2 pebbles per burst", "pebble-shooter"),
+    weaponUpgrade("extra-sprinklers", "Extra Sprinklers", "Sprinkler Mine: maximum active mines rises to 8", "sprinkler-mine"),
+    weaponUpgrade("high-voltage", "High Voltage", "Bug Zapper: chain one additional enemy", "bug-zapper"),
+    weaponUpgrade("oversized-lid", "Oversized Lid", "Trash Can Lid: +50% projectile size", "trash-can-lid"),
+    weaponUpgrade("gnome-army", "Gnome Army", "Garden Gnome: place two decoys", "garden-gnome"),
+    weaponUpgrade("family-size", "Family Size", "Fertilizer Bag: +40% cloud radius", "fertilizer-bag"),
+    weaponUpgrade("twin-tornadoes", "Twin Tornadoes", "Leaf Tornado: launch two angled tornadoes", "leaf-tornado"),
+    weaponUpgrade("expanded-field", "Expanded Field", "Polarity Gun: +40% pulse radius", "polarity-gun"),
+    weaponUpgrade("double-luck", "Double Luck", "Horseshoe: throw two opposite-curving horseshoes", "horseshoe"),
+    weaponUpgrade("overcharge", "Overcharge", "Jumper Cables: chain damage no longer falls off", "jumper-cables"),
+    weaponUpgrade("lightning-network", "Lightning Network", "Lightning Rod: greatly extend rod connection range", "lightning-rod"),
+    weaponUpgrade("double-reflection", "Double Reflection", "Garden Mirror: place two mirrors and increase capacity to 10", "garden-mirror"),
+    weaponUpgrade("ding-dong", "Ding Dong", "Doorbell: each activation emits two sound waves", "doorbell"),
+    weaponUpgrade("double-strike", "Double Strike", "Orbital Sprinkler: call a second strike at the same location", "orbital-sprinkler"),
   ]);
 
-  function upgrade(id, name, rarity, description) {
-    return Object.freeze({ id, name, rarity, description });
+  function upgrade(id, name, rarity, description, options = {}) {
+    return Object.freeze({ id, name, rarity, description, ...options });
   }
 
   function weaponUpgrade(id, name, description, weaponId) {
@@ -733,13 +1077,19 @@
 
   const REPEATABLE_GOLD_UPGRADES = Object.freeze(new Set(["second-wind"]));
 
-  function eligibleRunUpgrades(equippedWeaponIds = ["weedwacker-9000", "apples"]) {
+  function eligibleRunUpgrades(equippedWeaponIds = ["weedwacker-9000", "apples"], mapId = "backyard") {
     const equipped = new Set(equippedWeaponIds);
-    return RUN_UPGRADES.filter((upgrade) => !upgrade.weaponId || equipped.has(upgrade.weaponId));
+    const currentMapIndex = MAP_SLOTS.findIndex((map) => map.id === mapId);
+    return RUN_UPGRADES.filter((upgrade) => {
+      if (upgrade.weaponId && !equipped.has(upgrade.weaponId)) return false;
+      if (!upgrade.minimumMapId) return true;
+      const requiredMapIndex = MAP_SLOTS.findIndex((map) => map.id === upgrade.minimumMapId);
+      return currentMapIndex >= 0 && requiredMapIndex >= 0 && currentMapIndex >= requiredMapIndex;
+    });
   }
 
-  function chooseRunUpgrades(random = Math.random, count = 3, excludedIds = new Set(), equippedWeaponIds) {
-    const available = eligibleRunUpgrades(equippedWeaponIds).filter((upgrade) => !excludedIds.has(upgrade.id));
+  function chooseRunUpgrades(random = Math.random, count = 3, excludedIds = new Set(), equippedWeaponIds, mapId = "backyard") {
+    const available = eligibleRunUpgrades(equippedWeaponIds, mapId).filter((upgrade) => !excludedIds.has(upgrade.id));
     const choices = [];
     while (choices.length < Math.min(count, available.length)) {
       const index = Math.floor(random() * available.length);
@@ -749,7 +1099,14 @@
   }
 
   function xpRequiredForLevel(level) {
-    return 30 + Math.max(0, level - 1) * 20;
+    const steps = Math.max(0, Math.floor(level || 1) - 1);
+    // Repeat each XP increase twice, then grow that increase by five: 30, 50,
+    // 70, 95, 120, 150, 180, ...
+    let requirement = 30;
+    for (let index = 0; index < steps; index += 1) {
+      requirement += 20 + Math.floor(index / 2) * 5;
+    }
+    return requirement;
   }
 
   function applyRunUpgrade(player, upgradeId) {
@@ -767,7 +1124,10 @@
       "battery-pack": () => { player.batteryPack = true; },
       "freeze-pulse": () => { player.freezePulse = true; },
       "scarecrow-pulse": () => { player.scarecrowPulse = true; },
+      "flamingo-tube": () => { player.flamingoTube = true; },
       "apple-projectile": () => addWeaponBonus(player, "apples", { projectileCountAdd: 1 }),
+      "rainbow-apple-projectile": () => addWeaponBonus(player, "rainbow-apples", { projectileCountAdd: 1 }),
+      "party-hat-confetti": () => addWeaponBonus(player, "party-hat", { projectileCountAdd: 3 }),
       "sprayer-nozzle": () => addWeaponBonus(player, "garden-sprayer", { projectileCountAdd: 3 }),
       "steel-toes": () => { player.damageTakenMultiplier *= 0.75; },
       "weedwacker-range": () => addWeaponBonus(player, "weedwacker-9000", { rangeMultiplier: 1.4 }),
@@ -793,11 +1153,27 @@
       "shuriken-triple": () => addWeaponBonus(player, "shurikens", { projectileCountAdd: 1 }),
       "gravity-core": () => addWeaponBonus(player, "gravity-freezer", { splashRadiusMultiplier: 1.35 }),
       "firecracker-pack": () => addWeaponBonus(player, "firecracker", { splitCountAdd: 2 }),
+      "slushie-extra-large": () => addWeaponBonus(player, "slushie", { splashRadiusMultiplier: 1.4 }),
       "undefined-overflow": () => addWeaponBonus(player, "ordinance-undefined", { projectileCountAdd: 1, bouncesAdd: 1 }),
+      "pebble-pocket": () => addWeaponBonus(player, "pebble-shooter", { burstCountAdd: 2 }),
+      "extra-sprinklers": () => addWeaponBonus(player, "sprinkler-mine", { maxMinesAdd: 3 }),
+      "high-voltage": () => addWeaponBonus(player, "bug-zapper", { chainCountAdd: 1 }),
+      "oversized-lid": () => addWeaponBonus(player, "trash-can-lid", { projectileRadiusMultiplier: 1.5 }),
+      "gnome-army": () => addWeaponBonus(player, "garden-gnome", { decoyCountAdd: 1 }),
+      "family-size": () => addWeaponBonus(player, "fertilizer-bag", { fertilizerCloudRadiusMultiplier: 1.4 }),
+      "twin-tornadoes": () => addWeaponBonus(player, "leaf-tornado", { projectileCountAdd: 1 }),
+      "expanded-field": () => addWeaponBonus(player, "polarity-gun", { polarityRadiusMultiplier: 1.4 }),
+      "double-luck": () => addWeaponBonus(player, "horseshoe", { projectileCountAdd: 1 }),
+      "overcharge": () => addWeaponBonus(player, "jumper-cables", { chainFalloffMultiplier: 0 }),
+      "lightning-network": () => addWeaponBonus(player, "lightning-rod", { rodChainRangeMultiplier: 2 }),
+      "double-reflection": () => addWeaponBonus(player, "garden-mirror", { mirrorMaxAdd: 5, projectileCountAdd: 1 }),
+      "ding-dong": () => addWeaponBonus(player, "doorbell", { doorbellRingCountAdd: 1 }),
+      "double-strike": () => addWeaponBonus(player, "orbital-sprinkler", { orbitalSecondStrike: true }),
       "explosive-projectiles": () => { player.rangedExplosion = true; },
       "second-wind": () => {
         player.health = player.maxHealth;
       },
+      "vampire-fang-reach": () => addWeaponBonus(player, "vampire-fang", { rangeMultiplier: 1.35 }),
     };
     if (!actions[upgradeId]) return false;
     actions[upgradeId]();
@@ -847,10 +1223,17 @@
       const settings = isRecord(parsed.settings) ? parsed.settings : {};
       const keybinds = isRecord(parsed.keybinds) ? parsed.keybinds : {};
       const defeatedEnemies = isRecord(parsed.defeatedEnemies) ? parsed.defeatedEnemies : {};
+      const dailyQuests = isRecord(parsed.dailyQuests) && Array.isArray(parsed.dailyQuests.quests)
+        ? parsed.dailyQuests
+        : fallback.dailyQuests;
+      const season = isRecord(parsed.season) && Array.isArray(parsed.season.quests)
+        ? parsed.season
+        : fallback.season;
       const weaponMaxLevel = weaponMaxLevelForMaps(unlockedMaps);
       return {
         version: 2,
         coins,
+        chestPurchases: clampInteger(parsed.chestPurchases, 0, Number.MAX_SAFE_INTEGER, 0),
         unlockedMaps,
         ownedWeapons,
         weaponLevels: Object.fromEntries(ownedWeapons
@@ -862,12 +1245,15 @@
           )])),
         characterStats: Object.fromEntries(Object.keys(fallback.characterStats)
           .map((stat) => [stat, clampInteger(characterStats[stat], 0, 10, 0)])),
+        shieldUnlocked: parsed.shieldUnlocked === true,
         settings: Object.fromEntries(Object.keys(fallback.settings)
           .map((setting) => [setting, typeof settings[setting] === "boolean" ? settings[setting] : fallback.settings[setting]])),
         keybinds: Object.fromEntries(Object.keys(fallback.keybinds)
           .map((action) => [action, typeof keybinds[action] === "string" ? keybinds[action] : fallback.keybinds[action]])),
         defeatedEnemies: Object.fromEntries(ENEMY_GLOSSARY
           .map((enemy) => [enemy.id, clampInteger(defeatedEnemies[enemy.id], 0, Number.MAX_SAFE_INTEGER, 0)])),
+        dailyQuests,
+        season,
         equippedWeapons: {
           melee: validEquippedWeapon(parsed.equippedWeapons?.melee, "melee", ownedWeapons) ?? fallback.equippedWeapons.melee,
           ranged: validEquippedWeapon(parsed.equippedWeapons?.ranged, "ranged", ownedWeapons) ?? fallback.equippedWeapons.ranged,
@@ -906,14 +1292,18 @@
       storage.setItem("lawn-enforcement-save-v1", JSON.stringify({
         version: 2,
         coins: Math.max(0, Math.floor(progress.coins)),
+        chestPurchases: Math.max(0, Math.floor(progress.chestPurchases ?? 0)),
         unlockedMaps: [...new Set(progress.unlockedMaps ?? ["backyard"])],
         ownedWeapons: [...new Set(progress.ownedWeapons ?? ["weedwacker-9000", "apples"])],
         weaponLevels: progress.weaponLevels ?? { "weedwacker-9000": 1, apples: 1 },
-        characterStats: progress.characterStats ?? { health: 0, damage: 0, speed: 0, attackSpeed: 0, accuracy: 0 },
+        characterStats: progress.characterStats ?? { health: 0, damage: 0, speed: 0, attackSpeed: 0, accuracy: 0, shield: 0, regeneration: 0 },
+        shieldUnlocked: progress.shieldUnlocked === true,
         settings: progress.settings ?? { sound: true, screenShake: true },
         keybinds: progress.keybinds ?? { melee: "Digit1", ranged: "Digit2" },
         equippedWeapons: progress.equippedWeapons ?? { melee: "weedwacker-9000", ranged: "apples" },
         defeatedEnemies: progress.defeatedEnemies ?? Object.fromEntries(ENEMY_GLOSSARY.map((enemy) => [enemy.id, 0])),
+        dailyQuests: progress.dailyQuests ?? null,
+        season: progress.season ?? null,
       }));
       return true;
     } catch {
@@ -925,23 +1315,254 @@
     return {
       version: 2,
       coins: 0,
+      chestPurchases: 0,
       unlockedMaps: ["backyard"],
       ownedWeapons: ["weedwacker-9000", "apples"],
       weaponLevels: { "weedwacker-9000": 1, apples: 1 },
-      characterStats: { health: 0, damage: 0, speed: 0, attackSpeed: 0, accuracy: 0 },
+      characterStats: { health: 0, damage: 0, speed: 0, attackSpeed: 0, accuracy: 0, shield: 0, regeneration: 0 },
+      shieldUnlocked: false,
       settings: { sound: true, screenShake: true, reducedMotion: false, tutorialSeen: false },
       keybinds: { melee: "Digit1", ranged: "Digit2" },
       equippedWeapons: { melee: "weedwacker-9000", ranged: "apples" },
       defeatedEnemies: Object.fromEntries(ENEMY_GLOSSARY.map((enemy) => [enemy.id, 0])),
+      dailyQuests: null,
+      season: null,
     };
   }
 
   function unlockAllWeapons(progress) {
-    const allWeaponIds = WEAPON_DEFINITIONS.map((weapon) => weapon.id);
+    const allWeaponIds = WEAPON_DEFINITIONS.filter((weapon) => !weapon.limited).map((weapon) => weapon.id);
     progress.ownedWeapons = [...new Set([...(progress.ownedWeapons ?? []), ...allWeaponIds])];
     progress.weaponLevels ??= {};
     for (const weaponId of progress.ownedWeapons) progress.weaponLevels[weaponId] ??= 1;
     return progress;
+  }
+
+  function unlockSeasonWeapons(progress) {
+    const seasonWeaponIds = WEAPON_DEFINITIONS.filter((weapon) => weapon.limited).map((weapon) => weapon.id);
+    progress.ownedWeapons = [...new Set([...(progress.ownedWeapons ?? []), ...seasonWeaponIds])];
+    progress.weaponLevels ??= {};
+    for (const weaponId of seasonWeaponIds) progress.weaponLevels[weaponId] ??= 1;
+    return progress;
+  }
+
+  function unlockAllMaps(progress) {
+    const allMapIds = MAP_SLOTS.map((map) => map.id);
+    progress.unlockedMaps = [...new Set([...(progress.unlockedMaps ?? []), ...allMapIds])];
+    return progress;
+  }
+
+
+  const ENEMY_QUESTS = Object.freeze([
+    { id: "gnome-hunt", type: "enemy-kills", targetId: "gnome", goal: 100, reward: 1500, label: "Defeat 100 Lawn Gnomes", maps: ["backyard"] },
+    { id: "weed-whacking", type: "enemy-kills", targetId: "common-weed", goal: 300, reward: 5000, label: "Defeat 300 Common Weeds", maps: ["community-garden", "aquatic-garden"] },
+    { id: "gopher-control", type: "enemy-kills", targetId: "gopher", goal: 75, reward: 2000, label: "Defeat 75 Gophers", maps: ["frontyard", "golf-course"] },
+    { id: "squirrel-patrol", type: "enemy-kills", targetId: "squirrel", goal: 100, reward: 2500, label: "Defeat 100 Squirrels", maps: ["public-park", "lake-elizabeth"] },
+    { id: "mosquito-season", type: "enemy-kills", targetId: "mosquito", goal: 80, reward: 2500, label: "Defeat 80 Mosquitoes", maps: ["redwood-trail"] },
+  ]);
+
+  const GENERAL_QUESTS = Object.freeze([
+    { id: "lawn-clearing", type: "total-kills", goal: 250, reward: 3000, label: "Defeat 250 enemies" },
+    { id: "long-shift", type: "play-time", goal: 20 * 60, reward: 3500, label: "Play for 20 minutes" },
+    { id: "cola-cleanup", type: "weapon-kills", targetId: "diet-cola-launcher", goal: 50, reward: 4000, label: "Defeat 50 enemies with Diet Cola Launcher", weaponId: "diet-cola-launcher" },
+  ]);
+
+  const QUEST_REWARDS = new Map(
+    [...ENEMY_QUESTS, ...GENERAL_QUESTS].map((quest) => [quest.id, quest.reward]),
+  );
+
+  function ensureDailyQuests(progress, now = Date.now(), random = Math.random) {
+    const current = progress.dailyQuests;
+    if (validDailyState(current) && current.refreshAt > now) {
+      // Preserve active progress while migrating older rolling 24-hour saves to
+      // the next local-noon reset boundary.
+      if (!isLocalNoon(current.refreshAt)) current.refreshAt = nextDailyQuestReset(now);
+      for (const quest of current.quests) {
+        const currentReward = QUEST_REWARDS.get(quest.id);
+        if (currentReward !== undefined) quest.reward = currentReward;
+      }
+      return current;
+    }
+    const unlocked = new Set(progress.unlockedMaps ?? ["backyard"]);
+    const owned = new Set(progress.ownedWeapons ?? []);
+    const eligible = [
+      ...ENEMY_QUESTS.filter((quest) => quest.maps.some((mapId) => unlocked.has(mapId))),
+      ...GENERAL_QUESTS.filter((quest) => !quest.weaponId || owned.has(quest.weaponId)),
+    ];
+    const selected = [];
+    const pool = [...eligible];
+    while (selected.length < Math.min(3, pool.length)) {
+      const index = Math.min(pool.length - 1, Math.floor(random() * pool.length));
+      selected.push({ ...pool.splice(index, 1)[0], progress: 0, completed: false, rewarded: false });
+    }
+    progress.dailyQuests = { refreshAt: nextDailyQuestReset(now), quests: selected };
+    return progress.dailyQuests;
+  }
+
+  function nextDailyQuestReset(now = Date.now()) {
+    const reset = new Date(now);
+    reset.setHours(12, 0, 0, 0);
+    if (reset.getTime() <= now) reset.setDate(reset.getDate() + 1);
+    return reset.getTime();
+  }
+
+  function updateDailyQuestProgress(progress, event, now = Date.now(), random = Math.random) {
+    const state = ensureDailyQuests(progress, now, random);
+    let coinsAwarded = 0;
+    for (const quest of state.quests) {
+      if (quest.completed) continue;
+      let amount = 0;
+      if (quest.type === "play-time" && event.type === "play-time") amount = event.amount ?? 0;
+      if (quest.type === "total-kills" && event.type === "enemy-kill") amount = 1;
+      if (quest.type === "enemy-kills" && event.type === "enemy-kill" && event.enemyType === quest.targetId) amount = 1;
+      if (quest.type === "weapon-kills" && event.type === "enemy-kill" && event.weaponId === quest.targetId) amount = 1;
+      if (amount <= 0) continue;
+      quest.progress = Math.min(quest.goal, quest.progress + amount);
+      if (quest.progress >= quest.goal) {
+        quest.completed = true;
+        quest.rewarded = true;
+        coinsAwarded += quest.reward;
+      }
+    }
+    if (coinsAwarded > 0) progress.coins = Math.max(0, progress.coins ?? 0) + coinsAwarded;
+    return coinsAwarded;
+  }
+
+  function dailyQuestTimeRemaining(progress, now = Date.now()) {
+    return Math.max(0, (progress.dailyQuests?.refreshAt ?? now) - now);
+  }
+
+  function formatQuestTimer(milliseconds) {
+    const seconds = Math.max(0, Math.ceil(milliseconds / 1000));
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor(seconds % 3600 / 60);
+    const remainder = seconds % 60;
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
+  }
+
+  function validDailyState(value) {
+    return value && Number.isFinite(value.refreshAt) && Array.isArray(value.quests)
+      && value.quests.length > 0 && value.quests.every((quest) => typeof quest.id === "string" && Number.isFinite(quest.goal));
+  }
+
+  function isLocalNoon(timestamp) {
+    const date = new Date(timestamp);
+    return date.getHours() === 12 && date.getMinutes() === 0
+      && date.getSeconds() === 0 && date.getMilliseconds() === 0;
+  }
+
+
+  const SEASON_QUEST_COUNT = 3;
+  const SEASON_DAILY_CLAIM_LIMIT = 6;
+  const RAINBOW_APPLE_COST = 5;
+  const PARTY_HAT_COST = 25;
+  const SEASON_COIN_EXCHANGE_VALUE = 800;
+  const SEASON_END_AT = new Date(2026, 9, 1).getTime();
+  const SEASON_ACTIVE = Date.now() < SEASON_END_AT;
+  const SEASON_WEAPONS = Object.freeze({ "rainbow-apples": RAINBOW_APPLE_COST, "party-hat": PARTY_HAT_COST });
+
+  const QUESTS = Object.freeze([
+    { id: "season-gnomes", type: "enemy-kills", targetId: "gnome", goal: 40, reward: 1, label: "Defeat 40 Lawn Gnomes", maps: ["backyard"] },
+    { id: "season-weeds", type: "enemy-kills", targetId: "common-weed", goal: 75, reward: 1, label: "Defeat 75 Common Weeds", maps: ["community-garden", "aquatic-garden"] },
+    { id: "season-gophers", type: "enemy-kills", targetId: "gopher", goal: 30, reward: 1, label: "Defeat 30 Gophers", maps: ["frontyard", "golf-course"] },
+    { id: "season-enemies", type: "total-kills", goal: 100, reward: 1, label: "Defeat 100 enemies" },
+    { id: "season-play", type: "play-time", goal: 5 * 60, reward: 1, label: "Play for 5 minutes" },
+    { id: "season-apples", type: "weapon-kills", targetId: "apples", weaponId: "apples", goal: 25, reward: 1, label: "Defeat 25 enemies with Apples" },
+    { id: "season-cola", type: "weapon-kills", targetId: "diet-cola-launcher", weaponId: "diet-cola-launcher", goal: 15, reward: 1, label: "Defeat 15 enemies with Diet Cola Launcher" },
+  ]);
+  const QUESTS_BY_ID = new Map(QUESTS.map((quest) => [quest.id, quest]));
+
+  function ensureSeasonState(progress, now = Date.now(), random = Math.random) {
+    const day = localDayKey(now);
+    const current = progress.season;
+    if (!current || !Array.isArray(current.quests)) {
+      progress.season = { coins: 0, quests: [], claimDay: day, claimsToday: 0 };
+    }
+    const state = progress.season;
+    for (const quest of state.quests) {
+      const definition = QUESTS_BY_ID.get(quest.id);
+      if (!definition) continue;
+      const progressAmount = Math.max(0, Number(quest.progress) || 0);
+      Object.assign(quest, definition, { progress: Math.min(definition.goal, progressAmount) });
+      quest.completed = quest.progress >= quest.goal;
+    }
+    state.coins = Math.max(0, Math.floor(state.coins ?? 0));
+    if (state.claimDay !== day) {
+      state.claimDay = day;
+      state.claimsToday = 0;
+    }
+    state.claimsToday = Math.max(0, Math.min(SEASON_DAILY_CLAIM_LIMIT, Math.floor(state.claimsToday ?? 0)));
+    fillQuestSlots(progress, state, random);
+    return state;
+  }
+
+  function updateSeasonQuestProgress(progress, event, now = Date.now(), random = Math.random) {
+    const state = ensureSeasonState(progress, now, random);
+    for (const quest of state.quests) {
+      if (quest.completed) continue;
+      let amount = 0;
+      if (quest.type === "play-time" && event.type === "play-time") amount = event.amount ?? 0;
+      if (quest.type === "total-kills" && event.type === "enemy-kill") amount = 1;
+      if (quest.type === "enemy-kills" && event.type === "enemy-kill" && event.enemyType === quest.targetId) amount = 1;
+      if (quest.type === "weapon-kills" && event.type === "enemy-kill" && event.weaponId === quest.targetId) amount = 1;
+      if (amount <= 0) continue;
+      quest.progress = Math.min(quest.goal, quest.progress + amount);
+      quest.completed = quest.progress >= quest.goal;
+    }
+  }
+
+  function claimCompletedSeasonQuests(progress, now = Date.now(), random = Math.random) {
+    const state = ensureSeasonState(progress, now, random);
+    let remaining = SEASON_DAILY_CLAIM_LIMIT - state.claimsToday;
+    let coins = 0;
+    let claimed = 0;
+    state.quests = state.quests.filter((quest) => {
+      if (!quest.completed || remaining <= 0) return true;
+      remaining -= 1;
+      claimed += 1;
+      coins += quest.reward;
+      return false;
+    });
+    state.claimsToday += claimed;
+    state.coins += coins;
+    fillQuestSlots(progress, state, random);
+    return { claimed, coins, remaining: SEASON_DAILY_CLAIM_LIMIT - state.claimsToday };
+  }
+
+  function buySeasonWeapon(progress, weaponId, cost = SEASON_WEAPONS[weaponId]) {
+    const state = ensureSeasonState(progress);
+    if (!SEASON_ACTIVE || !Number.isFinite(cost) || state.coins < cost || progress.ownedWeapons.includes(weaponId)) return false;
+    state.coins -= cost;
+    progress.ownedWeapons.push(weaponId);
+    progress.weaponLevels ??= {};
+    progress.weaponLevels[weaponId] = 1;
+    return true;
+  }
+
+  function exchangeSeasonCoin(progress) {
+    const state = ensureSeasonState(progress);
+    if (!SEASON_ACTIVE || state.coins < 1) return false;
+    state.coins -= 1;
+    progress.coins = Math.max(0, progress.coins ?? 0) + SEASON_COIN_EXCHANGE_VALUE;
+    return true;
+  }
+
+  function fillQuestSlots(progress, state, random) {
+    const unlocked = new Set(progress.unlockedMaps ?? ["backyard"]);
+    const owned = new Set(progress.ownedWeapons ?? []);
+    const activeIds = new Set(state.quests.map((quest) => quest.id));
+    const pool = QUESTS.filter((quest) => !activeIds.has(quest.id)
+      && (!quest.maps || quest.maps.some((mapId) => unlocked.has(mapId)))
+      && (!quest.weaponId || owned.has(quest.weaponId)));
+    while (state.quests.length < SEASON_QUEST_COUNT && pool.length) {
+      const index = Math.min(pool.length - 1, Math.floor(random() * pool.length));
+      state.quests.push({ ...pool.splice(index, 1)[0], progress: 0, completed: false });
+    }
+  }
+
+  function localDayKey(now) {
+    const date = new Date(now);
+    return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
   }
 
 
@@ -963,10 +1584,22 @@
       : PERMANENT_WEAPONS.find((weapon) => weapon.id === "leaf-blower");
   }
 
-  function buyWeapon(progress, weaponId, priceOverride = null) {
+  function shopWeaponPrice(weaponOrId) {
+    const weapon = typeof weaponOrId === "string"
+      ? PERMANENT_WEAPONS.find((entry) => entry.id === weaponOrId)
+      : weaponOrId;
+    return SHOP_RARITY_PRICES[weapon?.rarity] ?? null;
+  }
+
+  function chestCost(progress) {
+    return Math.min(MAX_CHEST_COST, CHEST_COST + Math.max(0, progress.chestPurchases ?? 0) * CHEST_COST_INCREASE);
+  }
+
+  function buyWeapon(progress, weaponId, priceOverride = null, applyGlobalMultiplier = true) {
     const weapon = PERMANENT_WEAPONS.find((entry) => entry.id === weaponId);
-    const price = priceOverride ?? weapon?.price;
-    if (!weapon || price == null || progress.coins < price || progress.ownedWeapons.includes(weaponId)) return false;
+    const multiplier = applyGlobalMultiplier && progress.shieldUnlocked ? 2 : 1;
+    const price = (priceOverride ?? weapon?.price) * multiplier;
+    if (!weapon || weapon.developerOnly || price == null || progress.coins < price || progress.ownedWeapons.includes(weaponId)) return false;
     progress.coins -= price;
     progress.ownedWeapons.push(weaponId);
     progress.weaponLevels[weaponId] = 1;
@@ -976,7 +1609,7 @@
   function upgradeWeapon(progress, weaponId, maxLevel = weaponMaxLevelForMaps(progress.unlockedMaps)) {
     const level = progress.weaponLevels[weaponId] ?? 0;
     if (!progress.ownedWeapons.includes(weaponId) || level < 1 || level >= maxLevel) return false;
-    const cost = weaponUpgradeCost(level);
+    const cost = weaponUpgradeCost(level) * (progress.shieldUnlocked ? 2 : 1);
     if (progress.coins < cost) return false;
     progress.coins -= cost;
     progress.weaponLevels[weaponId] = level + 1;
@@ -985,8 +1618,11 @@
 
   function upgradeCharacterStat(progress, stat, maxLevel = 5) {
     const level = progress.characterStats[stat] ?? 0;
-    if (!(stat in progress.characterStats) || level >= maxLevel || level >= CHARACTER_STAT_COSTS.length) return false;
-    const cost = CHARACTER_STAT_COSTS[level];
+    const statMaxLevel = stat === "regeneration" ? 1 : maxLevel;
+    if (!(stat in progress.characterStats) || level >= statMaxLevel || level >= CHARACTER_STAT_COSTS.length) return false;
+    if (stat === "shield" && !progress.shieldUnlocked) return false;
+    if (stat === "regeneration" && !(progress.unlockedMaps ?? []).includes("aquatic-garden")) return false;
+    const cost = CHARACTER_STAT_COSTS[level] * (progress.shieldUnlocked ? 2 : 1);
     if (progress.coins < cost) return false;
     progress.coins -= cost;
     progress.characterStats[stat] = level + 1;
@@ -994,10 +1630,12 @@
   }
 
   function openChest(progress, random = Math.random) {
-    if (progress.coins < CHEST_COST) return null;
-    progress.coins -= CHEST_COST;
+    const cost = chestCost(progress);
+    if (progress.coins < cost) return null;
+    progress.coins -= cost;
+    progress.chestPurchases = Math.max(0, progress.chestPurchases ?? 0) + 1;
     const rarity = rollChestRarity(random);
-    const candidates = PERMANENT_WEAPONS.filter((weapon) => weapon.rarity === rarity);
+    const candidates = PERMANENT_WEAPONS.filter((weapon) => weapon.rarity === rarity && !weapon.developerOnly && !weapon.limited);
     const weapon = candidates[Math.floor(random() * candidates.length)];
     if (progress.ownedWeapons.includes(weapon.id)) {
       progress.coins += weapon.duplicateValue;
@@ -1017,6 +1655,7 @@
       this.viewHeight = viewHeight;
       this.worldWidth = worldWidth;
       this.worldHeight = worldHeight;
+      this.followSpeed = 10;
     }
 
     resize(width, height) {
@@ -1029,11 +1668,19 @@
       this.worldHeight = height;
     }
 
-    follow(target) {
+    follow(target, deltaTime = null) {
       const maxX = Math.max(0, this.worldWidth - this.viewWidth);
       const maxY = Math.max(0, this.worldHeight - this.viewHeight);
-      this.x = clamp(target.x - this.viewWidth / 2, 0, maxX);
-      this.y = clamp(target.y - this.viewHeight / 2, 0, maxY);
+      const desiredX = clamp(target.x - this.viewWidth / 2, 0, maxX);
+      const desiredY = clamp(target.y - this.viewHeight / 2, 0, maxY);
+      if (!Number.isFinite(deltaTime) || deltaTime <= 0) {
+        this.x = desiredX;
+        this.y = desiredY;
+        return;
+      }
+      const followFactor = 1 - Math.exp(-this.followSpeed * deltaTime);
+      this.x += (desiredX - this.x) * followFactor;
+      this.y += (desiredY - this.y) * followFactor;
     }
 
     screenToWorld(point) {
@@ -1067,6 +1714,9 @@
       this.rebindingAction = null;
       this.completedRebind = null;
       this.scrollRequested = 0;
+      this.textCaptureEnabled = false;
+      this.textInputRequested = [];
+      this.backspaceRequested = 0;
 
       window.addEventListener("keydown", (event) => this.handleKeyDown(event));
       window.addEventListener("keyup", (event) => this.keys.delete(event.code));
@@ -1106,6 +1756,18 @@
         this.completedRebind = { action: this.rebindingAction, code: event.code };
         this.rebindingAction = null;
         return;
+      }
+      if (this.textCaptureEnabled && !event.repeat) {
+        if (event.key === "Backspace") {
+          event.preventDefault();
+          this.backspaceRequested += 1;
+          return;
+        }
+        if (event.key.length === 1 && !event.metaKey && !event.ctrlKey && !event.altKey) {
+          event.preventDefault();
+          this.textInputRequested.push(event.key);
+          return;
+        }
       }
       if (MOVEMENT_KEYS.has(event.code)) {
         event.preventDefault();
@@ -1249,6 +1911,165 @@
       this.scrollRequested = 0;
       return direction;
     }
+
+    setTextCapture(enabled) {
+      this.textCaptureEnabled = enabled;
+    }
+
+    consumeTextInput() {
+      const value = this.textInputRequested.join("");
+      this.textInputRequested = [];
+      return value;
+    }
+
+    consumeBackspaceRequest() {
+      const count = this.backspaceRequested;
+      this.backspaceRequested = 0;
+      return count;
+    }
+  }
+
+
+  const HELD_WEAPON_VISUALS = Object.freeze({
+    "weedwacker-9000": { kind: "trimmer", primary: "#dcc45f", secondary: "#6e8d4d" },
+    "vampire-fang": { kind: "fang", primary: "#f0e1d4", secondary: "#c94b73" },
+    "garden-shears": { kind: "shears", primary: "#c8d5d0", secondary: "#56765e" },
+    "hedge-clippers": { kind: "clippers", primary: "#b9c8a5", secondary: "#496b43" },
+    wheelbarrow: { kind: "wheelbarrow", primary: "#b7a36d", secondary: "#42637d" },
+    "garden-shovel": { kind: "shovel", primary: "#9ca8ad", secondary: "#76513a" },
+    "golden-rake": { kind: "rake", primary: "#f0c84d", secondary: "#8b6328" },
+    "turbo-mower": { kind: "mower", primary: "#df5b42", secondary: "#343a36" },
+    "tennis-racket": { kind: "racket", primary: "#d8e85f", secondary: "#6a4b2f" },
+    "gravity-freezer": { kind: "tech-gun", primary: "#9e8cff", secondary: "#62d9e8" },
+    firecracker: { kind: "firecracker", primary: "#f06c42", secondary: "#ffd75a" },
+    "beach-ball": { kind: "striped-ball", primary: "#f2a84b", secondary: "#f4eee0" },
+    shurikens: { kind: "shuriken", primary: "#d9e5ed", secondary: "#64727d" },
+    apples: { kind: "apple", primary: "#b83b32", secondary: "#5f8d3e" },
+    "rainbow-apples": { kind: "apple", primary: "#ff5f74", secondary: "#7ff06c", rainbow: true },
+    "party-hat": { kind: "party-hat", primary: "#ff5f74", secondary: "#65d9ff", rainbow: true },
+    "pebble-shooter": { kind: "small-gun", primary: "#b6a98d", secondary: "#5d5141" },
+    "sprinkler-mine": { kind: "sprinkler", primary: "#62c7d2", secondary: "#456b72" },
+    "bug-zapper": { kind: "zapper", primary: "#f4df63", secondary: "#6259a7" },
+    "trash-can-lid": { kind: "lid", primary: "#9ca6a7", secondary: "#5a6264" },
+    "garden-gnome": { kind: "gnome", primary: "#d46a49", secondary: "#e8ddd0" },
+    "fertilizer-bag": { kind: "bag", primary: "#9f783d", secondary: "#d2b86d" },
+    "leaf-tornado": { kind: "leaf-fan", primary: "#b6c957", secondary: "#587744" },
+    "polarity-gun": { kind: "magnet-gun", primary: "#c18cff", secondary: "#6ce3e4" },
+    horseshoe: { kind: "horseshoe", primary: "#c9cbd0", secondary: "#686d73" },
+    "jumper-cables": { kind: "cables", primary: "#e94e4e", secondary: "#242629" },
+    "lightning-rod": { kind: "rod", primary: "#e9edff", secondary: "#68cce8" },
+    "garden-mirror": { kind: "mirror", primary: "#9fdff2", secondary: "#526b73" },
+    doorbell: { kind: "bell", primary: "#e3bb65", secondary: "#76532b" },
+    "orbital-sprinkler": { kind: "orbital", primary: "#71d9ff", secondary: "#48658b" },
+    "garden-sprayer": { kind: "sprayer", primary: "#63cbe8", secondary: "#637b51" },
+    "tennis-balls": { kind: "tennis-ball", primary: "#d8e85f", secondary: "#f5f1bd" },
+    "acorn-slingshot": { kind: "slingshot", primary: "#7b4b2b", secondary: "#c89c62" },
+    "nail-gun": { kind: "nail-gun", primary: "#c5c9c8", secondary: "#58646a" },
+    "rock-salt-blaster": { kind: "shotgun", primary: "#e7d7a5", secondary: "#74523a" },
+    "garden-hose": { kind: "hose", primary: "#63cbe8", secondary: "#4f8b4d" },
+    "bowling-ball": { kind: "bowling-ball", primary: "#3e3156", secondary: "#b8a9ce" },
+    "diet-cola-launcher": { kind: "bottle-launcher", primary: "#b63b32", secondary: "#ded8cd" },
+    slushie: { kind: "cup", primary: "#81d9ef", secondary: "#ecf6f4" },
+    "leaf-blower": { kind: "blower", primary: "#d6d0aa", secondary: "#68705d" },
+    "storm-sprinkler": { kind: "minigun", primary: "#78e4ff", secondary: "#547b87" },
+    "backyard-flamethrower": { kind: "flamethrower", primary: "#f27a32", secondary: "#7b4540" },
+    "plastic-ghost": { kind: "ghost", primary: "#b9f4ed", secondary: "#5c9f9b" },
+    "ordinance-undefined": { kind: "glitch-gun", primary: "#e05cff", secondary: "#51f0de" },
+  });
+
+  function circle(context, x, y, radius, color) {
+    context.fillStyle = color;
+    context.beginPath();
+    context.arc(x, y, radius, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  function renderHeldWeaponVisual(context, weapon) {
+    const visual = HELD_WEAPON_VISUALS[weapon?.id];
+    if (!visual) return false;
+    const { kind } = visual;
+    const rainbowHue = typeof performance === "undefined" ? 0 : performance.now() / 12 % 360;
+    const primary = visual.rainbow ? `hsl(${rainbowHue} 90% 62%)` : visual.primary;
+    const secondary = visual.rainbow ? `hsl(${(rainbowHue + 115) % 360} 85% 58%)` : visual.secondary;
+    context.save();
+    context.lineWidth = 2;
+    context.strokeStyle = "#292721";
+    context.fillStyle = primary;
+    switch (kind) {
+      case "trimmer":
+        context.fillStyle = secondary; context.fillRect(0, -2, 30, 4); context.fillStyle = primary; context.fillRect(27, -5, 9, 10); context.fillRect(34, -1, 10, 2); break;
+      case "fang":
+        context.beginPath(); context.moveTo(0, -6); context.lineTo(24, 0); context.lineTo(5, 8); context.lineTo(9, 1); context.closePath(); context.fill(); context.stroke(); break;
+      case "shears": case "clippers": {
+        const length = kind === "clippers" ? 34 : 24; context.fillStyle = secondary; circle(context, 2, -4, 4, secondary); circle(context, 2, 4, 4, secondary);
+        context.fillStyle = primary; context.beginPath(); context.moveTo(5, -2); context.lineTo(length, -7); context.lineTo(9, 1); context.lineTo(length, 7); context.lineTo(5, 2); context.closePath(); context.fill(); break;
+      }
+      case "wheelbarrow":
+        context.fillStyle = primary; context.fillRect(1, -9, 27, 15); context.fillStyle = secondary; circle(context, 27, 9, 6, secondary); context.fillRect(-3, -1, 9, 3); break;
+      case "shovel":
+        context.fillStyle = secondary; context.fillRect(0, -2, 27, 4); context.fillStyle = primary; context.beginPath(); context.moveTo(26, -7); context.lineTo(39, -5); context.lineTo(38, 5); context.lineTo(26, 7); context.closePath(); context.fill(); break;
+      case "rake":
+        context.fillStyle = secondary; context.fillRect(0, -2, 31, 4); context.fillStyle = primary; context.fillRect(29, -8, 4, 16); for (let y = -8; y <= 8; y += 4) context.fillRect(32, y, 9, 2); break;
+      case "mower":
+        context.fillStyle = secondary; context.fillRect(0, -3, 10, 3); context.fillStyle = primary; context.fillRect(8, -9, 25, 15); circle(context, 14, 8, 5, secondary); circle(context, 29, 8, 5, secondary); break;
+      case "racket":
+        context.fillStyle = secondary; context.fillRect(0, -2, 15, 4); context.strokeStyle = primary; context.lineWidth = 4; context.beginPath(); context.ellipse(24, 0, 10, 14, 0, 0, Math.PI * 2); context.stroke(); context.lineWidth = 1; context.beginPath(); context.moveTo(17, -7); context.lineTo(31, 7); context.moveTo(17, 7); context.lineTo(31, -7); context.stroke(); break;
+      case "tech-gun": case "magnet-gun": case "glitch-gun":
+        context.fillStyle = primary; context.fillRect(0, -7, 25, 14); context.fillStyle = secondary; context.fillRect(18, -10, 10, 20); context.fillRect(5, 7, 7, 8); circle(context, 15, 0, 3, "#f5f4d7"); break;
+      case "small-gun": case "nail-gun": case "shotgun": {
+        const length = kind === "shotgun" ? 34 : 24; context.fillStyle = primary; context.fillRect(0, -5, length, 10); context.fillStyle = secondary; context.fillRect(5, 5, 8, 9); if (kind === "shotgun") context.fillRect(22, 4, 12, 3); break;
+      }
+      case "firecracker":
+        context.fillStyle = primary; context.fillRect(0, -5, 19, 10); context.fillStyle = secondary; context.fillRect(17, -2, 5, 4); context.beginPath(); context.moveTo(21, 0); context.lineTo(26, -5); context.strokeStyle = secondary; context.stroke(); break;
+      case "party-hat":
+        context.fillStyle = primary; context.beginPath(); context.moveTo(0, 8); context.lineTo(25, 0); context.lineTo(0, -8); context.closePath(); context.fill();
+        context.fillStyle = secondary; context.fillRect(5, -5, 4, 4); context.fillRect(12, 1, 4, 4); context.fillRect(18, -3, 4, 4); break;
+      case "striped-ball": case "apple": case "tennis-ball": case "bowling-ball":
+        circle(context, 8, 0, kind === "striped-ball" ? 10 : 7, primary);
+        if (kind === "striped-ball") { context.fillStyle = secondary; context.fillRect(5, -9, 5, 18); }
+        if (kind === "apple") { context.fillStyle = secondary; context.fillRect(8, -10, 3, 5); }
+        if (kind === "tennis-ball") { context.strokeStyle = secondary; context.beginPath(); context.arc(8, 0, 5, -1.3, 1.3); context.stroke(); }
+        if (kind === "bowling-ball") { circle(context, 6, -2, 1.3, secondary); circle(context, 10, -3, 1.3, secondary); } break;
+      case "shuriken":
+        context.fillStyle = primary; context.beginPath(); for (let index = 0; index < 8; index += 1) { const angle = index * Math.PI / 4; const radius = index % 2 ? 3 : 10; const x = 9 + Math.cos(angle) * radius; const y = Math.sin(angle) * radius; if (index === 0) context.moveTo(x, y); else context.lineTo(x, y); } context.closePath(); context.fill(); circle(context, 9, 0, 2, secondary); break;
+      case "sprinkler": case "orbital":
+        context.fillStyle = secondary; context.fillRect(0, -4, 18, 8); circle(context, 17, 0, 8, primary); context.fillStyle = "#e8fbff"; context.fillRect(15, -11, 3, 6); context.fillRect(15, 5, 3, 6); break;
+      case "zapper": case "rod":
+        context.fillStyle = secondary; context.fillRect(0, -4, 8, 8); context.fillStyle = primary; context.fillRect(7, -3, 25, 6); context.fillStyle = "#ffffff"; context.fillRect(15, -5, 3, 10); break;
+      case "lid":
+        circle(context, 10, 0, 11, primary); context.strokeStyle = secondary; context.beginPath(); context.arc(10, 0, 7, 0, Math.PI * 2); context.stroke(); break;
+      case "gnome":
+        context.fillStyle = secondary; context.fillRect(2, -1, 12, 12); context.fillStyle = primary; context.beginPath(); context.moveTo(1, -1); context.lineTo(8, -17); context.lineTo(15, -1); context.closePath(); context.fill(); circle(context, 8, -2, 5, "#e8b995"); break;
+      case "bag":
+        context.fillStyle = primary; context.fillRect(0, -8, 19, 17); context.fillStyle = secondary; context.fillRect(4, -11, 11, 4); context.fillRect(5, -2, 9, 4); break;
+      case "leaf-fan":
+        context.strokeStyle = secondary; for (let index = 0; index < 3; index += 1) { context.beginPath(); context.arc(10 + index * 4, 0, 7 + index * 3, -1.1, 1.1); context.stroke(); } circle(context, 26, -6, 3, primary); circle(context, 30, 5, 3, primary); break;
+      case "horseshoe":
+        context.strokeStyle = primary; context.lineWidth = 5; context.beginPath(); context.arc(10, 0, 8, -1.25, 1.25); context.stroke(); break;
+      case "cables":
+        context.strokeStyle = primary; context.lineWidth = 3; context.beginPath(); context.moveTo(0, -3); context.bezierCurveTo(8, -12, 14, 8, 25, -4); context.stroke(); context.strokeStyle = secondary; context.beginPath(); context.moveTo(0, 3); context.bezierCurveTo(8, 12, 14, -8, 25, 4); context.stroke(); break;
+      case "mirror":
+        context.fillStyle = secondary; context.fillRect(0, -12, 22, 24); context.fillStyle = primary; context.fillRect(3, -9, 16, 18); context.fillStyle = "#ffffff"; context.fillRect(5, -7, 4, 11); break;
+      case "bell":
+        context.fillStyle = primary; context.beginPath(); context.moveTo(1, 7); context.lineTo(5, -8); context.lineTo(15, -8); context.lineTo(19, 7); context.closePath(); context.fill(); circle(context, 10, 9, 3, secondary); break;
+      case "sprayer":
+        context.fillStyle = secondary; context.fillRect(0, -5, 16, 11); context.fillStyle = primary; context.fillRect(14, -7, 10, 8); context.fillRect(21, -4, 10, 3); context.fillRect(4, 6, 7, 7); break;
+      case "slingshot":
+        context.strokeStyle = primary; context.lineWidth = 4; context.beginPath(); context.moveTo(0, 8); context.lineTo(10, -1); context.lineTo(16, -11); context.moveTo(10, -1); context.lineTo(18, 8); context.stroke(); context.strokeStyle = secondary; context.lineWidth = 2; context.beginPath(); context.moveTo(16, -11); context.lineTo(18, 8); context.stroke(); break;
+      case "hose": case "blower": case "minigun": case "flamethrower": case "bottle-launcher":
+        context.fillStyle = primary; context.fillRect(0, -7, 24, 14); context.fillStyle = secondary; context.fillRect(5, 7, 8, 8); context.fillRect(21, -4, kind === "blower" ? 14 : 10, 8);
+        if (kind === "minigun") { for (let y = -5; y <= 5; y += 5) context.fillRect(20, y, 16, 2); }
+        if (kind === "flamethrower") circle(context, 5, 8, 5, secondary);
+        if (kind === "bottle-launcher") { context.fillStyle = "#ede8dd"; context.fillRect(12, -5, 8, 10); } break;
+      case "cup":
+        context.fillStyle = primary; context.fillRect(1, -8, 15, 17); context.fillStyle = secondary; context.fillRect(0, -11, 17, 4); context.fillRect(10, -17, 3, 8); break;
+      case "ghost":
+        context.fillStyle = primary; context.beginPath(); context.arc(10, -3, 9, Math.PI, 0); context.lineTo(19, 11); context.lineTo(14, 7); context.lineTo(10, 11); context.lineTo(6, 7); context.lineTo(1, 11); context.closePath(); context.fill(); circle(context, 7, -4, 2, secondary); circle(context, 13, -4, 2, secondary); break;
+      default:
+        context.fillStyle = primary; context.fillRect(0, -5, 22, 10); context.fillStyle = secondary; context.fillRect(18, -3, 8, 6);
+    }
+    context.restore();
+    return true;
   }
 
 
@@ -1279,11 +2100,18 @@
       this.batteryPack = false;
       this.freezePulse = false;
       this.scarecrowPulse = false;
+      this.flamingoTube = false;
       this.reducedMotion = false;
       this.maxHealth = 100;
       this.roundStartingMaxHealth = this.maxHealth;
       this.maxHealthCap = this.roundStartingMaxHealth * 2;
       this.health = this.maxHealth;
+      this.maxShield = 0;
+      this.shield = 0;
+      this.shieldRegen = 0;
+      this.healthRegenAmount = 0;
+      this.healthRegenInterval = 0;
+      this.healthRegenTimer = 0;
       this.invulnerability = 0;
       this.hitFlash = 0;
       this.facing = 0;
@@ -1306,7 +2134,23 @@
       const inSandBunker = obstacles.some((obstacle) => obstacle.kind === "sand-bunker"
         && this.x >= obstacle.x && this.x <= obstacle.x + obstacle.width
         && this.y >= obstacle.y && this.y <= obstacle.y + obstacle.height);
-      const movementSpeed = inSandBunker ? this.speed * 0.5 : this.speed;
+      const inWater = obstacles.some((obstacle) => obstacle.kind === "river"
+        && this.x >= obstacle.x && this.x <= obstacle.x + obstacle.width
+        && this.y >= obstacle.y && this.y <= obstacle.y + obstacle.height);
+      const onRunningTrack = obstacles.some((obstacle) => obstacle.kind === "running-track"
+        && this.x >= obstacle.x && this.x <= obstacle.x + obstacle.width
+        && this.y >= obstacle.y && this.y <= obstacle.y + obstacle.height);
+      const inSlime = obstacles.some((obstacle) => obstacle.kind === "slime"
+        && Math.hypot(this.x - obstacle.x, this.y - obstacle.y) <= obstacle.radius);
+      const movementSpeed = inSlime ? this.speed * 0.4 : (inSandBunker || inWater) ? this.speed * 0.5 : onRunningTrack ? this.speed * 1.2 : this.speed;
+      if (this.maxShield > 0) this.shield = Math.min(this.maxShield, this.shield + this.shieldRegen * deltaTime);
+      if (this.healthRegenAmount > 0 && this.healthRegenInterval > 0) {
+        this.healthRegenTimer += deltaTime;
+        while (this.healthRegenTimer >= this.healthRegenInterval) {
+          this.healthRegenTimer -= this.healthRegenInterval;
+          this.health = Math.min(this.maxHealth, this.health + this.healthRegenAmount);
+        }
+      }
       this.x = clamp(this.x + movement.x * movementSpeed * deltaTime, this.radius, world.width - this.radius);
       this.y = clamp(this.y + movement.y * movementSpeed * deltaTime, this.radius, world.height - this.radius);
       resolveObstacleCollisions(this, obstacles);
@@ -1334,17 +2178,22 @@
       if (safeAmount === 0) return false;
 
       const multiplier = Number.isFinite(this.damageTakenMultiplier) ? Math.max(0, this.damageTakenMultiplier) : 1;
-      this.health = Math.max(0, this.health - Math.round(safeAmount * multiplier));
+      let adjusted = safeAmount * multiplier;
+      if (this.shield > 0) {
+        const shieldDamage = Math.min(this.shield, adjusted);
+        this.shield -= shieldDamage;
+        adjusted -= shieldDamage;
+      }
+      this.health = Math.max(0, this.health - Math.round(adjusted));
       this.invulnerability = 0.65;
       this.hitFlash = 0.14;
       return true;
     }
 
-    render(context, camera) {
+    render(context, camera, heldWeapon = null) {
       const x = Math.round(this.x - camera.x);
       const y = Math.round(this.y - camera.y);
       const direction = Math.cos(this.facing) >= 0 ? 1 : -1;
-      const localAim = direction === 1 ? this.facing : Math.PI - this.facing;
       const walkPhase = this.isMoving
         ? Math.floor(this.walkTime * WALK_FRAMES_PER_SECOND) % 4
         : 0;
@@ -1366,6 +2215,7 @@
         context.fillRect(-15, -45, 32, 6);
         context.fillStyle = "#9e342b";
         context.fillRect(-13, -43, 28, 2);
+        this.renderHeldWeapon(context, heldWeapon);
         context.restore();
         return;
       }
@@ -1422,20 +2272,30 @@
       context.fillStyle = "#9e342b";
       context.fillRect(-16, -53, 34, 3);
 
-      // The forward arm follows the cursor without rotating the whole sprite.
+      // Undo the fallback body's mirror before drawing the cursor-facing arm.
+      context.save();
+      context.scale(direction, 1);
+      this.renderHeldWeapon(context, heldWeapon);
+      context.restore();
+
+      context.restore();
+    }
+
+    renderHeldWeapon(context, heldWeapon) {
       context.save();
       context.translate(4, -14);
-      context.rotate(localAim);
+      context.rotate(this.facing);
       context.fillStyle = COLORS.playerShirt;
       context.fillRect(0, -5, 13, 10);
       context.fillStyle = COLORS.playerSkin;
       context.fillRect(12, -4, 12, 8);
-      context.fillStyle = "#4c4437";
-      context.fillRect(22, -2, 19, 5);
-      context.fillStyle = "#252723";
-      context.fillRect(38, -3, 8, 7);
-      context.restore();
-
+      context.translate(22, 0);
+      if (!renderHeldWeaponVisual(context, heldWeapon)) {
+        context.fillStyle = "#4c4437";
+        context.fillRect(0, -2, 19, 5);
+        context.fillStyle = "#252723";
+        context.fillRect(16, -3, 8, 7);
+      }
       context.restore();
     }
   }
@@ -1530,12 +2390,21 @@
       context.fillStyle = "#29231f";
       context.fillRect(-5, -13, 3, 3);
       context.fillRect(3, -13, 3, 3);
+      context.fillStyle = flash ? "#ffffff" : "#bd7d58";
+      context.fillRect(-2, -10, 5, 5);
       context.fillStyle = "#e7ddbd";
       context.fillRect(-8, -4, 16, 13);
+      context.fillStyle = "#c9bea0";
+      context.fillRect(-6, 0, 12, 3);
       context.fillRect(-5, 7, 10, 7);
+      context.fillStyle = "#714a31";
+      context.fillRect(-11, 7, 22, 4);
       context.fillStyle = "#405a74";
       context.fillRect(-10, 9, 8, 8);
       context.fillRect(2, 9, 8, 8);
+      context.fillStyle = "#241d19";
+      context.fillRect(-12, 15, 10, 4);
+      context.fillRect(2, 15, 10, 4);
 
       context.fillStyle = "#211c18";
       context.fillRect(-15, -43, 30, 5);
@@ -1668,13 +2537,205 @@
   }
 
 
-  class CommonWeed {
-    constructor({ x, y, lifetime = 5, copyInterval = 0.4, bossMode = false }) {
+  class Snail {
+    constructor({ x, y, health = 400, speed = 45, damage = 8, coinValue = 6, xpValue = 40, bossMinion = false }) {
       this.x = x;
       this.y = y;
+      this.radius = 24;
+      this.maxHealth = health;
+      this.health = health;
+      this.speed = speed;
+      this.damage = damage;
+      this.coinValue = coinValue;
+      this.xpValue = xpValue;
+      this.hitFlash = 0;
+      this.slowTime = 0;
+      this.enemyType = "snail";
+      this.bossMinion = bossMinion;
+      this.slimeTrailTimer = 0;
+    }
+
+    get active() { return this.health > 0; }
+
+    update(deltaTime, target) {
+      this.hitFlash = Math.max(0, this.hitFlash - deltaTime);
+      this.slowTime = Math.max(0, this.slowTime - deltaTime);
+      if (!this.active) return {};
+      const dx = target.x - this.x;
+      const dy = target.y - this.y;
+      const distance = Math.hypot(dx, dy) || 1;
+      const slow = this.slowTime > 0 ? 0.5 : 1;
+      this.x += dx / distance * this.speed * slow * deltaTime;
+      this.y += dy / distance * this.speed * slow * deltaTime;
+      this.slimeTrailTimer -= deltaTime;
+      if (this.slimeTrailTimer <= 0) {
+        this.slimeTrailTimer = 0.15;
+        return { slimeTrail: { x: this.x, y: this.y, radius: 30, lifetime: 5 } };
+      }
+      return {};
+    }
+
+    takeDamage(amount) {
+      if (!this.active) return false;
+      this.health = Math.max(0, this.health - Math.max(0, amount));
+      this.hitFlash = 0.1;
+      return this.health === 0;
+    }
+
+    render(context, camera) {
+      if (!this.active) return;
+      const x = Math.round(this.x - camera.x);
+      const y = Math.round(this.y - camera.y);
+      context.save();
+      context.translate(x, y);
+      context.fillStyle = "#264b38";
+      context.fillRect(-22, 6, 44, 14);
+      context.fillStyle = this.hitFlash > 0 ? "#fff4d1" : "#8d6e4c";
+      context.fillRect(-14, -15, 28, 27);
+      context.fillStyle = "#b99b69";
+      context.fillRect(-7, -21, 18, 19);
+      context.fillStyle = "#76543c";
+      context.fillRect(-6, -17, 11, 4);
+      context.fillRect(1, -13, 5, 9);
+      context.fillRect(-3, -7, 8, 4);
+      context.fillStyle = "#3d2b24";
+      context.fillRect(-3, -14, 4, 4);
+      context.fillRect(6, -14, 4, 4);
+      context.fillStyle = "#7f5339";
+      context.fillRect(-18, -4, 10, 7);
+      context.fillStyle = "#9bc56e";
+      context.fillRect(14, -13, 3, 14);
+      context.fillRect(21, -13, 3, 14);
+      context.fillStyle = "#29251e";
+      context.fillRect(13, -15, 5, 4);
+      context.fillRect(20, -15, 5, 4);
+      context.fillStyle = "#211c18";
+      context.fillRect(-20, -34, 40, 5);
+      context.fillStyle = "#8fd267";
+      context.fillRect(-18, -32, 36 * (this.health / this.maxHealth), 2);
+      context.restore();
+    }
+  }
+
+
+  class Mosquito {
+    constructor({ x, y, health = 50, speed = 185, damage = 5, coinValue = 2, xpValue = 20, random = Math.random, bossMinion = false }) {
+      this.x = x; this.y = y; this.radius = 13;
+      this.maxHealth = health; this.health = health; this.speed = speed; this.damage = damage;
+      this.coinValue = coinValue; this.xpValue = xpValue; this.enemyType = "mosquito";
+      this.bossMinion = bossMinion; this.hitFlash = 0; this.slowTime = 0;
+      this.ignoresObstacles = true; this.flying = true;
+      this.dashTimer = 1.8 + random() * 1.8; this.dashTime = 0; this.dashX = 0; this.dashY = 0;
+    }
+    get active() { return this.health > 0; }
+    update(deltaTime, target) {
+      this.hitFlash = Math.max(0, this.hitFlash - deltaTime);
+      this.dashTimer -= deltaTime;
+      if (this.dashTimer <= 0 && this.dashTime <= 0) {
+        const dx = target.x - this.x; const dy = target.y - this.y; const distance = Math.hypot(dx, dy) || 1;
+        this.dashX = dx / distance; this.dashY = dy / distance; this.dashTime = 0.28; this.dashTimer = 2.8;
+      }
+      if (this.dashTime > 0) {
+        this.x += this.dashX * 720 * deltaTime; this.y += this.dashY * 720 * deltaTime; this.dashTime -= deltaTime;
+      } else {
+        const dx = target.x - this.x; const dy = target.y - this.y; const distance = Math.hypot(dx, dy) || 1;
+        this.x += dx / distance * this.speed * deltaTime; this.y += dy / distance * this.speed * deltaTime;
+      }
+      return {};
+    }
+    takeDamage(amount) { if (!this.active) return false; this.health = Math.max(0, this.health - Math.max(0, amount)); this.hitFlash = 0.1; return this.health === 0; }
+    render(context, camera) {
+      if (!this.active) return;
+      const x = Math.round(this.x - camera.x); const y = Math.round(this.y - camera.y);
+      context.save(); context.translate(x, y);
+      context.fillStyle = "rgba(20, 24, 18, 0.25)"; context.fillRect(-9, 15, 18, 4);
+      context.fillStyle = this.hitFlash > 0 ? "#fff4d1" : "#5d7e55"; context.fillRect(-5, -10, 10, 21);
+      context.fillStyle = "#2b3224"; context.fillRect(-3, -14, 6, 6);
+      context.fillStyle = "#a3c3d1"; context.fillRect(-18, -8, 12, 5); context.fillRect(6, -8, 12, 5);
+      context.fillStyle = "#35251e"; context.fillRect(9, -3, 10, 3);
+      context.restore();
+    }
+  }
+
+
+  class Deer {
+    constructor({ x, y, health = 500, speed = 55, damage = 8, coinValue = 8, xpValue = 50, bossMinion = false }) {
+      this.x = x; this.y = y; this.radius = 28; this.maxHealth = health; this.health = health;
+      this.speed = speed; this.damage = damage; this.coinValue = coinValue; this.xpValue = xpValue;
+      this.enemyType = "deer"; this.bossMinion = bossMinion; this.hitFlash = 0; this.slowTime = 0;
+      this.state = "wander"; this.prepareTime = 0; this.chargeTime = 0; this.repositionTime = 0; this.chargeX = 0; this.chargeY = 0;
+    }
+    get active() { return this.health > 0; }
+    update(deltaTime, target) {
+      this.hitFlash = Math.max(0, this.hitFlash - deltaTime); this.slowTime = Math.max(0, this.slowTime - deltaTime);
+      if (!this.active) return {};
+      if (this.chargeTime > 0) {
+        this.x += this.chargeX * 520 * deltaTime; this.y += this.chargeY * 520 * deltaTime; this.chargeTime -= deltaTime;
+        if (this.chargeTime <= 0) { this.state = "reposition"; this.repositionTime = 0.9; }
+        return {};
+      }
+      if (this.repositionTime > 0) {
+        this.repositionTime -= deltaTime;
+        const dx = this.x - target.x; const dy = this.y - target.y; const distance = Math.hypot(dx, dy) || 1;
+        this.x += dx / distance * this.speed * deltaTime; this.y += dy / distance * this.speed * deltaTime;
+        if (this.repositionTime <= 0) this.state = "wander";
+        return {};
+      }
+      if (this.prepareTime > 0) {
+        this.prepareTime -= deltaTime;
+        if (this.prepareTime <= 0) {
+          this.chargeTime = 0.8; this.state = "charge";
+        }
+        return {};
+      }
+      const dx = target.x - this.x; const dy = target.y - this.y; const distance = Math.hypot(dx, dy) || 1;
+      if (distance < 290) {
+        // Snapshot the charge vector when the warning begins. The deer must use
+        // this same vector when the telegraph ends instead of retargeting.
+        this.chargeX = dx / distance;
+        this.chargeY = dy / distance;
+        this.prepareTime = 0.8;
+        this.state = "prepare";
+        return {};
+      }
+      this.x += dx / distance * this.speed * deltaTime; this.y += dy / distance * this.speed * deltaTime;
+      return {};
+    }
+    takeDamage(amount) { if (!this.active) return false; this.health = Math.max(0, this.health - Math.max(0, amount)); this.hitFlash = 0.1; return this.health === 0; }
+    render(context, camera) {
+      if (!this.active) return;
+      const x = Math.round(this.x - camera.x); const y = Math.round(this.y - camera.y);
+      if (this.prepareTime > 0) {
+        context.strokeStyle = "rgba(255, 224, 103, 0.75)";
+        context.lineWidth = 3;
+        context.setLineDash([8, 8]);
+        context.beginPath();
+        context.moveTo(x, y);
+        context.lineTo(x + this.chargeX * 520 * 0.8, y + this.chargeY * 520 * 0.8);
+        context.stroke();
+        context.setLineDash([]);
+      }
+      context.save(); context.translate(x, y);
+      context.fillStyle = this.hitFlash > 0 ? "#fff4d1" : "#8d6543"; context.fillRect(-20, -18, 40, 34);
+      context.fillStyle = "#b98d5f"; context.fillRect(-14, -27, 28, 15); context.fillRect(-18, -31, 8, 10); context.fillRect(10, -31, 8, 10);
+      context.fillStyle = "#d2ad78"; context.fillRect(-15, -39, 4, 12); context.fillRect(11, -39, 4, 12); context.fillRect(-22, -42, 11, 4); context.fillRect(11, -42, 11, 4); context.fillRect(-21, -49, 4, 9); context.fillRect(17, -49, 4, 9);
+      context.fillStyle = "#2b211b"; context.fillRect(-8, -21, 4, 4); context.fillRect(6, -21, 4, 4); context.fillRect(-3, -14, 7, 4);
+      context.fillStyle = "#4f3828"; context.fillRect(-22, 12, 13, 11); context.fillRect(9, 12, 13, 11);
+      context.fillStyle = "#211c18"; context.fillRect(-23, -39, 46, 5); context.fillStyle = "#cf7f5b"; context.fillRect(-21, -37, 42 * (this.health / this.maxHealth), 2);
+      context.restore();
+    }
+  }
+
+
+  class CommonWeed {
+    constructor({ x, y, lifetime = 4, copyInterval = 0.4, bossMode = false }) {
+      this.x = x;
+      this.y = y;
+      // Strongweeds use the same collision footprint as Common Weeds. Their
+      // tougher identity is communicated through color and health, not size.
       this.radius = 15;
       this.bossMode = bossMode;
-      this.maxHealth = bossMode ? 200 : 10;
+      this.maxHealth = bossMode ? 150 : 10;
       this.health = this.maxHealth;
       this.damage = 4;
       this.coinValue = 1;
@@ -1689,14 +2750,19 @@
       this.hitFlash = 0;
       this.slowTime = 0;
       this.freezeTime = 0;
-      this.enemyType = "common-weed";
+      this.shuffleTimer = 0;
+      this.shuffleVelocityX = 0;
+      this.shuffleVelocityY = 0;
+      this.enemyType = bossMode ? "strongweed" : "common-weed";
     }
 
     get active() { return this.health > 0 && (this.bossMode || this.lifetime > 0); }
 
     enterBossMode() {
       this.bossMode = true;
-      this.maxHealth = 200;
+      this.enemyType = "strongweed";
+      this.radius = 15;
+      this.maxHealth = 150;
       this.health = this.maxHealth;
       this.lifetime = Number.POSITIVE_INFINITY;
       this.copyInterval = Number.POSITIVE_INFINITY;
@@ -1709,7 +2775,20 @@
       this.hitFlash = Math.max(0, this.hitFlash - deltaTime);
       this.slowTime = Math.max(0, this.slowTime - deltaTime);
       if (!this.active) return {};
-      if (this.bossMode) return {};
+      if (this.bossMode) {
+        if (this.freezeTime > 0) return {};
+        this.shuffleTimer -= deltaTime;
+        if (this.shuffleTimer <= 0) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 14 + Math.random() * 18;
+          this.shuffleVelocityX = Math.cos(angle) * speed;
+          this.shuffleVelocityY = Math.sin(angle) * speed;
+          this.shuffleTimer = 0.2 + Math.random() * 0.35;
+        }
+        this.x += this.shuffleVelocityX * deltaTime;
+        this.y += this.shuffleVelocityY * deltaTime;
+        return {};
+      }
       if (this.freezeTime > 0) return {};
       this.lifetime -= deltaTime;
       if (this.lifetime <= 0) return {};
@@ -1759,15 +2838,18 @@
       context.fillRect(-13, -8, 11, 13);
       context.fillRect(-20, 2, 40, 12);
 
-      context.fillStyle = this.hitFlash > 0 ? "#fff7c7" : "#70c94b";
+      const stemColor = this.bossMode ? "#b765d8" : "#70c94b";
+      const leafColor = this.bossMode ? "#713b9e" : "#3f8e36";
+      const highlightColor = this.bossMode ? "#f0a4ff" : "#d7ef62";
+      context.fillStyle = this.hitFlash > 0 ? "#fff7c7" : stemColor;
       context.fillRect(-4, -22, 8, 28);
       context.fillRect(-14, -15, 10, 7);
       context.fillRect(4, -12, 13, 7);
       context.fillRect(-10, -5, 8, 7);
-      context.fillStyle = this.hitFlash > 0 ? "#fff7c7" : "#3f8e36";
+      context.fillStyle = this.hitFlash > 0 ? "#fff7c7" : leafColor;
       context.fillRect(-17, 4, 34, 7);
       context.fillRect(-11, 10, 22, 5);
-      context.fillStyle = this.hitFlash > 0 ? "#ffffff" : "#d7ef62";
+      context.fillStyle = this.hitFlash > 0 ? "#ffffff" : highlightColor;
       context.fillRect(-14, -15, 5, 3);
       context.fillRect(11, -12, 5, 3);
       context.fillRect(-3, -22, 5, 4);
@@ -1848,16 +2930,25 @@
       context.save();
       context.translate(x, y);
       context.fillStyle = "#35251d";
+      context.fillRect(-25, -14, 11, 27);
+      context.fillRect(-31, -8, 10, 18);
+      context.fillStyle = "#7d4d2d";
+      context.fillRect(-28, -11, 8, 17);
+      context.fillStyle = "#35251d";
       context.fillRect(-15, -12, 30, 24);
       context.fillStyle = this.hitFlash > 0 ? "#fff1c8" : "#9b673c";
       context.fillRect(-12, -16, 24, 19);
       context.fillRect(-8, -23, 16, 10);
       context.fillStyle = "#c48b56";
       context.fillRect(-8, -12, 16, 11);
+      context.fillRect(-9, -27, 7, 7);
+      context.fillRect(2, -27, 7, 7);
       context.fillStyle = "#211b18";
       context.fillRect(-5, -9, 3, 3);
       context.fillRect(3, -9, 3, 3);
       context.fillRect(6, -2, 6, 3);
+      context.fillStyle = "#ead0a2";
+      context.fillRect(-3, -3, 6, 3);
       context.fillStyle = "#543522";
       context.fillRect(-17, 9, 12, 8);
       context.fillRect(5, 9, 12, 8);
@@ -1939,9 +3030,9 @@
       const y = Math.round(this.y - camera.y);
       if (!this.active) return;
       context.save(); context.translate(x, y);
-      context.fillStyle = "#332a3f"; context.fillRect(-15, -12, 30, 24);
+      context.fillStyle = "#332a3f"; context.fillRect(-27, -14, 12, 27); context.fillRect(-32, -7, 10, 18); context.fillRect(-15, -12, 30, 24);
       context.fillStyle = this.hitFlash > 0 ? "#fff1c8" : "#7e5da8"; context.fillRect(-12, -16, 24, 19); context.fillRect(-8, -23, 16, 10);
-      context.fillStyle = "#d0a76b"; context.fillRect(-8, -12, 16, 11);
+      context.fillStyle = "#d0a76b"; context.fillRect(-8, -12, 16, 11); context.fillRect(-9, -27, 7, 7); context.fillRect(2, -27, 7, 7);
       context.fillStyle = "#211b18"; context.fillRect(-5, -9, 3, 3); context.fillRect(3, -9, 3, 3); context.fillRect(6, -2, 6, 3);
       context.fillStyle = "#4f3c69"; context.fillRect(-19, 7, 15, 8); context.fillRect(4, 7, 15, 8);
       context.fillStyle = "#6b452b"; context.fillRect(-4, -31, 8, 8); context.fillStyle = "#3a2a20"; context.fillRect(-7, -34, 14, 4);
@@ -2185,6 +3276,155 @@
   }
 
 
+  class LilyPad {
+    constructor({ x, y, driftSpeed = 8, phase = 0 }) {
+      this.x = x;
+      this.y = y;
+      this.radius = 28;
+      this.maxHealth = 500;
+      this.health = this.maxHealth;
+      this.driftSpeed = driftSpeed;
+      this.phase = phase;
+      this.time = 0;
+      this.spawnTimer = 1;
+    }
+
+    update(deltaTime, river) {
+      if (this.health <= 0) return { spawnStrongweed: false };
+      this.time += deltaTime;
+      this.spawnTimer -= deltaTime;
+      this.x += this.driftSpeed * deltaTime;
+      if (this.x - this.radius > river.x + river.width) this.x = river.x - this.radius;
+      return { spawnStrongweed: this.spawnTimer <= 0 };
+    }
+
+    resetSpawnTimer() {
+      this.spawnTimer = 1;
+    }
+
+    takeDamage(amount) {
+      if (this.health <= 0) return true;
+      this.health = Math.max(0, this.health - Math.max(0, amount));
+      return this.health <= 0;
+    }
+
+    render(context, camera) {
+      if (this.health <= 0) return;
+      const x = Math.round(this.x - camera.x);
+      const y = Math.round(this.y - camera.y + Math.sin(this.time * 1.2 + this.phase) * 2);
+      context.fillStyle = "#254f3d";
+      context.fillRect(x - 24, y - 9, 48, 22);
+      context.fillStyle = "#4f9b58";
+      context.fillRect(x - 20, y - 15, 38, 24);
+      context.fillRect(x - 12, y - 20, 24, 30);
+      context.fillStyle = "#8ac66b";
+      context.fillRect(x - 3, y - 15, 5, 25);
+      context.fillRect(x - 8, y - 4, 15, 4);
+      context.fillStyle = "#2c6f49";
+      context.fillRect(x + 16, y - 5, 8, 4);
+    }
+  }
+
+
+  class LilyQueenBoss {
+    constructor({ x, y, config }) {
+      this.x = x;
+      this.y = y;
+      this.radius = 54;
+      this.name = config.name;
+      this.maxHealth = config.health;
+      this.health = config.health;
+      this.damage = config.damage;
+      this.shieldStrength = config.shieldStrength;
+      this.shieldRegeneration = config.shieldRegeneration;
+      this.strongweedCooldown = config.strongweedCooldown;
+      this.strongweedLaunchChance = config.strongweedLaunchChance ?? 0.5;
+      this.strongweedLaunchSpeed = config.strongweedLaunchSpeed ?? 900;
+      this.riverbankWeedCooldown = config.riverbankWeedCooldown;
+      this.strongweedTimer = this.strongweedCooldown;
+      this.riverbankWeedTimer = this.riverbankWeedCooldown;
+      this.shield = this.shieldStrength;
+      this.hitFlash = 0;
+      this.slowTime = 0;
+      this.isBoss = true;
+      this.enemyType = "lily-queen";
+    }
+
+    get active() { return this.health > 0; }
+
+    update(deltaTime) {
+      const events = { spawnStrongweed: false, spawnRiverbankWeed: false };
+      this.hitFlash = Math.max(0, this.hitFlash - deltaTime);
+      this.slowTime = Math.max(0, this.slowTime - deltaTime);
+      if (!this.active) return events;
+      this.shield = Math.min(this.shieldStrength, this.shield + this.shieldRegeneration * deltaTime);
+      this.strongweedTimer -= deltaTime;
+      if (this.strongweedTimer <= 0) {
+        events.spawnStrongweed = true;
+        this.strongweedTimer += this.strongweedCooldown;
+      }
+      this.riverbankWeedTimer -= deltaTime;
+      if (this.riverbankWeedTimer <= 0) {
+        events.spawnRiverbankWeed = true;
+        this.riverbankWeedTimer += this.riverbankWeedCooldown;
+      }
+      return events;
+    }
+
+    takeDamage(amount) {
+      if (!this.active) return false;
+      let remaining = Math.max(0, amount);
+      if (this.shield > 0) {
+        const absorbed = Math.min(this.shield, remaining);
+        this.shield -= absorbed;
+        remaining -= absorbed;
+      }
+      if (remaining > 0) this.health = Math.max(0, this.health - remaining);
+      this.hitFlash = 0.12;
+      return this.health === 0;
+    }
+
+    render(context, camera) {
+      if (!this.active) return;
+      const x = Math.round(this.x - camera.x);
+      const y = Math.round(this.y - camera.y);
+      context.save();
+      context.translate(x, y);
+      if (this.shield > 0) {
+        context.strokeStyle = "rgba(137, 224, 255, 0.82)";
+        context.lineWidth = 8;
+        context.beginPath();
+        context.arc(0, 0, 68, 0, Math.PI * 2);
+        context.stroke();
+      }
+      context.fillStyle = "#24533d";
+      context.fillRect(-12, -12, 24, 55);
+      context.fillStyle = this.hitFlash > 0 ? "#fff8c9" : "#d7ee67";
+      for (let index = 0; index < 12; index += 1) {
+        const angle = index / 12 * Math.PI * 2;
+        context.fillRect(Math.round(Math.cos(angle) * 43) - 10, Math.round(Math.sin(angle) * 43) - 10, 20, 20);
+      }
+      context.fillStyle = this.hitFlash > 0 ? "#ffffff" : "#f39ac4";
+      for (let index = 0; index < 8; index += 1) {
+        const angle = index / 8 * Math.PI * 2;
+        context.fillRect(Math.round(Math.cos(angle) * 29) - 8, Math.round(Math.sin(angle) * 29) - 8, 16, 16);
+      }
+      context.fillStyle = "#c68e46";
+      context.fillRect(-27, -26, 54, 50);
+      context.fillStyle = "#30271c";
+      context.fillRect(-13, -12, 8, 8);
+      context.fillRect(6, -12, 8, 8);
+      context.fillRect(-16, 3, 32, 6);
+      context.fillStyle = "#f2c85b";
+      context.fillRect(-22, -42, 44, 7);
+      context.fillRect(-18, -50, 8, 9);
+      context.fillRect(-4, -55, 8, 14);
+      context.fillRect(10, -50, 8, 9);
+      context.restore();
+    }
+  }
+
+
   class GroundskeeperBoss {
     constructor({ x, y, config, world }) {
       this.x = x; this.y = y; this.radius = 46;
@@ -2271,7 +3511,16 @@
       }
       context.save(); context.translate(x, y);
       if (this.shield > 0) { context.strokeStyle = "rgba(137, 224, 255, 0.82)"; context.lineWidth = 7; context.beginPath(); context.arc(0, -8, 58, 0, Math.PI * 2); context.stroke(); }
-      context.fillStyle = "#27302a"; context.fillRect(-42, -18, 84, 42); context.fillStyle = this.hitFlash > 0 ? "#fff3cd" : "#4c8b53"; context.fillRect(-32, -34, 64, 24); context.fillStyle = "#171b17"; context.fillRect(-36, 20, 22, 18); context.fillRect(14, 20, 22, 18); context.fillStyle = "#c88f52"; context.fillRect(-16, -54, 32, 20); context.fillStyle = "#211d19"; context.fillRect(-9, -47, 5, 5); context.fillRect(5, -47, 5, 5); context.restore();
+      context.fillStyle = "#27302a"; context.fillRect(-42, -18, 84, 42);
+      context.fillStyle = "#1b211c"; context.fillRect(-49, 4, 18, 11); context.fillRect(31, 4, 18, 11);
+      context.fillStyle = this.hitFlash > 0 ? "#fff3cd" : "#4c8b53"; context.fillRect(-32, -34, 64, 24); context.fillRect(29, -11, 30, 14);
+      context.fillStyle = "#86ae67"; context.fillRect(-27, -29, 48, 5); context.fillRect(35, -7, 17, 4);
+      context.fillStyle = "#171b17"; context.fillRect(-36, 20, 22, 18); context.fillRect(14, 20, 22, 18);
+      context.fillStyle = "#58605a"; context.fillRect(-31, 24, 12, 7); context.fillRect(19, 24, 12, 7);
+      context.fillStyle = "#c88f52"; context.fillRect(-16, -54, 32, 20);
+      context.fillStyle = "#211d19"; context.fillRect(-9, -47, 5, 5); context.fillRect(5, -47, 5, 5); context.fillRect(-5, -37, 10, 4);
+      context.fillStyle = "#aeb6a8"; context.fillRect(-28, -48, 5, 20); context.fillRect(-30, -51, 9, 5);
+      context.restore();
     }
   }
 
@@ -2405,7 +3654,7 @@
 
 
   class ThrownGnome {
-    constructor({ x, y, targetX, targetY, speed, enemyType = "gnome" }) {
+    constructor({ x, y, targetX, targetY, speed, enemyType = "gnome", damage = 0 }) {
       this.x = x;
       this.y = y;
       this.targetX = targetX;
@@ -2414,6 +3663,8 @@
       this.arrived = false;
       this.rotation = 0;
       this.enemyType = enemyType;
+      this.damage = damage;
+      this.radius = enemyType === "strongweed" ? 15 : 14;
     }
 
     update(deltaTime) {
@@ -2447,6 +3698,19 @@
       context.save();
       context.translate(x, y);
       context.rotate(this.rotation);
+      if (this.enemyType === "strongweed") {
+        context.fillStyle = "#291b36";
+        context.fillRect(-10, -18, 20, 28);
+        context.fillStyle = "#b765d8";
+        context.fillRect(-5, -16, 10, 22);
+        context.fillRect(-14, -10, 9, 7);
+        context.fillRect(5, -8, 10, 7);
+        context.fillStyle = "#f0a4ff";
+        context.fillRect(-9, -11, 4, 3);
+        context.fillRect(5, -9, 4, 3);
+        context.restore();
+        return;
+      }
       if (this.enemyType === "gopher") {
         context.fillStyle = "#3a2d21";
         context.fillRect(-11, -10, 22, 22);
@@ -2814,6 +4078,424 @@
   }
 
 
+  class AncientSnailBoss {
+    constructor({ x, y, config }) {
+      this.x = x; this.y = y; this.radius = 86; this.maxHealth = config.health; this.health = config.health;
+      this.maxShield = config.shieldStrength; this.shield = config.shieldStrength; this.shieldRegeneration = config.shieldRegeneration;
+      this.speed = config.speed; this.damage = 12; this.name = config.name; this.isBoss = true; this.enemyType = "ancient-snail";
+      this.hitFlash = 0; this.slowTime = 0; this.spitCooldown = config.spitCooldown; this.spitTimer = config.spitCooldown;
+      this.shellSlamCooldown = config.shellSlamCooldown; this.shellSlamTimer = config.shellSlamCooldown; this.shellSlamWarning = 0;
+      this.snailArmyCooldown = config.snailArmyCooldown; this.snailArmyTimer = config.snailArmyCooldown; this.config = config; this.slimeTimer = 0; this.slamWave = 0;
+    }
+    get active() { return this.health > 0; }
+    update(deltaTime, target) {
+      const events = { spit: null, shellSlam: null, spawnSnail: false, permanentSlime: null };
+      this.hitFlash = Math.max(0, this.hitFlash - deltaTime); this.slowTime = Math.max(0, this.slowTime - deltaTime);
+      this.shield = Math.min(this.maxShield, this.shield + this.shieldRegeneration * deltaTime);
+      if (!this.active) return events;
+      const dx = target.x - this.x; const dy = target.y - this.y; const distance = Math.hypot(dx, dy) || 1;
+      if (this.shellSlamWarning <= 0) { this.x += dx / distance * this.speed * (this.slowTime > 0 ? 0.5 : 1) * deltaTime; this.y += dy / distance * this.speed * (this.slowTime > 0 ? 0.5 : 1) * deltaTime; }
+      this.slimeTimer -= deltaTime;
+      if (this.slimeTimer <= 0) { this.slimeTimer = 0.12; events.permanentSlime = { x: this.x, y: this.y, radius: 72, permanent: true }; }
+      this.spitTimer -= deltaTime;
+      if (this.spitTimer <= 0) { this.spitTimer += this.spitCooldown; events.spit = { x: this.x, y: this.y, targetX: target.x, targetY: target.y, speed: this.config.spitSpeed, damage: this.config.spitDamage, lifetime: this.config.spitLifetime, splashRadius: this.config.spitSplashRadius }; }
+      if (this.shellSlamWarning > 0) {
+        this.shellSlamWarning -= deltaTime;
+        if (this.shellSlamWarning <= 0) { this.slamWave = 0.45; events.shellSlam = { radius: this.config.shellSlamRadius, damage: this.config.shellSlamDamage, pushback: this.config.shellSlamPushback }; }
+      } else {
+        this.shellSlamTimer -= deltaTime;
+        if (this.shellSlamTimer <= 0) { this.shellSlamTimer += this.shellSlamCooldown; this.shellSlamWarning = 0.8; }
+      }
+      this.slamWave = Math.max(0, this.slamWave - deltaTime);
+      this.snailArmyTimer -= deltaTime;
+      if (this.snailArmyTimer <= 0) { this.snailArmyTimer += this.snailArmyCooldown; events.spawnSnail = true; }
+      return events;
+    }
+    takeDamage(amount) {
+      if (!this.active) return false;
+      let remaining = Math.max(0, amount);
+      const shieldDamage = Math.min(this.shield, remaining); this.shield -= shieldDamage; remaining -= shieldDamage;
+      this.health = Math.max(0, this.health - remaining); this.hitFlash = 0.12; return this.health === 0;
+    }
+    render(context, camera) {
+      if (!this.active) return;
+      const x = Math.round(this.x - camera.x); const y = Math.round(this.y - camera.y);
+      if (this.shellSlamWarning > 0) { context.strokeStyle = "rgba(255, 215, 110, 0.75)"; context.lineWidth = 5; context.setLineDash([10, 8]); context.beginPath(); context.arc(x, y, this.config.shellSlamRadius, 0, Math.PI * 2); context.stroke(); context.setLineDash([]); }
+      if (this.slamWave > 0) { context.strokeStyle = `rgba(255, 218, 125, ${this.slamWave / 0.45})`; context.lineWidth = 8; context.beginPath(); context.arc(x, y, this.config.shellSlamRadius * (1 - this.slamWave / 0.45 * 0.45), 0, Math.PI * 2); context.stroke(); }
+      context.save(); context.translate(x, y);
+      context.fillStyle = "rgba(17, 29, 19, 0.32)"; context.fillRect(-68, 30, 136, 22);
+      context.fillStyle = this.hitFlash > 0 ? "#fff4d1" : "#7b6b52"; context.fillRect(-58, -34, 116, 70);
+      context.fillStyle = "#a48b62"; context.fillRect(-40, -55, 72, 52);
+      context.fillStyle = "#65503d"; context.fillRect(-28, -44, 42, 7); context.fillRect(8, -37, 7, 27); context.fillRect(-16, -16, 30, 7); context.fillRect(-23, -30, 7, 21);
+      context.fillStyle = "#8eb26b"; context.fillRect(39, -48, 6, 42); context.fillRect(57, -48, 6, 42);
+      context.fillStyle = "#3d3027"; context.fillRect(36, -53, 12, 7); context.fillRect(54, -53, 12, 7); context.fillRect(-15, -34, 7, 7); context.fillRect(13, -34, 7, 7);
+      context.fillStyle = "#211c18"; context.fillRect(-72, -89, 144, 7); context.fillStyle = "#c87563"; context.fillRect(-68, -87, 136 * (this.health / this.maxHealth), 3);
+      context.fillStyle = "#163b45"; context.fillRect(-68, -98, 136, 5); context.fillStyle = "#6ec5d3"; context.fillRect(-66, -97, 132 * (this.shield / this.maxShield), 2);
+      context.restore();
+    }
+  }
+
+
+  class SnailSpitProjectile {
+    constructor({ x, y, velocityX, velocityY, damage = 35, lifetime = 4, splashRadius = 42 }) {
+      this.x = x; this.y = y; this.velocityX = velocityX; this.velocityY = velocityY; this.damage = damage;
+      this.lifetime = lifetime; this.radius = 10; this.splashRadius = splashRadius; this.bouncesRemaining = 1; this.active = true; this.bounced = false; this.impacted = false;
+    }
+    update(deltaTime, world) {
+      if (!this.active) return;
+      this.x += this.velocityX * deltaTime; this.y += this.velocityY * deltaTime; this.lifetime -= deltaTime;
+      if (this.lifetime <= 0 || this.x < 10 || this.y < 10 || this.x > world.width - 10 || this.y > world.height - 10) { this.active = false; this.impacted = true; }
+    }
+    hitPlayer() { this.active = false; }
+    bounceToward(target) { const dx = target.x - this.x; const dy = target.y - this.y; const distance = Math.hypot(dx, dy) || 1; const speed = Math.hypot(this.velocityX, this.velocityY); this.velocityX = dx / distance * speed; this.velocityY = dy / distance * speed; this.bouncesRemaining -= 1; this.bounced = true; }
+    render(context, camera) { if (!this.active) return; const x = Math.round(this.x - camera.x); const y = Math.round(this.y - camera.y); context.fillStyle = "#85b886"; context.fillRect(x - 9, y - 7, 18, 14); context.fillStyle = "#c8f0ae"; context.fillRect(x - 4, y - 5, 8, 4); }
+  }
+
+
+  class SchoolFieldEnemy {
+    constructor({ x, y, health, speed, damage = 6, radius = 22, coinValue = 3, xpValue = 30, enemyType }) {
+      this.x = x; this.y = y; this.radius = radius;
+      this.maxHealth = health; this.health = health; this.speed = speed; this.damage = damage;
+      this.coinValue = coinValue; this.xpValue = xpValue; this.enemyType = enemyType;
+      this.bossMinion = false; this.hitFlash = 0; this.slowTime = 0; this.flying = false;
+    }
+    get active() { return this.health > 0; }
+    takeDamage(amount) {
+      if (!this.active) return false;
+      this.health = Math.max(0, this.health - Math.max(0, Number(amount) || 0));
+      this.hitFlash = 0.1;
+      return this.health === 0;
+    }
+    updateStatus(deltaTime) {
+      this.hitFlash = Math.max(0, this.hitFlash - deltaTime);
+      this.slowTime = Math.max(0, this.slowTime - deltaTime);
+    }
+    moveToward(target, speed, deltaTime) {
+      const dx = target.x - this.x; const dy = target.y - this.y;
+      const distance = Math.hypot(dx, dy) || 1;
+      this.x += dx / distance * speed * deltaTime;
+      this.y += dy / distance * speed * deltaTime;
+    }
+    bar(context, x, y) {
+      context.fillStyle = "#211c18"; context.fillRect(x - this.radius, y - this.radius - 12, this.radius * 2, 4);
+      context.fillStyle = "#e25a45"; context.fillRect(x - this.radius, y - this.radius - 12, this.radius * 2 * Math.max(0, this.health / this.maxHealth), 4);
+    }
+  }
+
+  class RogueSoccerBall extends SchoolFieldEnemy {
+    constructor({ x, y, health = 200, speed = 85, damage = 8, coinValue = 4, xpValue = 30 } = {}) {
+      super({ x, y, health, speed, damage, radius: 21, coinValue, xpValue, enemyType: "rogue-soccer-ball" });
+      this.acceleration = 125; this.maxSpeed = 688; this.deceleration = 260; this.minSpeed = Math.max(30, speed * 0.45);
+      this.turnRate = 2.1; this.currentSpeed = speed; this.headingX = 0; this.headingY = 0; this.passedPlayer = false; this.rotation = 0;
+    }
+    update(deltaTime, target) {
+      this.updateStatus(deltaTime);
+      if (!this.active) return {};
+      const dx = target.x - this.x; const dy = target.y - this.y; const distance = Math.hypot(dx, dy) || 1;
+      if (!this.passedPlayer) {
+        const desiredAngle = Math.atan2(dy, dx);
+        const headingLength = Math.hypot(this.headingX, this.headingY);
+        if (headingLength < 0.5) {
+          this.headingX = Math.cos(desiredAngle); this.headingY = Math.sin(desiredAngle);
+        } else {
+          const currentAngle = Math.atan2(this.headingY, this.headingX);
+          const turnError = Math.atan2(Math.sin(desiredAngle - currentAngle), Math.cos(desiredAngle - currentAngle));
+          const maxTurn = this.turnRate * deltaTime;
+          const appliedTurn = Math.max(-maxTurn, Math.min(maxTurn, turnError));
+          const nextAngle = currentAngle + appliedTurn;
+          this.headingX = Math.cos(nextAngle); this.headingY = Math.sin(nextAngle);
+          if (Math.abs(turnError) > 0.8) {
+            this.currentSpeed = Math.max(this.minSpeed, this.currentSpeed - this.deceleration * deltaTime);
+          } else {
+            this.currentSpeed = Math.min(this.maxSpeed, this.currentSpeed + this.acceleration * deltaTime);
+          }
+        }
+      }
+      this.x += this.headingX * this.currentSpeed * deltaTime; this.y += this.headingY * this.currentSpeed * deltaTime; this.rotation += this.currentSpeed * deltaTime / this.radius;
+      if (distance < target.radius + this.radius + 8) this.passedPlayer = true;
+      if (this.passedPlayer && distance > 260) { this.passedPlayer = false; this.currentSpeed = this.speed; }
+      return {};
+    }
+    render(context, camera) {
+      if (!this.active) return;
+      const x = Math.round(this.x - camera.x); const y = Math.round(this.y - camera.y);
+      context.save(); context.translate(x, y); context.rotate(this.rotation);
+      context.fillStyle = this.hitFlash > 0 ? "#fff5d3" : "#f5f1df"; context.fillRect(-20, -20, 40, 40);
+      context.fillStyle = "#242521";
+      context.fillRect(-5, -5, 10, 10); context.fillRect(-15, -16, 8, 8); context.fillRect(7, 8, 8, 8);
+      context.fillRect(-16, 8, 7, 7); context.fillRect(9, -15, 7, 7);
+      context.fillStyle = "#d8443e"; context.fillRect(-20, -3, 7, 6); context.fillRect(13, -3, 7, 6);
+      context.restore(); this.bar(context, x, y);
+    }
+  }
+
+  class Sprinter extends SchoolFieldEnemy {
+    constructor({ x, y, world = { width: 1280, height: 720 }, health = 200, speed = 180, damage = 8, coinValue = 4, xpValue = 30, random = Math.random } = {}) {
+      super({ x, y, health, speed, damage, radius: 18, coinValue, xpValue, enemyType: "sprinter" });
+      this.world = world; this.random = random; this.trackInset = 55; this.chaseDistance = 220;
+      this.trackSpeedMultiplier = 3; this.chaseSpeedMultiplier = 2;
+      this.trackDirection = this.random() < 0.5 ? 1 : -1; this.trackDistance = null; this.chasing = false;
+      this.syncTrackDistance();
+    }
+    get trackBounds() {
+      return { left: this.trackInset, right: this.world.width - this.trackInset, top: this.trackInset, bottom: this.world.height - this.trackInset };
+    }
+    get trackPerimeter() {
+      const bounds = this.trackBounds;
+      return 2 * ((bounds.right - bounds.left) + (bounds.bottom - bounds.top));
+    }
+    syncTrackDistance() {
+      const bounds = this.trackBounds;
+      const width = bounds.right - bounds.left; const height = bounds.bottom - bounds.top;
+      const candidates = [
+        { distance: Math.abs(this.y - bounds.top), path: Math.max(0, Math.min(width, this.x - bounds.left)) },
+        { distance: Math.abs(this.x - bounds.right), path: width + Math.max(0, Math.min(height, this.y - bounds.top)) },
+        { distance: Math.abs(this.y - bounds.bottom), path: width + height + Math.max(0, Math.min(width, bounds.right - this.x)) },
+        { distance: Math.abs(this.x - bounds.left), path: width * 2 + height + Math.max(0, Math.min(height, bounds.bottom - this.y)) },
+      ];
+      this.trackDistance = candidates.sort((a, b) => a.distance - b.distance)[0].path;
+    }
+    placeOnTrack() {
+      const bounds = this.trackBounds;
+      const width = bounds.right - bounds.left; const height = bounds.bottom - bounds.top;
+      const distance = ((this.trackDistance % this.trackPerimeter) + this.trackPerimeter) % this.trackPerimeter;
+      if (distance < width) { this.x = bounds.left + distance; this.y = bounds.top; }
+      else if (distance < width + height) { this.x = bounds.right; this.y = bounds.top + distance - width; }
+      else if (distance < width * 2 + height) { this.x = bounds.right - (distance - width - height); this.y = bounds.bottom; }
+      else { this.x = bounds.left; this.y = bounds.bottom - (distance - width * 2 - height); }
+    }
+    update(deltaTime, target) {
+      this.updateStatus(deltaTime);
+      if (!this.active) return {};
+      const distanceToTarget = Math.hypot(target.x - this.x, target.y - this.y);
+      if (distanceToTarget <= this.chaseDistance) this.chasing = true;
+      if (this.chasing) {
+        this.moveToward(target, this.speed * this.chaseSpeedMultiplier, deltaTime);
+        if (distanceToTarget > this.chaseDistance * 1.35) {
+          this.chasing = false;
+          this.syncTrackDistance();
+        }
+        return {};
+      }
+      this.trackDistance += this.trackDirection * this.speed * this.trackSpeedMultiplier * deltaTime;
+      this.placeOnTrack();
+      return {};
+    }
+    render(context, camera) {
+      if (!this.active) return;
+      const x = Math.round(this.x - camera.x); const y = Math.round(this.y - camera.y);
+      context.save(); context.translate(x, y);
+      context.fillStyle = this.hitFlash > 0 ? "#fff5d3" : "#e15b47";
+      context.fillRect(-13, -22, 26, 31); context.fillStyle = "#efd09e"; context.fillRect(-10, -34, 20, 14);
+      context.fillStyle = "#242521"; context.fillRect(-6, -29, 4, 4); context.fillRect(4, -29, 4, 4);
+      context.fillStyle = "#27384f"; context.fillRect(-14, 9, 10, 22); context.fillRect(4, 9, 10, 22);
+      if (!this.chasing) { context.fillStyle = "#f3df8d"; context.fillRect(17, -23, 5, 8); context.fillRect(21, -31, 5, 8); }
+      context.restore(); this.bar(context, x, y);
+    }
+  }
+
+  class Backpack extends SchoolFieldEnemy {
+    constructor({ x, y, health = 550, speed = 70, damage = 12, coinValue = 8, xpValue = 50 } = {}) {
+      super({ x, y, health, speed, damage, radius: 27, coinValue, xpValue, enemyType: "backpack" });
+      this.hopTime = 0; this.fallenTime = 0; this.fallTimer = 3.2;
+    }
+    update(deltaTime, target) {
+      this.updateStatus(deltaTime);
+      if (!this.active) return {};
+      if (this.fallenTime > 0) { this.fallenTime -= deltaTime; return {}; }
+      this.fallTimer -= deltaTime;
+      if (this.fallTimer <= 0) { this.fallenTime = 0.8; this.fallTimer = 3.2; return {}; }
+      this.hopTime += deltaTime * 1.7;
+      if (this.hopTime >= 1) this.hopTime -= 1;
+      this.moveToward(target, this.speed, deltaTime);
+      return {};
+    }
+    render(context, camera) {
+      if (!this.active) return;
+      const x = Math.round(this.x - camera.x); const y = Math.round(this.y - camera.y);
+      const hop = this.fallenTime > 0 ? 0 : Math.round(Math.abs(Math.sin(this.hopTime * Math.PI)) * 18);
+      const shadowWidth = Math.max(16, 32 - Math.round(hop * 0.55));
+      context.fillStyle = "rgba(18, 22, 18, 0.3)";
+      context.fillRect(x - Math.round(shadowWidth / 2), y + 23, shadowWidth, 5);
+      context.fillStyle = this.hitFlash > 0 ? "#fff5d3" : this.fallenTime > 0 ? "#725748" : "#734f9c";
+      context.fillRect(x - 25, y - 22 - hop, 50, 44); context.fillStyle = "#d1a86c"; context.fillRect(x - 14, y - 14 - hop, 28, 8);
+      context.fillStyle = "#211c28"; context.fillRect(x - 11, y + 1 - hop, 7, 7); context.fillRect(x + 5, y + 1 - hop, 7, 7);
+      this.bar(context, x, y);
+    }
+  }
+
+  class SchoolBasketball extends SchoolFieldEnemy {
+    constructor({ x, y, health = 150, speed = 280, damage = 6, coinValue = 2, xpValue = 20, random = Math.random } = {}) {
+      super({ x, y, health, speed, damage, radius: 18, coinValue, xpValue, enemyType: "basketball" });
+      this.random = random; this.wanderTimer = 0; this.steeringAngle = 0; this.travelAngle = null;
+      this.bounceTime = 0; this.bounceHeight = 0; this.jumpHeight = 32; this.airborne = false;
+    }
+    chooseBounceDirection(target) {
+      this.wanderTimer = 0.18 + this.random() * 0.42;
+      // Keep a visible, unpredictable turn while biasing the actual jump
+      // toward the player's latest position. This correction happens on every
+      // landing, so the jump arc and the reposition length stay in sync.
+      this.steeringAngle = (this.random() - 0.5) * 2.2;
+      const desiredAngle = Math.atan2(target.y - this.y, target.x - this.x);
+      this.travelAngle = desiredAngle + this.steeringAngle * 0.55;
+      this.targetSnapshot = { x: target.x, y: target.y };
+    }
+    update(deltaTime, target) {
+      this.updateStatus(deltaTime); if (!this.active) return {};
+      if (this.travelAngle === null) this.chooseBounceDirection(target);
+      const angleToTarget = this.travelAngle ?? Math.atan2(target.y - this.y, target.x - this.x);
+      this.x += Math.cos(angleToTarget) * this.speed * deltaTime;
+      this.y += Math.sin(angleToTarget) * this.speed * deltaTime;
+      const wasAirborne = this.airborne;
+      this.bounceTime += deltaTime * 8;
+      this.bounceHeight = Math.abs(Math.sin(this.bounceTime)) * this.jumpHeight;
+      this.airborne = this.bounceHeight > 2;
+      if (wasAirborne && !this.airborne) this.chooseBounceDirection(target);
+      return {};
+    }
+    render(context, camera) {
+      if (!this.active) return;
+      const x = Math.round(this.x - camera.x); const y = Math.round(this.y - camera.y - this.bounceHeight);
+      context.fillStyle = "rgba(20, 20, 20, 0.22)"; context.fillRect(x - 12, Math.round(this.y - camera.y) + 16, 24, 4);
+      context.fillStyle = this.hitFlash > 0 ? "#fff5d3" : "#d47736"; context.fillRect(x - 16, y - 16, 32, 32);
+      context.fillStyle = "#3b2720"; context.fillRect(x - 2, y - 16, 4, 32); context.fillRect(x - 16, y - 2, 32, 4);
+      this.bar(context, x, y);
+    }
+  }
+
+  class Basketball extends SchoolBasketball {}
+
+
+  class SchoolBallProjectile {
+    constructor({ x, y, velocityX, velocityY, damage, radius = 10, kind = "soccer-ball", color = "#f3f0df", lifetime = 4, knockback = 0, bounce = false }) {
+      this.x = x; this.y = y; this.velocityX = velocityX; this.velocityY = velocityY;
+      this.damage = damage; this.radius = radius; this.kind = kind; this.color = color; this.lifetime = lifetime;
+      this.initialLifetime = lifetime; this.knockback = knockback; this.active = true; this.bounce = bounce; this.bounced = false; this.rotation = 0;
+    }
+    update(deltaTime, world, target) {
+      if (!this.active) return;
+      this.x += this.velocityX * deltaTime; this.y += this.velocityY * deltaTime; this.rotation += deltaTime * 8; this.lifetime -= deltaTime;
+      if (this.bounce && !this.bounced && this.lifetime < this.initialLifetime * 0.48 && target) {
+        const speed = Math.hypot(this.velocityX, this.velocityY) || 1; const dx = target.x - this.x; const dy = target.y - this.y; const distance = Math.hypot(dx, dy) || 1;
+        this.velocityX = dx / distance * speed; this.velocityY = dy / distance * speed; this.bounced = true;
+      }
+      if (this.x < this.radius || this.x > world.width - this.radius) this.velocityX *= -1;
+      if (this.y < this.radius || this.y > world.height - this.radius) this.velocityY *= -1;
+      this.x = Math.max(this.radius, Math.min(world.width - this.radius, this.x)); this.y = Math.max(this.radius, Math.min(world.height - this.radius, this.y));
+      this.active = this.lifetime > 0;
+    }
+    hitPlayer() { this.active = false; }
+    render(context, camera) {
+      if (!this.active) return;
+      const x = Math.round(this.x - camera.x); const y = Math.round(this.y - camera.y);
+      context.save(); context.translate(x, y); context.rotate(this.rotation);
+      context.fillStyle = this.color;
+      if (this.kind === "volleyball") { context.fillRect(-16, -16, 32, 32); context.fillStyle = "#4c8f9a"; context.fillRect(-16, -3, 32, 6); }
+      else if (this.kind === "tennis-ball") { context.fillRect(-7, -7, 14, 14); context.fillStyle = "#efffc0"; context.fillRect(-7, -1, 14, 3); }
+      else if (this.kind === "dodgeball") { context.fillRect(-12, -12, 24, 24); context.fillStyle = "#fff0b0"; context.fillRect(-10, -2, 20, 4); }
+      else { context.fillRect(-this.radius, -this.radius, this.radius * 2, this.radius * 2); context.fillStyle = "#d8443e"; context.fillRect(-3, -this.radius, 6, this.radius * 2); context.fillRect(-this.radius, -3, this.radius * 2, 6); }
+      context.restore();
+    }
+  }
+
+
+
+  class PeTeacherBoss {
+    constructor({ x, y, config, world }) {
+      this.x = x; this.y = y; this.radius = 42; this.world = world; this.config = config; this.name = config.name;
+      this.maxHealth = config.health; this.health = config.health; this.speed = config.speed; this.damage = config.damage ?? 20;
+      this.dodgeballCooldown = config.dodgeballCooldown; this.whistleCooldown = config.whistleCooldown; this.lapCooldown = config.lapCooldown;
+      this.dodgeballTimer = this.dodgeballCooldown; this.whistleTimer = this.whistleCooldown; this.lapTimer = this.lapCooldown;
+      this.whistleTime = 0; this.lapTime = 0; this.lapAngle = 0; this.lapExitDistance = config.lapExitDistance ?? 220;
+      this.hitFlash = 0; this.slowTime = 0; this.isBoss = true; this.enemyType = "pe-teacher";
+    }
+    get active() { return this.health > 0; }
+    update(deltaTime, target) {
+      const events = { throwDodgeball: null, whistle: false };
+      this.hitFlash = Math.max(0, this.hitFlash - deltaTime); this.slowTime = Math.max(0, this.slowTime - deltaTime);
+      if (!this.active) return events;
+      this.dodgeballTimer -= deltaTime; this.whistleTimer -= deltaTime; this.lapTimer -= deltaTime;
+      const distanceToTarget = Math.hypot(target.x - this.x, target.y - this.y);
+      if (this.lapTime > 0 && distanceToTarget <= this.lapExitDistance) {
+        // The lap is an approach pattern, not a bypass: once the teacher gets
+        // close to the player, leave the perimeter immediately and pursue them.
+        this.lapTime = 0;
+        this.lapTimer = this.lapCooldown;
+      }
+      if (this.lapTime > 0) {
+        this.lapTime -= deltaTime; this.lapAngle += Math.PI * 2 / 2.3 * deltaTime;
+        const inset = 100; const width = this.world.width - inset * 2; const height = this.world.height - inset * 2;
+        const perimeter = 2 * (width + height); const distance = (this.lapAngle % (Math.PI * 2)) / (Math.PI * 2) * perimeter;
+        if (distance < width) { this.x = inset + distance; this.y = inset; }
+        else if (distance < width + height) { this.x = this.world.width - inset; this.y = inset + distance - width; }
+        else if (distance < width * 2 + height) { this.x = this.world.width - inset - (distance - width - height); this.y = this.world.height - inset; }
+        else { this.x = inset; this.y = this.world.height - inset - (distance - width * 2 - height); }
+      } else {
+        this.moveToward(target, this.speed * (this.slowTime > 0 ? 0.5 : 1), deltaTime);
+        if (this.lapTimer <= 0) { this.lapTime = 2.3; this.lapTimer = this.lapCooldown; }
+      }
+      if (this.dodgeballTimer <= 0) {
+        events.throwDodgeball = {
+          x: this.x,
+          y: this.y,
+          targetX: target.x,
+          targetY: target.y,
+          speed: this.config.dodgeballSpeed,
+          damage: this.config.dodgeballDamage,
+          knockback: this.config.dodgeballKnockback,
+        };
+        this.dodgeballTimer = this.dodgeballCooldown;
+      }
+      if (this.whistleTimer <= 0 && this.whistleTime <= 0) { events.whistle = true; this.whistleTime = 0.55; this.whistleTimer = this.whistleCooldown; }
+      if (this.whistleTime > 0) this.whistleTime -= deltaTime;
+      return events;
+    }
+    moveToward(target, speed, deltaTime) { const dx = target.x - this.x; const dy = target.y - this.y; const distance = Math.hypot(dx, dy) || 1; this.x += dx / distance * speed * deltaTime; this.y += dy / distance * speed * deltaTime; }
+    takeDamage(amount) { if (!this.active) return false; this.health = Math.max(0, this.health - Math.max(0, Number(amount) || 0)); this.hitFlash = 0.12; return this.health === 0; }
+    render(context, camera) {
+      if (!this.active) return;
+      const x = Math.round(this.x - camera.x); const y = Math.round(this.y - camera.y);
+      context.save(); context.translate(x, y);
+      context.fillStyle = "#2e5a96"; context.fillRect(-30, -35, 60, 56); context.fillStyle = "#efc395"; context.fillRect(-22, -58, 44, 28);
+      context.fillStyle = "#242321"; context.fillRect(-13, -47, 6, 6); context.fillRect(7, -47, 6, 6); context.fillStyle = "#e9d7a1"; context.fillRect(26, -15, 20, 28);
+      if (this.whistleTime > 0) { context.strokeStyle = "#fff0a4"; context.lineWidth = 4; context.beginPath(); context.arc(0, 0, 60 + (0.55 - this.whistleTime) * 260, 0, Math.PI * 2); context.stroke(); }
+      context.restore();
+      context.fillStyle = "#211c18"; context.fillRect(x - 42, y - 76, 84, 5); context.fillStyle = "#e25a45"; context.fillRect(x - 42, y - 76, 84 * Math.max(0, this.health / this.maxHealth), 5);
+    }
+  }
+
+  class PETeacherBoss extends PeTeacherBoss {}
+
+
+  class BallLauncherBoss {
+    constructor({ x, y, config }) {
+      this.x = x; this.y = y; this.radius = 58; this.name = config.name; this.maxHealth = config.health; this.health = config.health;
+      this.speed = 0; this.damage = 0; this.ballCooldown = config.ballCooldown; this.dumpCooldown = config.dumpCooldown; this.ballTimer = this.ballCooldown; this.dumpTimer = this.dumpCooldown; this.dumpWarning = 0; this.aimAngle = 0; this.hitFlash = 0; this.isBoss = true; this.enemyType = "ball-launcher";
+      this.config = config;
+    }
+    get active() { return this.health > 0; }
+    update(deltaTime, target) {
+      const events = { fireRandomBall: null, ballDump: false };
+      this.hitFlash = Math.max(0, this.hitFlash - deltaTime); if (!this.active) return events;
+      this.aimAngle = Math.atan2(target.y - this.y, target.x - this.x); this.ballTimer -= deltaTime; this.dumpTimer -= deltaTime;
+      if (this.dumpWarning > 0) { this.dumpWarning -= deltaTime; if (this.dumpWarning <= 0) events.ballDump = true; }
+      else if (this.dumpTimer <= 0) { this.dumpWarning = 0.8; this.dumpTimer = this.dumpCooldown; }
+      if (this.ballTimer <= 0) { events.fireRandomBall = { x: this.x, y: this.y, targetX: target.x, targetY: target.y }; this.ballTimer = this.ballCooldown; }
+      return events;
+    }
+    takeDamage(amount) { if (!this.active) return false; this.health = Math.max(0, this.health - Math.max(0, Number(amount) || 0)); this.hitFlash = 0.12; return this.health === 0; }
+    render(context, camera) {
+      if (!this.active) return;
+      const x = Math.round(this.x - camera.x); const y = Math.round(this.y - camera.y);
+      const shake = this.dumpWarning > 0 ? Math.sin(this.dumpWarning * 42) * 5 : 0;
+      context.save(); context.translate(x + shake, y); context.rotate(this.aimAngle);
+      if (this.dumpWarning > 0 && Math.floor(this.dumpWarning * 12) % 2 === 0) context.globalAlpha = 0.55;
+      context.fillStyle = this.hitFlash > 0 ? "#fff5d3" : "#5c6571"; context.fillRect(-55, -45, 110, 90); context.fillStyle = "#222933"; context.fillRect(20, -18, 70, 36); context.fillStyle = "#d37438"; context.fillRect(72, -10, 24, 20); context.restore();
+      context.globalAlpha = 1; context.fillStyle = "#211c18"; context.fillRect(x - 60, y - 78, 120, 6); context.fillStyle = "#e25a45"; context.fillRect(x - 60, y - 78, 120 * Math.max(0, this.health / this.maxHealth), 6);
+    }
+  }
+
+
   class Projectile {
     constructor({
       x, y, velocityX, velocityY, damage, lifetime, kind = "apple", color = "#b83b32",
@@ -2822,6 +4504,11 @@
       fireDamagePerSecond = 0, fireDuration = 0, fireMaxStacks = 1, freezeDuration = 0,
       endSpeedMultiplier = 1, speedCurve = "linear", lifesteal = 0, boundaryBounces = false, allowRepeatBounces = false,
       gravityPull = 0, splitCount = 0, splitDamage = 0, splitRadius = 0, detonateOnExpiry = false,
+      puddleDuration = 0, puddleRadius = 0,
+      boomerang = false, boomerangRange = 0, returnSpeed = 0, returnDamageMultiplier = 1,
+      fertilizerCloudRadius = 0, fertilizerCloudDuration = 0, fertilizerTickInterval = 0.5,
+      polarity = "pull", polarityRadius = 0, polarityForce = 0, bossDamageMultiplier = 1,
+      horseshoe = false, horseshoeRange = 0, horseshoeArc = 0, weaponId = null,
     }) {
       this.x = x;
       this.y = y;
@@ -2837,6 +4524,15 @@
       this.allowRepeatBounces = allowRepeatBounces;
       this.gravityPull = gravityPull; this.splitCount = splitCount; this.splitDamage = splitDamage; this.splitRadius = splitRadius;
       this.detonateOnExpiry = detonateOnExpiry;
+      this.puddleDuration = puddleDuration; this.puddleRadius = puddleRadius;
+      this.boomerang = boomerang; this.boomerangRange = boomerangRange; this.returnSpeed = returnSpeed;
+      this.returnDamageMultiplier = returnDamageMultiplier; this.returning = false;
+      this.horseshoe = horseshoe; this.horseshoeRange = horseshoeRange; this.horseshoeArc = horseshoeArc;
+      this.weaponId = weaponId;
+      this.polarity = polarity; this.polarityRadius = polarityRadius; this.polarityForce = polarityForce;
+      this.bossDamageMultiplier = bossDamageMultiplier;
+      this.fertilizerCloudRadius = fertilizerCloudRadius; this.fertilizerCloudDuration = fertilizerCloudDuration; this.fertilizerTickInterval = fertilizerTickInterval;
+      this.originX = x; this.originY = y;
       this.kind = kind;
       this.color = color;
       this.radius = radius;
@@ -2848,12 +4544,16 @@
       this.slowDuration = slowDuration;
       this.bouncesRemaining = bounces;
       this.piercesRemaining = pierces;
+      this.initialBounces = bounces;
+      this.initialPierces = pierces;
+      this.reflected = false;
       this.knockback = knockback;
       this.fireDamagePerSecond = fireDamagePerSecond;
       this.fireDuration = fireDuration;
       this.fireMaxStacks = fireMaxStacks;
       this.freezeDuration = freezeDuration;
       this.hitEnemies = new Set();
+      this.hitCounts = new Map();
       this.rehitCooldown = 0;
     }
 
@@ -2895,6 +4595,21 @@
   }
 
   function renderProjectileShape(context, projectile) {
+    if (projectile.kind === "rainbow-apple") {
+      const hue = typeof performance === "undefined" ? 0 : performance.now() / 10 % 360;
+      context.fillStyle = `hsl(${hue} 90% 58%)`;
+      context.fillRect(-7, -7, 14, 14);
+      context.fillStyle = `hsl(${(hue + 120) % 360} 85% 55%)`;
+      context.fillRect(1, -11, 3, 5);
+      return;
+    }
+    if (projectile.kind === "confetti") {
+      context.fillStyle = projectile.color;
+      context.fillRect(-6, -3, 12, 6);
+      context.fillStyle = "rgba(255,255,255,0.7)";
+      context.fillRect(-3, -2, 3, 2);
+      return;
+    }
     if (projectile.kind === "flame") {
       context.fillStyle = "#ffe36a";
       context.fillRect(-8, -4, 8, 8);
@@ -2912,6 +4627,41 @@
       context.fillStyle = "#f2ffff";
       context.fillRect(2, -3, 8, 3);
       return;
+    }
+    if (projectile.kind === "pebble") {
+      context.fillStyle = "#302a25"; context.fillRect(-5, -4, 10, 8);
+      context.fillStyle = projectile.color; context.fillRect(-4, -3, 8, 6); return;
+    }
+    if (projectile.kind === "sprinkler-mine") {
+      context.fillStyle = "#223b42"; context.fillRect(-10, -7, 20, 14);
+      context.fillStyle = projectile.color; context.fillRect(-6, -4, 12, 8); return;
+    }
+    if (projectile.kind === "trash-can-lid") {
+      context.fillStyle = "#313738"; context.fillRect(-14, -5, 28, 10);
+      context.fillStyle = projectile.color; context.fillRect(-10, -3, 20, 6); return;
+    }
+    if (projectile.kind === "fertilizer-bag") {
+      context.fillStyle = "#3b281b"; context.fillRect(-11, -8, 22, 16);
+      context.fillStyle = projectile.color; context.fillRect(-8, -6, 16, 12); return;
+    }
+    if (projectile.kind === "leaf-tornado") {
+      context.fillStyle = "rgba(182,201,87,0.22)"; context.fillRect(-projectile.radius, -projectile.radius, projectile.radius * 2, projectile.radius * 2);
+      context.fillStyle = projectile.color;
+      context.fillRect(-projectile.radius * 0.7, -4, projectile.radius * 1.4, 5);
+      context.fillRect(-4, -projectile.radius * 0.7, 5, projectile.radius * 1.4); return;
+    }
+    if (projectile.kind === "polarity") {
+      context.fillStyle = projectile.polarity === "pull" ? "#b98cff" : "#ff9a75";
+      context.fillRect(-9, -9, 18, 18);
+      context.fillStyle = "#241d32"; context.fillRect(-3, -3, 6, 6); return;
+    }
+    if (projectile.kind === "horseshoe") {
+      context.strokeStyle = projectile.color; context.lineWidth = 6; context.beginPath();
+      context.arc(0, 0, 10, Math.PI * 0.18, Math.PI * 1.82); context.stroke(); return;
+    }
+    if (projectile.kind === "orbital-water") {
+      context.fillStyle = projectile.color; context.fillRect(-9, -3, 18, 6);
+      context.fillStyle = "#e2fbff"; context.fillRect(-3, -2, 8, 2); return;
     }
     if (projectile.kind === "gravity-portal") {
       const diameter = projectile.splashRadius * 2;
@@ -3029,12 +4779,12 @@
       this.active = true;
     }
 
-    update(deltaTime, player) {
+    update(deltaTime, player, { attractAll = false } = {}) {
       const offsetX = player.x - this.x;
       const offsetY = player.y - this.y;
       const distance = Math.hypot(offsetX, offsetY) || 1;
-      if (distance <= player.pickupRadius) {
-        const speed = 430;
+      if (attractAll || distance <= player.pickupRadius) {
+        const speed = attractAll ? 860 : 430;
         this.x += offsetX / distance * Math.min(distance, speed * deltaTime);
         this.y += offsetY / distance * Math.min(distance, speed * deltaTime);
       }
@@ -3046,6 +4796,16 @@
     render(context, camera) {
       const x = Math.round(this.x - camera.x);
       const y = Math.round(this.y - camera.y);
+      if (this.type === "magnet") {
+        context.fillStyle = "#e35d72";
+        context.fillRect(x - 8, y - 8, 5, 14);
+        context.fillRect(x + 3, y - 8, 5, 14);
+        context.fillRect(x - 3, y + 3, 6, 5);
+        context.fillStyle = "#f5d9dd";
+        context.fillRect(x - 6, y - 7, 2, 7);
+        context.fillRect(x + 4, y - 7, 2, 7);
+        return;
+      }
       context.fillStyle = this.type === "xp" ? "#71d98b" : "#edcc4f";
       if (this.type === "xp") {
         context.fillRect(x - 6, y - 6, 12, 12);
@@ -3063,9 +4823,25 @@
 
   const FIXED_STEP = 1 / 60;
   const MAX_FRAME_TIME = 0.1;
-  const MAX_ENEMIES = 100;
+  const MAX_ENEMIES = 220;
+  const MAX_COMMON_WEEDS = 100;
+  const MAX_STRONGWEEDS = 300;
   const GNOME_HEALTH = 54;
   const MAP_SELECTION_VISIBLE_COUNT = 5;
+  const SHOP_WEAPON_IDS = Object.freeze([
+    "tennis-balls", "hedge-clippers", "acorn-slingshot", "beach-ball", "diet-cola-launcher",
+    "pebble-shooter", "jumper-cables", "garden-mirror", "orbital-sprinkler",
+  ]);
+  const SCREEN_SHAKE_DIRECTIONS = Object.freeze([
+    [1, 0],
+    [-1, 0],
+    [0, -1],
+    [0, 1],
+    [1, -1],
+    [-1, 1],
+    [-1, -1],
+    [1, 1],
+  ]);
 
   class Game {
     constructor(canvas, debugOutput) {
@@ -3085,9 +4861,14 @@
       const savedProgress = loadProgress(window.localStorage);
       this.progress = savedProgress;
       unlockAllWeapons(this.progress);
+      unlockSeasonWeapons(this.progress);
+      unlockAllMaps(this.progress);
+      ensureDailyQuests(this.progress);
+      ensureSeasonState(this.progress);
       saveProgress(window.localStorage, this.progress);
       this.input.setKeybinds(savedProgress.keybinds);
-      this.bankCoins = savedProgress.coins;
+      this.bankCoins = this.progress.coins;
+      this.questSaveTimer = 0;
       this.unlockedMaps = new Set(savedProgress.unlockedMaps);
       this.selectedMapId = "backyard";
       this.currentMap = FIRST_MAP;
@@ -3097,7 +4878,9 @@
       this.glossaryTab = "bestiary";
       this.glossaryScroll = 0;
       this.mapSelectionScroll = 0;
+      this.shopScroll = 0;
       this.weaponSelectionScroll = { melee: 0, ranged: 0 };
+      this.weaponSearch = { melee: "", ranged: "" };
       this.arsenalScroll = { melee: 0, ranged: 0 };
       this.uiHitTargets = [];
 
@@ -3120,17 +4903,45 @@
       this.enemies = [];
       this.projectiles = [];
       this.pickups = [];
+      this.magnetActive = false;
       this.syrupSplats = [];
       this.explosions = [];
+      this.attackEffects = [];
+      this.weaponFlashes = [];
+      this.deathEffects = [];
+      this.hitEffects = [];
+      this.floatingDamageNumbers = [];
       this.abilityProjectiles = [];
       this.thrownGnomes = [];
       this.bossProjectiles = [];
+      this.sprinklerMines = [];
+      this.bugZappers = [];
+      this.gardenDecoys = [];
+      this.fertilizerClouds = [];
+      this.pendingBurstShots = [];
+      this.leafTornadoes = [];
+      this.lightningRods = [];
+      this.gardenMirrors = [];
+      this.doorbells = [];
+      this.orbitalStrikes = [];
+      this.lightningArcs = [];
+      this.polarityPulses = [];
+      this.doorbellWaves = [];
+      this.polarityNext = "pull";
       this.activeObstacles = (this.currentMap.obstacles ?? []).map((obstacle) => ({ ...obstacle }));
+      this.slimeTerrain = [];
+      this.lilypads = this.currentMap.id === "aquatic-garden" ? this.createLilyPads() : [];
       this.weaponSlot = 1;
       this.attackCooldown = 0;
       this.attackCooldowns = { 1: 0, 2: 0 };
       this.meleePulse = 0;
       this.meleeEffectWeapon = null;
+      this.screenShakeTime = 0;
+      this.screenShakeDuration = 0;
+      this.screenShakeStrength = 0;
+      this.screenShakeFrame = 0;
+      this.screenKickX = 0;
+      this.screenKickY = 0;
       this.runTime = 0;
       this.runCoins = 0;
       this.runXp = 0;
@@ -3140,8 +4951,9 @@
       this.appliedUpgrades = [];
       this.appliedUpgradeIds = new Set();
       this.upgradeChoices = [];
+      this.upgradeSelectionDelay = 0;
       this.syrupTimer = 0;
-      this.passiveCooldowns = { mower: 5, battery: 5, freeze: 5, scarecrow: 5 };
+      this.passiveCooldowns = { mower: 5, battery: 5, freeze: 5, scarecrow: 5, flamingo: 5 };
       this.boss = null;
       this.bossSpawned = false;
       this.bossIndex = 0;
@@ -3199,6 +5011,7 @@
         this.debugVisible = !this.debugVisible;
         this.debugOutput.classList.toggle("is-visible", this.debugVisible);
       }
+      this.input.setTextCapture(this.screenState === "melee-selection" || this.screenState === "ranged-selection");
 
       if (this.screenState === "tutorial") {
         const uiAction = this.consumeUiAction();
@@ -3211,6 +5024,9 @@
       }
 
       if (this.screenState === "menu") {
+        const previousQuestRefresh = this.progress.dailyQuests?.refreshAt;
+        ensureDailyQuests(this.progress);
+        if (previousQuestRefresh !== this.progress.dailyQuests.refreshAt) this.savePermanentProgress();
         const uiAction = this.consumeUiAction();
         const menuAction = uiAction?.type === "menu" ? uiAction.value : this.input.consumeMenuAction();
         if (menuAction === "shop") {
@@ -3221,6 +5037,16 @@
         if (menuAction === "upgrades") {
           this.screenState = "permanent-upgrades";
           this.permanentUpgradeCategory = null;
+          this.input.consumeUpgradeChoice();
+          return;
+        }
+        if (menuAction === "quests") {
+          this.screenState = "quests";
+          this.input.consumeUpgradeChoice();
+          return;
+        }
+        if (menuAction === "season-shop" && SEASON_ACTIVE) {
+          this.screenState = "season-shop";
           this.input.consumeUpgradeChoice();
           return;
         }
@@ -3272,24 +5098,38 @@
       }
 
       if (this.screenState === "melee-selection" || this.screenState === "ranged-selection") {
+        this.input.setTextCapture(true);
+        this.input.consumeMenuAction();
         if (this.input.consumePauseRequest()) {
           this.screenState = "menu";
           return;
         }
         const slot = this.screenState === "melee-selection" ? "melee" : "ranged";
-        const weapons = this.ownedWeaponsForSlot(slot);
+        const allWeapons = this.ownedWeaponsForSlot(slot);
         const uiAction = this.consumeUiAction();
         if (uiAction === "back") {
           this.screenState = slot === "ranged" ? "melee-selection" : "menu";
           return;
         }
+        if (uiAction?.type === "weapon-search-clear") {
+          this.weaponSearch[slot] = "";
+          this.weaponSelectionScroll[slot] = 0;
+        }
+        const searchText = this.input.consumeTextInput();
+        const backspaces = this.input.consumeBackspaceRequest();
+        if (searchText) this.weaponSearch[slot] = `${this.weaponSearch[slot]}${searchText}`.slice(0, 28);
+        if (backspaces) this.weaponSearch[slot] = this.weaponSearch[slot].slice(0, Math.max(0, this.weaponSearch[slot].length - backspaces));
+        const query = this.weaponSearch[slot].trim().toLowerCase();
+        const weapons = query
+          ? allWeapons.filter((weapon) => `${weapon.name} ${weapon.rarity} ${weapon.id}`.toLowerCase().includes(query))
+          : allWeapons;
         const scrollDirection = uiAction?.type === "weapon-scroll"
           ? uiAction.value
           : this.input.consumeScrollRequest();
         if (scrollDirection) {
           const visibleCount = Math.min(5, weapons.length);
           const maxOffset = Math.max(0, weapons.length - visibleCount);
-          this.weaponSelectionScroll[slot] = clamp(this.weaponSelectionScroll[slot] + scrollDirection * 3, 0, maxOffset);
+          this.weaponSelectionScroll[slot] = clamp(this.weaponSelectionScroll[slot] + scrollDirection, 0, maxOffset);
         }
         const choice = uiAction?.type === "choice" ? uiAction.value : this.input.consumeUpgradeChoice();
         this.input.consumeWeaponSlot();
@@ -3314,10 +5154,51 @@
           this.screenState = "menu";
           return;
         }
+        const shopScroll = uiAction?.type === "shop-scroll" ? uiAction.value : this.input.consumeScrollRequest();
+        if (shopScroll) this.shopScroll = clamp(this.shopScroll + shopScroll * 3, 0, Math.max(0, this.shopItems().length - 6));
         const choice = uiAction?.type === "choice" ? uiAction.value : this.input.consumeUpgradeChoice();
         this.input.consumeWeaponSlot();
         if (choice !== null) this.handleShopChoice(choice);
         this.updateDebugOutput();
+        return;
+      }
+
+      if (this.screenState === "quests") {
+        if (this.input.consumePauseRequest() || this.consumeUiAction() === "back") this.screenState = "menu";
+        this.input.consumeUpgradeChoice();
+        this.input.consumeWeaponSlot();
+        return;
+      }
+
+      if (this.screenState === "season-shop") {
+        const uiAction = this.consumeUiAction();
+        if (this.input.consumePauseRequest() || uiAction === "back") {
+          this.screenState = "menu";
+          return;
+        }
+        if (uiAction?.type === "season-buy") {
+          const weapon = weaponById(uiAction.value);
+          this.menuMessage = buySeasonWeapon(this.progress, uiAction.value)
+            ? `${weapon.name} unlocked!`
+            : this.progress.ownedWeapons.includes(uiAction.value) ? `${weapon.name} already owned.` : "Not enough Season Coins.";
+          this.savePermanentProgress();
+        } else if (uiAction === "season-exchange") {
+          if (exchangeSeasonCoin(this.progress)) {
+            this.bankCoins = this.progress.coins;
+            this.menuMessage = `Exchanged 1 Season Coin for ${SEASON_COIN_EXCHANGE_VALUE} Coins.`;
+          } else {
+            this.menuMessage = "You need 1 Season Coin to exchange.";
+          }
+          this.savePermanentProgress();
+        } else if (uiAction === "season-claim") {
+          const result = claimCompletedSeasonQuests(this.progress);
+          this.menuMessage = result.claimed
+            ? `Claimed ${result.coins} Season Coins · ${result.remaining} rewards left today`
+            : result.remaining <= 0 ? "Daily reward limit reached. Completed quests remain until tomorrow." : "Complete a Season Quest first.";
+          this.savePermanentProgress();
+        }
+        this.input.consumeUpgradeChoice();
+        this.input.consumeWeaponSlot();
         return;
       }
 
@@ -3379,11 +5260,11 @@
           this.glossaryTab = uiAction.value;
           this.glossaryScroll = 0;
         } else if (uiAction?.type === "glossary-scroll") {
-          this.glossaryScroll = clamp(this.glossaryScroll + uiAction.value * 3, 0, this.glossaryMaxScroll(this.camera.viewWidth, this.camera.viewHeight));
+          this.glossaryScroll = clamp(this.glossaryScroll + uiAction.value * 48, 0, this.glossaryMaxScroll(this.camera.viewWidth, this.camera.viewHeight));
         }
         if (!uiAction || (uiAction?.type !== "glossary-scroll" && uiAction !== "back")) {
           const scrollDirection = this.input.consumeScrollRequest();
-          if (scrollDirection) this.glossaryScroll = clamp(this.glossaryScroll + scrollDirection * 3, 0, this.glossaryMaxScroll(this.camera.viewWidth, this.camera.viewHeight));
+          if (scrollDirection) this.glossaryScroll = clamp(this.glossaryScroll + scrollDirection * 48, 0, this.glossaryMaxScroll(this.camera.viewWidth, this.camera.viewHeight));
         }
         this.input.consumeUpgradeChoice();
         this.input.consumeWeaponSlot();
@@ -3410,10 +5291,11 @@
       }
 
       if (this.screenState === "upgrade") {
+        this.upgradeSelectionDelay = Math.max(0, this.upgradeSelectionDelay - deltaTime);
         const uiAction = this.consumeUiAction();
         const choice = uiAction?.type === "choice" ? uiAction.value : this.input.consumeUpgradeChoice();
         this.input.consumeWeaponSlot();
-        if (choice !== null) {
+        if (choice !== null && this.upgradeSelectionDelay <= 0) {
           this.selectUpgrade(choice - 1);
         }
         this.updateDebugOutput();
@@ -3440,10 +5322,24 @@
 
       deltaTime = this.applyBossIntroSlowdown(deltaTime);
       this.updateTemporaryObstacles(deltaTime);
+      const river = this.currentMap.obstacles?.find((obstacle) => obstacle.kind === "river");
+      if (river) {
+        for (const lilyPad of this.lilypads) {
+          if (lilyPad.update(deltaTime, river).spawnStrongweed) {
+            const angle = (this.random ?? Math.random)() * Math.PI * 2;
+            const distance = 22 + (this.random ?? Math.random)() * 24;
+            this.spawnStrongweedAt(
+              lilyPad.x + Math.cos(angle) * distance,
+              lilyPad.y + Math.sin(angle) * distance,
+            );
+            lilyPad.resetSpawnTimer();
+          }
+        }
+      }
 
       let aimPoint = this.camera.screenToWorld(this.input.pointer);
       this.player.update(deltaTime, this.input.movementVector(), aimPoint, this.world, this.activeObstacles);
-      this.camera.follow(this.player);
+      this.camera.follow(this.player, deltaTime);
       aimPoint = this.camera.screenToWorld(this.input.pointer);
       this.player.updateRecoil(deltaTime, this.input.pointer.down);
 
@@ -3451,7 +5347,50 @@
       this.attackCooldowns[2] = Math.max(0, this.attackCooldowns[2] - deltaTime);
       this.attackCooldown = this.attackCooldowns[this.weaponSlot];
       this.meleePulse = Math.max(0, this.meleePulse - deltaTime);
+      for (const effect of this.attackEffects ?? []) effect.lifetime -= deltaTime;
+      this.attackEffects = (this.attackEffects ?? []).filter((effect) => effect.lifetime > 0);
+      for (const flash of this.weaponFlashes ?? []) flash.lifetime -= deltaTime;
+      this.weaponFlashes = (this.weaponFlashes ?? []).filter((flash) => flash.lifetime > 0);
+      for (const effect of this.deathEffects ?? []) {
+        effect.lifetime -= deltaTime;
+        effect.angle += effect.angularVelocity * deltaTime;
+        const progress = 1 - Math.max(0, effect.lifetime) / effect.maxLifetime;
+        const distance = effect.spiralDistance * progress;
+        const fall = progress * progress;
+        effect.enemy.x = effect.originX + Math.cos(effect.angle) * distance + effect.fallX * fall;
+        effect.enemy.y = effect.originY + Math.sin(effect.angle) * distance + effect.fallY * fall;
+      }
+      this.deathEffects = (this.deathEffects ?? []).filter((effect) => effect.lifetime > 0);
+      for (const effect of this.hitEffects ?? []) effect.lifetime -= deltaTime;
+      this.hitEffects = (this.hitEffects ?? []).filter((effect) => effect.lifetime > 0);
+      this.screenShakeTime = Math.max(0, (this.screenShakeTime ?? 0) - deltaTime);
+      this.screenShakeStrength = Math.max(0, (this.screenShakeStrength ?? 0) - deltaTime * 0.7);
+      if (this.screenShakeTime <= 0) {
+        this.screenShakeDuration = 0;
+        this.screenShakeFrame = 0;
+      }
+      const kickDamping = Math.exp(-deltaTime * 18);
+      this.screenKickX = (this.screenKickX ?? 0) * kickDamping;
+      this.screenKickY = (this.screenKickY ?? 0) * kickDamping;
+      for (const number of this.floatingDamageNumbers ?? []) {
+        number.lifetime -= deltaTime;
+        number.y -= number.riseSpeed * deltaTime;
+        number.x += number.drift * deltaTime;
+      }
+      this.floatingDamageNumbers = (this.floatingDamageNumbers ?? []).filter((number) => number.lifetime > 0);
       this.runTime += deltaTime;
+      const playQuestCoins = updateDailyQuestProgress(this.progress, { type: "play-time", amount: deltaTime });
+      updateSeasonQuestProgress(this.progress, { type: "play-time", amount: deltaTime });
+      if (playQuestCoins > 0) {
+        this.bankCoins = this.progress.coins;
+        this.menuMessage = `Daily quest complete: +${playQuestCoins} coins`;
+        this.savePermanentProgress();
+      }
+      this.questSaveTimer -= deltaTime;
+      if (this.questSaveTimer <= 0) {
+        this.questSaveTimer = 5;
+        this.savePermanentProgress();
+      }
       if (!this.bossSpawned && this.bossNextSpawnTimer !== null) {
         this.bossNextSpawnTimer -= deltaTime;
         if (this.bossNextSpawnTimer <= 0) this.spawnBoss();
@@ -3459,16 +5398,25 @@
         this.spawnBoss();
       }
       this.spawnTimer -= deltaTime;
-      if (!this.bossSpawned && this.spawnTimer <= 0 && this.enemies.length < MAX_ENEMIES) {
+      const isWeedMap = this.currentMap.normalEnemyType === "weed"
+        || this.currentMap.normalEnemyType === "aquatic-garden";
+      const commonWeedCount = isWeedMap
+        ? this.enemies.filter((enemy) => enemy instanceof CommonWeed && !enemy.bossMode && enemy.active).length
+        : 0;
+      const population = isWeedMap ? commonWeedCount : this.enemies.length;
+      const populationLimit = isWeedMap ? MAX_COMMON_WEEDS : MAX_ENEMIES;
+      if (!this.bossSpawned && this.spawnTimer <= 0 && population < populationLimit) {
         const burstSize = 1 + Math.floor(this.runTime / 45);
-        const availableSlots = MAX_ENEMIES - this.enemies.length;
+        const availableSlots = populationLimit - population;
         for (let index = 0; index < Math.min(burstSize, availableSlots); index += 1) {
           this.spawnNormalEnemy();
         }
         const spawnMultiplier = this.currentMap.normalEnemyType === "park" ? 1.3
           : this.currentMap.normalEnemyType === "lake" ? 1.5
-            : this.currentMap.normalEnemyType === "golf" ? 1.1 : 1;
-        this.spawnTimer = Math.max(0.6, 2.25 - this.runTime * 0.018) * spawnMultiplier;
+            : this.currentMap.normalEnemyType === "golf" ? 1.1
+              : this.currentMap.normalEnemyType === "redwood-trail" ? 1.15 : 1;
+        const schoolSpawnMultiplier = this.currentMap.normalEnemyType === "school-field" ? 1.28 : 1;
+        this.spawnTimer = Math.max(0.6, 2.25 - this.runTime * 0.018) * spawnMultiplier * schoolSpawnMultiplier;
       }
 
       if (this.player.syrupTrail && this.player.isMoving) {
@@ -3484,14 +5432,115 @@
         this.attack(aimPoint);
       }
       this.updatePassiveAbilities(deltaTime);
+      this.updateWeaponDeployables(deltaTime);
+      this.updatePendingBurstShots(deltaTime);
 
       for (const projectile of this.projectiles) {
+        if (projectile.horseshoe && projectile.active) {
+          const distanceFromOrigin = Math.hypot(projectile.x - projectile.originX, projectile.y - projectile.originY);
+          if (!projectile.returning && distanceFromOrigin >= projectile.horseshoeRange) {
+            projectile.returning = true;
+            projectile.horseshoeOrbiting = true;
+            projectile.horseshoeOrbitTime = 0;
+            projectile.horseshoeOrbitRadius = Math.max(70, Math.min(135, Math.hypot(projectile.x - this.player.x, projectile.y - this.player.y)));
+            projectile.horseshoeOrbitAngle = Math.atan2(projectile.y - this.player.y, projectile.x - this.player.x);
+          }
+          if (projectile.horseshoeOrbiting) {
+            projectile.horseshoeOrbitTime += deltaTime;
+            projectile.horseshoeOrbitAngle += (projectile.horseshoeDirection ?? 1) * 4.8 * deltaTime;
+            const orbitX = this.player.x + Math.cos(projectile.horseshoeOrbitAngle) * projectile.horseshoeOrbitRadius;
+            const orbitY = this.player.y + Math.sin(projectile.horseshoeOrbitAngle) * projectile.horseshoeOrbitRadius;
+            projectile.velocityX = (orbitX - projectile.x) / Math.max(deltaTime, 0.001);
+            projectile.velocityY = (orbitY - projectile.y) / Math.max(deltaTime, 0.001);
+            if (projectile.horseshoeOrbitTime >= 1.25) projectile.horseshoeOrbiting = false;
+          } else if (projectile.returning) {
+            const speed = Math.hypot(projectile.velocityX, projectile.velocityY) || 1;
+            const dx = this.player.x - projectile.x; const dy = this.player.y - projectile.y;
+            const distance = Math.hypot(dx, dy) || 1;
+            projectile.velocityX = dx / distance * speed;
+            projectile.velocityY = dy / distance * speed;
+            if (distance <= this.player.radius + projectile.radius) projectile.active = false;
+          }
+        } else if (projectile.boomerang && projectile.active) {
+          const distanceFromOrigin = Math.hypot(projectile.x - projectile.originX, projectile.y - projectile.originY);
+          if (!projectile.returning && distanceFromOrigin >= projectile.boomerangRange) {
+            projectile.returning = true;
+            const dx = this.player.x - projectile.x; const dy = this.player.y - projectile.y;
+            const distance = Math.hypot(dx, dy) || 1;
+            projectile.velocityX = dx / distance * projectile.returnSpeed;
+            projectile.velocityY = dy / distance * projectile.returnSpeed;
+          } else if (projectile.returning) {
+            const dx = this.player.x - projectile.x; const dy = this.player.y - projectile.y;
+            const distance = Math.hypot(dx, dy) || 1;
+            projectile.velocityX = dx / distance * projectile.returnSpeed;
+            projectile.velocityY = dy / distance * projectile.returnSpeed;
+            if (distance <= this.player.radius + projectile.radius) projectile.active = false;
+          }
+        }
+        if (projectile.active && !projectile.reflected && projectile.kind !== "garden-mirror") {
+          for (const mirror of this.gardenMirrors) {
+            if (!mirror.active || Math.hypot(projectile.x - mirror.x, projectile.y - mirror.y) > mirror.radius + projectile.radius) continue;
+            const target = this.enemies.filter((enemy) => enemy.active && enemy.targetable !== false)
+              .sort((a, b) => Math.hypot(a.x - projectile.x, a.y - projectile.y) - Math.hypot(b.x - projectile.x, b.y - projectile.y))[0];
+            if (!target) break;
+            const speed = Math.hypot(projectile.velocityX, projectile.velocityY) || 1;
+            const dx = target.x - projectile.x; const dy = target.y - projectile.y; const distance = Math.hypot(dx, dy) || 1;
+            projectile.velocityX = dx / distance * speed; projectile.velocityY = dy / distance * speed;
+            projectile.reflected = true;
+            projectile.piercesRemaining = projectile.initialPierces;
+            projectile.bouncesRemaining = projectile.initialBounces;
+            projectile.damage *= mirror.damageMultiplier;
+            mirror.flash = 0.18;
+            break;
+          }
+        }
         if (projectile.kind === "firecracker" && projectile.active
           && this.enemies.some((enemy) => enemy.active && Math.hypot(enemy.x - this.player.x, enemy.y - this.player.y) <= this.player.radius + (enemy.radius ?? 16) + projectile.radius)) {
           projectile.x = this.player.x; projectile.y = this.player.y; projectile.lifetime = 0;
         }
         projectile.update(deltaTime);
+        if (projectile.active && !projectile.gravityPull) {
+          for (const tree of this.activeObstacles.filter((obstacle) => obstacle.kind === "redwood-trunk" && obstacle.solid !== false)) {
+            const closestX = clamp(projectile.x, tree.x, tree.x + tree.width);
+            const closestY = clamp(projectile.y, tree.y, tree.y + tree.height);
+            if (Math.hypot(projectile.x - closestX, projectile.y - closestY) > projectile.radius) continue;
+            if (projectile.kind === "beach-ball" && projectile.bouncesRemaining > 0) {
+              const horizontal = Math.min(Math.abs(projectile.x - tree.x), Math.abs(projectile.x - (tree.x + tree.width)));
+              const vertical = Math.min(Math.abs(projectile.y - tree.y), Math.abs(projectile.y - (tree.y + tree.height)));
+              if (horizontal < vertical) projectile.velocityX *= -1; else projectile.velocityY *= -1;
+              projectile.bouncesRemaining -= 1;
+              const target = nearestBounceTarget(projectile, this.enemies, null);
+              if (target) {
+                const dx = target.x - projectile.x; const dy = target.y - projectile.y; const distance = Math.hypot(dx, dy) || 1;
+                const speed = Math.hypot(projectile.velocityX, projectile.velocityY);
+                projectile.velocityX = dx / distance * speed; projectile.velocityY = dy / distance * speed;
+              }
+              if (projectile.bouncesRemaining === 0) {
+                this.explosions.push({ x: projectile.x, y: projectile.y, lifetime: 0.28, radius: projectile.splashRadius, color: projectile.color });
+                for (const enemy of this.enemies) {
+                  if (enemy.active && enemy.targetable !== false && Math.hypot(enemy.x - projectile.x, enemy.y - projectile.y) <= projectile.splashRadius) {
+                    this.damageEnemy(enemy, Math.round(projectile.damage * projectile.splashDamageMultiplier), 0, projectile.weaponId);
+                  }
+                }
+                projectile.active = false;
+              }
+            } else {
+              projectile.active = false;
+            }
+            break;
+          }
+        }
         if (!projectile.active && projectile.detonateOnExpiry) {
+          if (projectile.kind === "fertilizer-bag") {
+            this.createFertilizerCloud(projectile.x, projectile.y, projectile);
+            projectile.detonateOnExpiry = false;
+            continue;
+          }
+          if (projectile.kind === "polarity") {
+            this.detonatePolarityProjectile(projectile);
+            projectile.detonateOnExpiry = false;
+            continue;
+          }
           this.detonateProjectile(projectile);
           projectile.detonateOnExpiry = false;
           continue;
@@ -3530,7 +5579,7 @@
             }
             if (projectile.bouncesRemaining === 0) {
               this.explosions.push({ x: projectile.x, y: projectile.y, lifetime: 0.28, radius: projectile.splashRadius, color: projectile.color });
-              for (const enemy of this.enemies) if (enemy.active && Math.hypot(enemy.x - projectile.x, enemy.y - projectile.y) <= projectile.splashRadius) this.damageEnemy(enemy, Math.round(projectile.damage * projectile.splashDamageMultiplier));
+              for (const enemy of this.enemies) if (enemy.active && Math.hypot(enemy.x - projectile.x, enemy.y - projectile.y) <= projectile.splashRadius) this.damageEnemy(enemy, Math.round(projectile.damage * projectile.splashDamageMultiplier), 0, projectile.weaponId);
               projectile.active = false;
             }
           }
@@ -3539,8 +5588,9 @@
           continue;
         }
         for (const enemy of this.enemies) {
+          const hitCount = projectile.hitCounts?.get(enemy) ?? 0;
           if (enemy.active && enemy.targetable !== false
-            && (!projectile.hitEnemies.has(enemy) || (projectile.allowRepeatBounces && projectile.rehitCooldown <= 0))
+            && (projectile.boomerang ? hitCount < 2 : (!projectile.hitEnemies.has(enemy) || (projectile.allowRepeatBounces && projectile.rehitCooldown <= 0)))
             && circlesOverlap(projectile, enemy)) {
             if (projectile.detonateOnExpiry) {
               // Firecracker detonates on contact; if nothing is hit, its range expiry still detonates it.
@@ -3548,11 +5598,20 @@
                 this.detonateProjectile(projectile);
                 projectile.detonateOnExpiry = false;
                 projectile.active = false;
+              } else if (projectile.kind === "fertilizer-bag") {
+                this.createFertilizerCloud(projectile.x, projectile.y, projectile);
+                projectile.detonateOnExpiry = false;
+                projectile.active = false;
+              } else if (projectile.kind === "polarity") {
+                this.detonatePolarityProjectile(projectile);
+                projectile.detonateOnExpiry = false;
+                projectile.active = false;
               }
               else continue;
             }
             if (!projectile.active) break;
             projectile.hitEnemies.add(enemy);
+            if (projectile.boomerang) projectile.hitCounts.set(enemy, hitCount + 1);
             if (projectile.gravityPull > 0) {
               for (const nearby of this.enemies) if (nearby.active && nearby.targetable !== false) {
                 const dx = projectile.x - nearby.x; const dy = projectile.y - nearby.y; const distance = Math.hypot(dx, dy);
@@ -3560,7 +5619,13 @@
               }
             }
             if (projectile.allowRepeatBounces) projectile.rehitCooldown = 0.16;
-            this.damageEnemy(enemy, projectile.damage, projectile.lifesteal);
+            const hitDamage = projectile.returning
+              ? projectile.damage * projectile.returnDamageMultiplier
+              : projectile.damage;
+            const bossAdjustedDamage = enemy.isBoss
+              ? hitDamage * (projectile.bossDamageMultiplier ?? 1)
+              : hitDamage;
+            this.damageEnemy(enemy, bossAdjustedDamage, projectile.lifesteal, projectile.weaponId);
             if (projectile.slowDuration > 0) enemy.slowTime = Math.max(enemy.slowTime ?? 0, projectile.slowDuration);
             if (projectile.fireDuration > 0) applyFire(enemy, projectile.fireDamagePerSecond, projectile.fireDuration, projectile.fireMaxStacks);
             if (projectile.freezeDuration > 0) applyFreeze(enemy, projectile.freezeDuration);
@@ -3574,14 +5639,14 @@
                   if (projectile.slowDuration > 0) nearbyEnemy.slowTime = Math.max(nearbyEnemy.slowTime ?? 0, projectile.slowDuration);
                   if (projectile.fireDuration > 0) applyFire(nearbyEnemy, projectile.fireDamagePerSecond, projectile.fireDuration, projectile.fireMaxStacks);
                   if (projectile.freezeDuration > 0) applyFreeze(nearbyEnemy, projectile.freezeDuration);
-                  if (nearbyEnemy !== enemy) this.damageEnemy(nearbyEnemy, Math.round(projectile.damage * projectile.splashDamageMultiplier), projectile.lifesteal);
+                  if (nearbyEnemy !== enemy) this.damageEnemy(nearbyEnemy, Math.round(projectile.damage * projectile.splashDamageMultiplier), projectile.lifesteal, projectile.weaponId);
                 }
               }
             }
             if (projectile.splitCount > 0) {
               for (let split = 0; split < projectile.splitCount; split += 1) {
                 const angle = split / projectile.splitCount * Math.PI * 2;
-                this.projectiles.push(new Projectile({ x: projectile.x, y: projectile.y, velocityX: Math.cos(angle) * 480, velocityY: Math.sin(angle) * 480, damage: projectile.splitDamage, lifetime: 0.35, kind: "firecracker-spark", color: projectile.color, radius: 7, explosive: false, detonateOnExpiry: true, splashRadius: projectile.splitRadius, splashDamageMultiplier: 0.7, fireDamagePerSecond: projectile.fireDamagePerSecond, fireDuration: projectile.fireDuration, fireMaxStacks: projectile.fireMaxStacks }));
+                this.projectiles.push(new Projectile({ x: projectile.x, y: projectile.y, velocityX: Math.cos(angle) * 480, velocityY: Math.sin(angle) * 480, damage: projectile.splitDamage, lifetime: 0.35, kind: "firecracker-spark", color: projectile.color, radius: 7, explosive: false, detonateOnExpiry: true, splashRadius: projectile.splitRadius, splashDamageMultiplier: 0.7, fireDamagePerSecond: projectile.fireDamagePerSecond, fireDuration: projectile.fireDuration, fireMaxStacks: projectile.fireMaxStacks, weaponId: projectile.weaponId }));
               }
               projectile.splitCount = 0;
             }
@@ -3600,25 +5665,66 @@
       this.explosions = this.explosions.filter((explosion) => explosion.lifetime > 0);
 
       for (const pickup of this.pickups) {
-        pickup.update(deltaTime, this.player);
+        if (!pickup.active) continue;
+        const attractAll = this.magnetActive && (pickup.type === "coin" || pickup.type === "xp");
+        pickup.update(deltaTime, this.player, { attractAll });
         if (!pickup.active) this.collectPickup(pickup);
       }
       this.pickups = this.pickups.filter((pickup) => pickup.active);
+      if (this.magnetActive && !this.pickups.some((pickup) => pickup.type === "coin" || pickup.type === "xp")) {
+        this.magnetActive = false;
+      }
 
       for (const splat of this.syrupSplats) splat.lifetime -= deltaTime;
       this.syrupSplats = this.syrupSplats.filter((splat) => splat.lifetime > 0);
 
       for (const thrownGnome of this.thrownGnomes) {
         thrownGnome.update(deltaTime);
-        if (thrownGnome.arrived) this.spawnLandedEnemy(thrownGnome.enemyType, thrownGnome.x, thrownGnome.y, true);
+        if (thrownGnome.arrived) {
+          if (thrownGnome.damage > 0 && Math.hypot(thrownGnome.x - this.player.x, thrownGnome.y - this.player.y) <= this.player.radius + thrownGnome.radius) {
+            this.player.takeDamage(thrownGnome.damage);
+          }
+          this.spawnLandedEnemy(thrownGnome.enemyType, thrownGnome.x, thrownGnome.y, true);
+        }
       }
       this.thrownGnomes = this.thrownGnomes.filter((thrownGnome) => !thrownGnome.arrived);
 
       for (const spore of this.bossProjectiles) {
-        spore.update(deltaTime, this.world);
-        if (spore.impacted) this.handleGolfBombImpact(spore);
+        spore.update(deltaTime, this.world, this.player);
+        if (spore instanceof SnailSpitProjectile && spore.active) {
+          for (const tree of this.activeObstacles.filter((obstacle) => obstacle.kind === "redwood-trunk" && obstacle.solid !== false)) {
+            const closestX = clamp(spore.x, tree.x, tree.x + tree.width);
+            const closestY = clamp(spore.y, tree.y, tree.y + tree.height);
+            if (Math.hypot(spore.x - closestX, spore.y - closestY) <= spore.radius) {
+              if (spore.bouncesRemaining > 0) {
+                const target = { x: this.player.x, y: this.player.y };
+                spore.bounceToward(target);
+              } else { spore.active = false; spore.impacted = true; }
+              break;
+            }
+          }
+        }
+        if (spore.impacted && !(spore instanceof SnailSpitProjectile)) this.handleGolfBombImpact(spore);
+        if (spore instanceof SnailSpitProjectile && spore.impacted) {
+          if (Math.hypot(spore.x - this.player.x, spore.y - this.player.y) <= this.player.radius + spore.radius) this.player.takeDamage(spore.damage);
+          this.addSlimePuddle(spore.x, spore.y, spore.splashRadius, 5);
+          spore.impacted = false;
+        }
+        if (spore instanceof SnailSpitProjectile && spore.active) {
+          const hit = this.enemies.find((enemy) => enemy !== this.boss && enemy.active && enemy.targetable !== false && circlesOverlap(spore, enemy));
+          if (hit) {
+            this.damageEnemy(hit, spore.damage);
+            if (spore.bouncesRemaining > 0) spore.bounceToward({ x: this.player.x, y: this.player.y });
+            else { spore.active = false; spore.impacted = true; }
+          }
+        }
         if (spore.active && !spore.isBomb && circlesOverlap(spore, this.player)) {
           this.player.takeDamage(spore.damage);
+          if (spore.knockback) {
+            const distance = Math.hypot(spore.velocityX, spore.velocityY) || 1;
+            this.player.x = clamp(this.player.x + spore.velocityX / distance * spore.knockback, this.player.radius, this.world.width - this.player.radius);
+            this.player.y = clamp(this.player.y + spore.velocityY / distance * spore.knockback, this.player.radius, this.world.height - this.player.radius);
+          }
           spore.hitPlayer();
         }
         if (!spore.active && spore.spawnsWeed && !spore.spawnedWeed) {
@@ -3632,7 +5738,12 @@
       for (const enemy of this.enemies) {
         const status = updateEnemyStatus(enemy, deltaTime);
         if (status.fireDamage > 0) this.damageEnemy(enemy, status.fireDamage);
-        const bossEvents = status.frozen || !enemy.active ? {} : enemy.update(deltaTime, this.player, this.activeObstacles) ?? {};
+        const enemyTarget = this.getEnemyTarget(enemy);
+        const onRunningTrack = this.currentMap.id === "school-field" && this.activeObstacles.some((obstacle) => obstacle.kind === "running-track"
+          && enemy.x >= obstacle.x && enemy.x <= obstacle.x + obstacle.width
+          && enemy.y >= obstacle.y && enemy.y <= obstacle.y + obstacle.height);
+        const enemyDeltaTime = onRunningTrack ? deltaTime * 1.2 : deltaTime;
+        const bossEvents = status.frozen || !enemy.active ? {} : enemy.update(enemyDeltaTime, enemyTarget, this.activeObstacles) ?? {};
         if (enemy.isBoss && bossEvents.summonGnomes) {
           this.summonBossGnomes(enemy);
         }
@@ -3668,6 +5779,33 @@
         }
         if (enemy.isBoss && bossEvents.fireSpores) this.fireDandelionSpores(enemy);
         if (enemy.isBoss && bossEvents.fireAimedSpore) this.fireDandelionAimedSpore(enemy);
+        if (enemy.isBoss && bossEvents.spawnStrongweed) this.spawnLilyQueenStrongweed(enemy);
+        if (bossEvents.slimeTrail) {
+          // Snail trail deposits must remain separate so they leave a visible path
+          // instead of merging into one puddle that follows the enemy.
+          this.addSlimePuddle(
+            bossEvents.slimeTrail.x,
+            bossEvents.slimeTrail.y,
+            bossEvents.slimeTrail.radius,
+            bossEvents.slimeTrail.lifetime,
+            false,
+            false,
+          );
+        }
+        if (enemy.isBoss && bossEvents.permanentSlime) this.addSlimePuddle(bossEvents.permanentSlime.x, bossEvents.permanentSlime.y, bossEvents.permanentSlime.radius, Infinity, true);
+        if (enemy.isBoss && bossEvents.spit) this.fireAncientSnailSpit(bossEvents.spit);
+        if (enemy.isBoss && bossEvents.shellSlam) {
+          const slam = bossEvents.shellSlam;
+          const dx = this.player.x - enemy.x; const dy = this.player.y - enemy.y; const distance = Math.hypot(dx, dy) || 1;
+          if (distance <= slam.radius) {
+            this.player.takeDamage(slam.damage);
+            this.player.x = clamp(this.player.x + dx / distance * slam.pushback, this.player.radius, this.world.width - this.player.radius);
+            this.player.y = clamp(this.player.y + dy / distance * slam.pushback, this.player.radius, this.world.height - this.player.radius);
+          }
+          this.explosions.push({ x: enemy.x, y: enemy.y, lifetime: 0.45, maxLifetime: 0.45, radius: slam.radius, ring: true, color: "#d6a55a" });
+        }
+        if (enemy.isBoss && bossEvents.spawnSnail) this.spawnRedwoodEnemy(Math.random() * Math.PI * 2, true, "snail");
+        if (enemy.isBoss && bossEvents.spawnRiverbankWeed) this.spawnRiverbankWeed();
         if (enemy.isBoss && bossEvents.divebomb) {
           this.player.takeDamage(50);
           const dx = this.player.x - enemy.waterX;
@@ -3681,6 +5819,21 @@
         if (enemy.isBoss && bossEvents.fireClippings) this.fireGroundskeeperClippings(bossEvents.fireClippings);
         if (bossEvents.fireGolfBall) this.fireGolfBall(bossEvents.fireGolfBall);
         if (enemy.isBoss && bossEvents.attack) this.fireProGolferAttack(enemy, bossEvents.attack);
+        if (enemy.isBoss && bossEvents.throwDodgeball) this.fireSchoolBall(bossEvents.throwDodgeball, "dodgeball");
+        if (enemy.isBoss && bossEvents.whistle) {
+          const whistleRadius = enemy.config?.whistleRadius ?? 240;
+          const whistleDamage = enemy.config?.whistleDamage ?? 35;
+          const whistleKnockback = enemy.config?.whistleKnockback ?? 130;
+          const dx = this.player.x - enemy.x; const dy = this.player.y - enemy.y; const distance = Math.hypot(dx, dy) || 1;
+          if (distance <= whistleRadius) {
+            this.player.takeDamage(whistleDamage);
+            this.player.x = clamp(this.player.x + dx / distance * whistleKnockback, this.player.radius, this.world.width - this.player.radius);
+            this.player.y = clamp(this.player.y + dy / distance * whistleKnockback, this.player.radius, this.world.height - this.player.radius);
+          }
+          this.explosions.push({ x: enemy.x, y: enemy.y, lifetime: 0.55, maxLifetime: 0.55, radius: whistleRadius, ring: true, color: "#f4e27a" });
+        }
+        if (enemy.isBoss && bossEvents.fireRandomBall) this.fireBallLauncherShot(bossEvents.fireRandomBall, enemy.config);
+        if (enemy.isBoss && bossEvents.ballDump) this.fireSchoolBallDump(enemy);
         if (enemy.isBoss && bossEvents.crushObstacles?.length) {
           for (const obstacle of bossEvents.crushObstacles) {
             this.activeObstacles = this.activeObstacles.filter((entry) => entry !== obstacle);
@@ -3708,14 +5861,20 @@
             }
           }
         }
+        if (enemyTarget !== this.player && enemy.active && circlesOverlap(enemy, enemyTarget)) {
+          enemyTarget.health -= (enemy.damage ?? 4) * deltaTime;
+        }
         if (this.syrupSplats.some((splat) => Math.hypot(enemy.x - splat.x, enemy.y - splat.y) <= 34)) {
           enemy.slowTime = Math.max(enemy.slowTime, 0.15);
         }
-        if (enemy.active && enemy.targetable !== false && circlesOverlap(enemy, this.player)) {
+        if (enemy.active && enemy.targetable !== false && circlesOverlap(enemy, this.player)
+          && !(enemy instanceof SchoolBasketball && enemy.bounceHeight > 4)) {
           touchingEnemies.push(enemy);
         }
       }
-      if (this.isDandelionBossMode()) this.separateDandelionWeeds();
+      if (this.enemies.some((enemy) => enemy instanceof CommonWeed && enemy.active)) {
+        this.separateWeeds();
+      }
       if (touchingEnemies.length > 0) {
         this.player.takeDamage(totalContactDamage(touchingEnemies));
       }
@@ -3728,6 +5887,30 @@
       this.updateDebugOutput();
     }
 
+    addSlimePuddle(x, y, radius = 30, lifetime = 5, permanent = false, merge = true) {
+      const nearby = merge && this.slimeTerrain.find((puddle) => puddle.permanent === permanent
+        && Math.hypot(puddle.x - x, puddle.y - y) < Math.min(puddle.radius, radius) * 0.7);
+      if (nearby) {
+        nearby.lifetime = permanent ? Infinity : Math.max(nearby.lifetime, lifetime);
+        nearby.radius = Math.max(nearby.radius, radius);
+        nearby.x = (nearby.x + x) / 2; nearby.y = (nearby.y + y) / 2;
+        return;
+      }
+      this.slimeTerrain.push({ x, y, radius, lifetime, permanent });
+      if (this.slimeTerrain.length > 1800) this.slimeTerrain.splice(0, this.slimeTerrain.length - 1800);
+    }
+
+    getEnemyTarget(enemy) {
+      if (enemy.isBoss || !this.gardenDecoys?.length) return this.player;
+      const nearestDecoy = this.gardenDecoys
+        .filter((decoy) => decoy.active)
+        .sort((a, b) => Math.hypot(a.x - enemy.x, a.y - enemy.y) - Math.hypot(b.x - enemy.x, b.y - enemy.y))[0];
+      if (!nearestDecoy) return this.player;
+      const playerDistance = Math.hypot(this.player.x - enemy.x, this.player.y - enemy.y);
+      const decoyDistance = Math.hypot(nearestDecoy.x - enemy.x, nearestDecoy.y - enemy.y);
+      return decoyDistance < playerDistance ? nearestDecoy : this.player;
+    }
+
     updateDebugOutput() {
       if (!this.debugVisible) {
         return;
@@ -3737,6 +5920,7 @@
         `FPS      ${this.fps.toString().padStart(3, " ")}`,
         `PLAYER   ${this.player.x.toFixed(0)}, ${this.player.y.toFixed(0)}`,
         `HEALTH   ${this.player.health} / ${this.player.maxHealth}`,
+        `SHIELD   ${this.player.shield.toFixed(2)} / ${this.player.maxShield}`,
         `TIME     ${formatTime(this.runTime)}`,
         `WEAPON   ${weaponForSlot(this.weaponSlot, this.progress.equippedWeapons).name}`,
         `COINS    ${this.runCoins}`,
@@ -3757,6 +5941,12 @@
       this.player.speed *= 1 + stats.speed * 0.06;
       this.player.cooldownMultiplier *= Math.max(0.55, 1 - stats.attackSpeed * 0.06);
       this.player.accuracy *= 1 + stats.accuracy * 0.08;
+      this.player.maxShield = this.progress.shieldUnlocked ? 10 + (stats.shield ?? 0) : 0;
+      this.player.shield = this.player.maxShield;
+      this.player.shieldRegen = this.progress.shieldUnlocked ? 0.25 : 0;
+      this.player.healthRegenAmount = (stats.regeneration ?? 0) > 0 ? 1 : 0;
+      this.player.healthRegenInterval = (stats.regeneration ?? 0) > 0 ? 3 : 0;
+      this.player.healthRegenTimer = 0;
       this.player.reducedMotion = this.progress.settings.reducedMotion;
     }
 
@@ -3774,17 +5964,26 @@
     handleShopChoice(choice) {
       let success = false;
       let label = "Purchase unavailable";
-      if (choice >= 1 && choice <= 5) {
-        const id = ["tennis-balls", "hedge-clippers", "acorn-slingshot", "beach-ball", "diet-cola-launcher"][choice - 1];
-        success = buyWeapon(this.progress, id);
+      const items = this.shopItems();
+      const item = items[this.shopScroll + choice - 1];
+      if (item && item.id) {
+        const id = item.id;
+        success = buyWeapon(this.progress, id, shopWeaponPrice(id), false);
         label = success ? `${weaponById(id).name} purchased` : "Cannot purchase weapon";
-      } else if (choice === 6) {
+      } else if (item?.chest) {
         this.openChestFromMenu();
         return;
       }
       this.bankCoins = this.progress.coins;
       this.menuMessage = label;
       if (success) this.savePermanentProgress();
+    }
+
+    shopItems() {
+      const shopIds = new Set(SHOP_WEAPON_IDS);
+      return [{ chest: true }, ...WEAPONS_SORTED_BY_RARITY
+        .filter((weapon) => shopIds.has(weapon.id))
+        .map((weapon) => ({ id: weapon.id }))];
     }
 
     handlePermanentUpgradeChoice(choice) {
@@ -3800,8 +5999,8 @@
         this.permanentUpgradeCategory = "all";
         this.menuMessage = "Choose any owned weapon to upgrade";
         return;
-      } else if (choice >= 3 && choice <= 7) {
-        const stat = ["health", "damage", "speed", "attackSpeed", "accuracy"][choice - 3];
+      } else if (choice >= 3 && choice <= 9) {
+        const stat = ["health", "damage", "speed", "attackSpeed", "accuracy", "shield", "regeneration"][choice - 3];
         success = upgradeCharacterStat(this.progress, stat, this.unlockedMaps.size * 5);
         label = success ? `${stat} upgraded` : "Cannot upgrade stat";
       }
@@ -3811,9 +6010,10 @@
     }
 
     openChestFromMenu() {
+      const currentChestCost = chestCost(this.progress);
       const result = openChest(this.progress);
       if (!result) {
-        this.menuMessage = `Need ${CHEST_COST} coins for a chest`;
+        this.menuMessage = `Need ${currentChestCost} coins for a chest`;
         return;
       }
       this.bankCoins = this.progress.coins;
@@ -3862,7 +6062,8 @@
         this.spawnLakeEnemy(forcedAngle);
         return;
       }
-      if (this.currentMap.normalEnemyType === "weed") {
+      if (this.currentMap.normalEnemyType === "weed"
+        || this.currentMap.normalEnemyType === "aquatic-garden") {
         this.spawnCommonWeed(forcedAngle);
         return;
       }
@@ -3880,7 +6081,63 @@
         this.spawnGolfEnemy(forcedAngle);
         return;
       }
+      if (this.currentMap.normalEnemyType === "redwood-trail") {
+        this.spawnRedwoodEnemy(forcedAngle);
+        return;
+      }
+      if (this.currentMap.normalEnemyType === "school-field") {
+        this.spawnSchoolFieldEnemy(forcedAngle);
+        return;
+      }
       this.spawnEnemy(forcedAngle);
+    }
+
+    spawnSchoolFieldEnemy(forcedAngle = Math.random() * Math.PI * 2, bossMinion = false, forcedType = null) {
+      if (this.enemies.length >= MAX_ENEMIES) return;
+      const side = Math.floor((((forcedAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)) / (Math.PI * 2) * 4);
+      const inset = 28;
+      const random = this.random ?? Math.random;
+      const edgeT = random();
+      const x = side === 1 ? this.world.width - inset : side === 3 ? inset : inset + edgeT * (this.world.width - inset * 2);
+      const y = side === 0 ? inset : side === 2 ? this.world.height - inset : inset + edgeT * (this.world.height - inset * 2);
+      return this.spawnSchoolFieldEnemyAt(x, y, bossMinion, forcedType);
+    }
+
+    spawnSchoolFieldEnemyAt(x, y, bossMinion = false, forcedType = null) {
+      if (this.enemies.length >= MAX_ENEMIES) return null;
+      const random = this.random ?? Math.random;
+      const weights = (this.firstBossDefeated
+        ? this.currentMap.schoolFieldSpawnWeights
+        : this.currentMap.schoolFieldPreBossSpawnWeights)
+        ?? { rogueSoccerBall: 0.29, sprinter: 0.26, backpack: 0.22, basketball: 0.23 };
+      const roll = random();
+      const type = forcedType ?? (roll < weights.rogueSoccerBall ? "rogue-soccer-ball"
+        : roll < weights.rogueSoccerBall + weights.sprinter ? "sprinter"
+          : roll < weights.rogueSoccerBall + weights.sprinter + weights.backpack ? "backpack"
+            : "basketball");
+      const options = { x, y, world: this.world, random };
+      let enemy;
+      if (type === "rogue-soccer-ball") enemy = new RogueSoccerBall(options);
+      else if (type === "sprinter") enemy = new Sprinter(options);
+      else if (type === "backpack") enemy = new Backpack(options);
+      else enemy = new SchoolBasketball(options);
+      enemy.bossMinion = bossMinion;
+      this.enemies.push(enemy);
+      return enemy;
+    }
+
+    spawnRedwoodEnemy(forcedAngle = Math.random() * Math.PI * 2, bossMinion = false, forcedType = null) {
+      if (this.enemies.length >= MAX_ENEMIES) return;
+      const distance = Math.max(this.camera.viewWidth, this.camera.viewHeight) * 0.52 + 90;
+      const x = clamp(this.player.x + Math.cos(forcedAngle) * distance, 36, this.world.width - 36);
+      const y = clamp(this.player.y + Math.sin(forcedAngle) * distance, 36, this.world.height - 36);
+      const random = this.random ?? Math.random;
+      const weights = this.currentMap.redwoodSpawnWeights ?? { snail: 0.5, mosquito: 0.34, deer: 0.16 };
+      const roll = random();
+      const type = forcedType ?? (roll < weights.snail ? "snail" : roll < weights.snail + weights.mosquito ? "mosquito" : "deer");
+      if (type === "mosquito") this.enemies.push(new Mosquito({ x, y, random, bossMinion }));
+      else if (type === "deer") this.enemies.push(new Deer({ x, y, bossMinion }));
+      else this.enemies.push(new Snail({ x, y, bossMinion }));
     }
 
     spawnGolfEnemy(forcedAngle = Math.random() * Math.PI * 2) {
@@ -3973,7 +6230,14 @@
     }
 
     spawnCommonWeedAt(x, y) {
-      if (this.enemies.length >= MAX_ENEMIES) return;
+      const commonWeedCount = this.enemies.filter((enemy) => enemy instanceof CommonWeed && !enemy.bossMode && enemy.active).length;
+      if (commonWeedCount >= MAX_COMMON_WEEDS) return;
+      const river = this.currentMap.obstacles?.find((obstacle) => obstacle.kind === "river");
+      if (river && y >= river.y && y <= river.y + river.height) {
+        const topBank = river.y - 26;
+        const bottomBank = river.y + river.height + 26;
+        y = Math.abs(y - topBank) <= Math.abs(y - bottomBank) ? topBank : bottomBank;
+      }
       this.enemies.push(new CommonWeed({
         x: clamp(x, 24, this.world.width - 24),
         y: clamp(y, 24, this.world.height - 24),
@@ -3981,19 +6245,92 @@
       }));
     }
 
+    spawnStrongweedAt(x, y) {
+      const strongweedCount = this.enemies.filter((enemy) => enemy.enemyType === "strongweed" && enemy.active).length;
+      if (strongweedCount >= MAX_STRONGWEEDS) return;
+      this.enemies.push(new CommonWeed({
+        x: clamp(x, 24, this.world.width - 24),
+        y: clamp(y, 24, this.world.height - 24),
+        bossMode: true,
+      }));
+    }
+
+    spawnLilyQueenStrongweed(boss) {
+      const random = this.random ?? Math.random;
+      if (random() >= (boss.strongweedLaunchChance ?? 0.5)) {
+        this.spawnStrongweedAt(boss.x, boss.y);
+        return;
+      }
+      this.thrownGnomes.push(new ThrownGnome({
+        x: boss.x,
+        y: boss.y,
+        targetX: this.player.x,
+        targetY: this.player.y,
+        speed: boss.strongweedLaunchSpeed ?? 900,
+        enemyType: "strongweed",
+        damage: 20,
+      }));
+    }
+
+    spawnRiverbankWeed() {
+      const river = this.currentMap.obstacles?.find((obstacle) => obstacle.kind === "river");
+      if (!river) return;
+      const random = this.random ?? Math.random;
+      const x = 32 + random() * Math.max(1, this.world.width - 64);
+      const y = random() < 0.5 ? river.y - 26 : river.y + river.height + 26;
+      this.spawnCommonWeedAt(x, y);
+    }
+
+    fireAncientSnailSpit(event) {
+      const dx = event.targetX - event.x; const dy = event.targetY - event.y; const distance = Math.hypot(dx, dy) || 1;
+      this.bossProjectiles.push(new SnailSpitProjectile({
+        x: event.x, y: event.y, velocityX: dx / distance * event.speed, velocityY: dy / distance * event.speed,
+        damage: event.damage, lifetime: event.lifetime, splashRadius: event.splashRadius,
+      }));
+    }
+
+    createLilyPads() {
+      const river = this.currentMap.obstacles?.find((obstacle) => obstacle.kind === "river");
+      if (!river) return [];
+      const count = Math.min(3, this.currentMap.lilypadCount ?? 3);
+      return Array.from({ length: count }, (_, index) => new LilyPad({
+        x: river.x + (index + 0.5) * river.width / count,
+        y: river.y + river.height * (0.28 + (index % 3) * 0.2),
+        driftSpeed: 5 + index,
+        phase: index * 1.8,
+      }));
+    }
+
     updateTemporaryObstacles(deltaTime) {
       this.activeObstacles = (this.activeObstacles ?? []).filter((obstacle) => {
+        if (obstacle.kind === "slime") return false;
         if (Number.isFinite(obstacle.lifetime)) obstacle.lifetime -= deltaTime;
         return !Number.isFinite(obstacle.lifetime) || obstacle.lifetime > 0;
       });
+      for (const puddle of this.slimeTerrain ?? []) {
+        if (!puddle.permanent) puddle.lifetime -= deltaTime;
+      }
+      this.slimeTerrain = (this.slimeTerrain ?? []).filter((puddle) => puddle.permanent || puddle.lifetime > 0);
+      for (const puddle of this.slimeTerrain) {
+        this.activeObstacles.push({ kind: "slime", x: puddle.x, y: puddle.y, radius: puddle.radius, width: puddle.radius * 2, height: puddle.radius * 2, solid: false });
+      }
+      for (const puddle of this.activeObstacles.filter((obstacle) => obstacle.kind === "ice-puddle")) {
+        for (const enemy of this.enemies) {
+          if (enemy.active && Math.hypot(enemy.x - puddle.x, enemy.y - puddle.y) <= puddle.radius + enemy.radius) {
+            enemy.freezeTime = Math.max(enemy.freezeTime ?? 0, 0.35);
+            enemy.slowTime = Math.max(enemy.slowTime ?? 0, 0.35);
+          }
+        }
+      }
     }
 
     isDandelionBossMode() {
       return Boolean(this.bossSpawned && this.boss?.active && this.boss.enemyType === "dandelion");
     }
 
-    separateDandelionWeeds() {
-      const weeds = this.enemies.filter((enemy) => enemy instanceof CommonWeed && enemy.bossMode && enemy.active);
+    separateWeeds() {
+      const weeds = this.enemies.filter((enemy) => enemy instanceof CommonWeed && enemy.active);
+      const random = this.random ?? Math.random;
       for (let pass = 0; pass < 4; pass += 1) {
         let separated = true;
         for (let first = 0; first < weeds.length; first += 1) {
@@ -4005,8 +6342,12 @@
             const offsetY = b.y - a.y;
             const distance = Math.hypot(offsetX, offsetY);
             if (distance >= minimumDistance) continue;
-            const normalX = distance > 0 ? offsetX / distance : 1;
-            const normalY = distance > 0 ? offsetY / distance : 0;
+            const baseAngle = distance > 0 ? Math.atan2(offsetY, offsetX) : 0;
+            // A small angle jitter prevents perfectly aligned rows while keeping
+            // the push mostly along the shortest separation direction.
+            const angle = baseAngle + (random() - 0.5) * 0.28;
+            const normalX = Math.cos(angle);
+            const normalY = Math.sin(angle);
             const push = (minimumDistance - distance) / 2 + 0.01;
             a.x = clamp(a.x - normalX * push, a.radius, this.world.width - a.radius);
             a.y = clamp(a.y - normalY * push, a.radius, this.world.height - a.radius);
@@ -4017,6 +6358,14 @@
         }
         if (separated) break;
       }
+    }
+
+    separateStrongweeds() {
+      this.separateWeeds();
+    }
+
+    separateDandelionWeeds() {
+      this.separateWeeds();
     }
 
     spawnBoss() {
@@ -4030,11 +6379,21 @@
         ? DandelionBoss
         : bossConfig.type === "groundskeeper" ? GroundskeeperBoss
           : bossConfig.type === "pondfather" ? PondfatherBoss
-            : bossConfig.type === "pro-golfer" ? ProGolferBoss : Boss;
+            : bossConfig.type === "pro-golfer" ? ProGolferBoss
+              : bossConfig.type === "lily-queen" ? LilyQueenBoss
+                : bossConfig.type === "ancient-snail" ? AncientSnailBoss
+                  : bossConfig.type === "pe-teacher" ? PeTeacherBoss
+                    : bossConfig.type === "ball-launcher" ? BallLauncherBoss : Boss;
       const pond = this.currentMap.obstacles?.find((obstacle) => obstacle.kind === "lake");
       this.boss = new BossType({
-        x: bossConfig.type === "pondfather" && pond ? pond.x + pond.width / 2 : clamp(this.player.x + Math.cos(angle) * distance, 80, this.world.width - 80),
-        y: bossConfig.type === "pondfather" && pond ? pond.y + pond.height / 2 : clamp(this.player.y + Math.sin(angle) * distance, 80, this.world.height - 80),
+        x: bossConfig.type === "pondfather" && pond ? pond.x + pond.width / 2
+          : bossConfig.type === "lily-queen" ? this.world.width / 2
+            : bossConfig.type === "ball-launcher" ? this.world.width / 2
+            : clamp(this.player.x + Math.cos(angle) * distance, 80, this.world.width - 80),
+        y: bossConfig.type === "pondfather" && pond ? pond.y + pond.height / 2
+          : bossConfig.type === "lily-queen" ? this.world.height / 2
+            : bossConfig.type === "ball-launcher" ? this.world.height / 2
+            : clamp(this.player.y + Math.sin(angle) * distance, 80, this.world.height - 80),
         config: bossConfig,
         world: this.world,
       });
@@ -4100,6 +6459,53 @@
       }));
     }
 
+    fireSchoolBall(event, forcedKind = null, config = {}) {
+      const kinds = [
+        { kind: "soccer-ball", radius: 12, speed: config.ballSpeed ?? 440, damage: config.ballDamage ?? 18, color: "#f3f0df", knockback: 22 },
+        { kind: "basketball", radius: 14, speed: (config.ballSpeed ?? 440) * 0.82, damage: config.ballDamage ?? 18, color: "#d47736", knockback: 18, bounce: true },
+        { kind: "tennis-ball", radius: 7, speed: (config.ballSpeed ?? 440) * 1.65, damage: config.ballDamage ?? 18, color: "#d4e85e", knockback: 10 },
+        { kind: "volleyball", radius: 18, speed: (config.ballSpeed ?? 440) * 0.58, damage: config.ballDamage ?? 18, color: "#f0eee3", knockback: 75 },
+      ];
+      const selected = forcedKind === "dodgeball"
+        ? { kind: "dodgeball", radius: 13, speed: event.speed, damage: event.damage, color: "#d94f45", knockback: event.knockback }
+        : kinds[Math.floor((this.random ?? Math.random)() * kinds.length)];
+      const dx = event.targetX - event.x; const dy = event.targetY - event.y; const distance = Math.hypot(dx, dy) || 1;
+      this.bossProjectiles.push(new SchoolBallProjectile({
+        x: event.x, y: event.y, velocityX: dx / distance * selected.speed, velocityY: dy / distance * selected.speed,
+        damage: selected.damage, radius: selected.radius, kind: selected.kind, color: selected.color, knockback: selected.knockback,
+        bounce: selected.bounce,
+      }));
+    }
+
+    fireBallLauncherShot(event, config = {}) {
+      const roll = (this.random ?? Math.random)();
+      if (roll < 0.05) {
+        this.spawnSchoolFieldEnemyAt(event.x, event.y, true, "basketball");
+        return "basketball-enemy";
+      }
+      if (roll < 0.10) {
+        this.spawnSchoolFieldEnemyAt(event.x, event.y, true, "rogue-soccer-ball");
+        return "soccer-ball-enemy";
+      }
+      this.fireSchoolBall(event, null, config);
+      return "projectile";
+    }
+
+    fireSchoolBallDump(boss) {
+      const config = boss.config ?? {};
+      for (let index = 0; index < 10; index += 1) {
+        const angle = index / 10 * Math.PI * 2;
+        const kinds = ["soccer-ball", "basketball", "tennis-ball", "volleyball"];
+        const kind = kinds[index % kinds.length];
+        const settings = kind === "volleyball" ? { radius: 18, damage: config.dumpDamage ?? 22, speed: config.dumpSpeed ?? 360, color: "#f0eee3", knockback: 65 }
+          : kind === "tennis-ball" ? { radius: 7, damage: config.dumpDamage ?? 22, speed: (config.dumpSpeed ?? 360) * 1.35, color: "#d4e85e", knockback: 8 }
+            : kind === "basketball" ? { radius: 14, damage: config.dumpDamage ?? 22, speed: config.dumpSpeed ?? 360, color: "#d47736", knockback: 18, bounce: true }
+              : { radius: 12, damage: config.dumpDamage ?? 22, speed: config.dumpSpeed ?? 360, color: "#f3f0df", knockback: 20 };
+        this.bossProjectiles.push(new SchoolBallProjectile({ x: boss.x, y: boss.y, velocityX: Math.cos(angle) * settings.speed, velocityY: Math.sin(angle) * settings.speed, ...settings, kind }));
+      }
+      this.explosions.push({ x: boss.x, y: boss.y, lifetime: 0.5, maxLifetime: 0.5, radius: 82, ring: true, color: "#f0d96c" });
+    }
+
     fireProGolferAttack(boss, attack) {
       if (attack.type === "bomb") {
         this.bossProjectiles.push(new GolfBombProjectile({
@@ -4154,6 +6560,10 @@
     }
 
     spawnLandedEnemy(enemyType, x, y, bossMinion = false) {
+      if (enemyType === "strongweed") {
+        this.spawnStrongweedAt(x, y);
+        return;
+      }
       if (this.enemies.length >= MAX_ENEMIES) return;
       if (enemyType === "gopher") {
         const gopher = new Gopher({ x, y, bossMinion });
@@ -4180,28 +6590,104 @@
       }));
     }
 
-    damageEnemy(enemy, damage, lifestealRatio = 0) {
+    damageEnemy(enemy, damage, lifestealRatio = 0, weaponId = null) {
       const healthBefore = Number.isFinite(enemy.health) ? enemy.health : 0;
+      const shieldBefore = Number.isFinite(enemy.shield) ? enemy.shield : 0;
       if (this.bossSpawned && this.boss?.active && !enemy.isBoss && !enemy.bossMinion) damage *= 3;
       const defeated = enemy.takeDamage(damage);
-      const actualDamage = Math.max(0, healthBefore - (Number.isFinite(enemy.health) ? enemy.health : healthBefore));
-      if (lifestealRatio > 0 && actualDamage > 0) this.addLifesteal(actualDamage * lifestealRatio);
+      const healthDamage = Math.max(0, healthBefore - (Number.isFinite(enemy.health) ? enemy.health : healthBefore));
+      const shieldDamage = Math.max(0, shieldBefore - (Number.isFinite(enemy.shield) ? enemy.shield : shieldBefore));
+      const impactDamage = healthDamage + shieldDamage;
+      if (impactDamage > 0) {
+        const random = this.random ?? Math.random;
+        const impactStrength = enemy.isBoss ? 0.14 : Math.min(0.12, 0.045 + impactDamage * 0.002);
+        const impactDuration = enemy.isBoss ? 0.2 : 0.09;
+        const impactKick = enemy.isBoss ? 5 : Math.min(3, 1 + impactDamage * 0.03);
+        this.addScreenShake(
+          impactStrength,
+          impactDuration,
+          (random() - 0.5) * impactKick,
+          (random() - 0.5) * impactKick,
+        );
+        const radius = Math.max(10, Math.min(24, (enemy.radius ?? 16) * 0.8));
+        (this.hitEffects ??= []).push({
+          x: enemy.x,
+          y: enemy.y,
+          radius,
+          angle: random() * Math.PI * 2,
+          color: enemy.isBoss ? "#ffe07a" : "#fff1bf",
+          lifetime: 0.2,
+          maxLifetime: 0.2,
+        });
+        (this.floatingDamageNumbers ??= []).push({
+          x: enemy.x + (random() - 0.5) * 14,
+          y: enemy.y - (enemy.radius ?? 16) - 6,
+          text: `${Math.max(1, Math.round(impactDamage))}`,
+          color: enemy.isBoss ? "#ffe07a" : "#fff1bf",
+          lifetime: 0.7,
+          maxLifetime: 0.7,
+          riseSpeed: 34,
+          drift: (random() - 0.5) * 16,
+        });
+      }
+      if (lifestealRatio > 0 && healthDamage > 0) this.addLifesteal(healthDamage * lifestealRatio);
       if (defeated) {
+        this.addScreenShake(enemy.isBoss ? 0.16 : 0.1, enemy.isBoss ? 0.24 : 0.14);
+        // A compact pixel burst marks the exact frame an enemy is removed. Use
+        // the shared explosion renderer so it remains cheap even in large waves.
+        (this.explosions ??= []).push({
+          x: enemy.x,
+          y: enemy.y,
+          lifetime: enemy.isBoss ? 0.5 : 0.3,
+          maxLifetime: enemy.isBoss ? 0.5 : 0.3,
+          radius: enemy.isBoss ? 68 : Math.max(24, (enemy.radius ?? 16) * 1.35),
+          color: enemy.isBoss ? "#ffe07a" : "#f4c85d",
+        });
+        const random = this.random ?? Math.random;
+        const deathLifetime = enemy.isBoss ? 1.3 : 0.9;
+        (this.deathEffects ??= []).push({
+          enemy,
+          originX: enemy.x,
+          originY: enemy.y,
+          angle: random() * Math.PI * 2,
+          angularVelocity: (random() < 0.5 ? -1 : 1) * (7 + random() * 5),
+          spiralDistance: Math.max(22, (enemy.radius ?? 16) * 1.7),
+          fallX: (random() < 0.5 ? -1 : 1) * (28 + random() * 24),
+          fallY: 12 + random() * 18,
+          lifetime: deathLifetime,
+          maxLifetime: deathLifetime,
+        });
         const enemyType = enemy.enemyType ?? (enemy.isBoss ? "king-gnomulus" : "gnome");
         if (enemyType in this.progress.defeatedEnemies) {
           this.progress.defeatedEnemies[enemyType] += 1;
         }
+        const killQuestCoins = updateDailyQuestProgress(this.progress, { type: "enemy-kill", enemyType, weaponId });
+        updateSeasonQuestProgress(this.progress, { type: "enemy-kill", enemyType, weaponId });
+        if (killQuestCoins > 0) {
+          this.bankCoins = this.progress.coins;
+          this.menuMessage = `Daily quest complete: +${killQuestCoins} coins`;
+          this.savePermanentProgress();
+        }
         if (enemy.isBoss) {
+          if (enemy.enemyType === "ancient-snail") {
+            this.slimeTerrain = [];
+            this.activeObstacles = this.activeObstacles.filter((obstacle) => obstacle.kind !== "slime");
+            this.progress.shieldUnlocked = true;
+          }
           if (this.currentMap.bosses && this.bossIndex < this.currentMap.bosses.length - 1) {
             this.bossIndex += 1;
             this.firstBossDefeated = true;
             this.bossSpawned = false;
             this.boss = null;
-            this.bossNextSpawnTimer = 60;
+            this.bossNextSpawnTimer = this.currentMap.nextBossSpawnDelay ?? 60;
           } else {
             this.finishVictory();
           }
           return;
+        }
+        if ((this.random ?? Math.random)() < 0.01) {
+          const offset = randomDropOffset();
+          this.pickups.push(new Pickup({ x: enemy.x, y: enemy.y, type: "magnet", ...offset }));
         }
         const coinDropChance = enemy.coinDropChance ?? 1;
         if (coinDropChance >= 1 || (this.random ?? Math.random)() < coinDropChance) {
@@ -4218,15 +6704,18 @@
           }
         }
       }
-      return actualDamage;
+      return healthDamage;
     }
 
     detonateProjectile(projectile) {
       const radius = projectile.splashRadius || 0;
       this.explosions.push({ x: projectile.x, y: projectile.y, lifetime: 0.28, radius, color: projectile.color });
+      if (projectile.puddleDuration > 0) {
+        this.activeObstacles.push({ kind: "ice-puddle", x: projectile.x, y: projectile.y, radius: projectile.puddleRadius, width: projectile.puddleRadius * 2, height: projectile.puddleRadius * 2, lifetime: projectile.puddleDuration, solid: false });
+      }
       for (const enemy of this.enemies) {
         if (!enemy.active || enemy.targetable === false || Math.hypot(enemy.x - projectile.x, enemy.y - projectile.y) > radius) continue;
-        this.damageEnemy(enemy, projectile.damage, projectile.lifesteal);
+        this.damageEnemy(enemy, projectile.damage, projectile.lifesteal, projectile.weaponId);
         if (projectile.fireDuration > 0) applyFire(enemy, projectile.fireDamagePerSecond, projectile.fireDuration, projectile.fireMaxStacks);
         if (projectile.freezeDuration > 0) applyFreeze(enemy, projectile.freezeDuration);
       }
@@ -4238,6 +6727,7 @@
           radius: 7, explosive: false, detonateOnExpiry: true, splashRadius: projectile.splitRadius,
           splashDamageMultiplier: 0.7, fireDamagePerSecond: projectile.fireDamagePerSecond,
           fireDuration: projectile.fireDuration, fireMaxStacks: projectile.fireMaxStacks,
+          weaponId: projectile.weaponId,
         }));
       }
       projectile.splitCount = 0;
@@ -4257,6 +6747,10 @@
     }
 
     collectPickup(pickup) {
+      if (pickup.type === "magnet") {
+        this.magnetActive = true;
+        return;
+      }
       if (pickup.type === "coin") {
         this.runCoins += 1;
         return;
@@ -4272,8 +6766,10 @@
           3,
           this.appliedUpgradeIds,
           [this.progress.equippedWeapons.melee, this.progress.equippedWeapons.ranged],
+          this.currentMap.id,
         );
         this.screenState = "upgrade";
+        this.upgradeSelectionDelay = 0.5;
         this.input.pointer.down = false;
       }
     }
@@ -4289,6 +6785,24 @@
         this.appliedUpgradeIds.add(upgrade.id);
       }
       this.screenState = "running";
+      this.checkForPendingLevelUp();
+    }
+
+    checkForPendingLevelUp() {
+      if (this.screenState !== "running" || this.levelXp < this.xpToNextLevel) return;
+      this.levelXp -= this.xpToNextLevel;
+      this.runLevel += 1;
+      this.xpToNextLevel = xpRequiredForLevel(this.runLevel);
+      this.upgradeChoices = chooseRunUpgrades(
+        Math.random,
+        3,
+        this.appliedUpgradeIds,
+        [this.progress.equippedWeapons.melee, this.progress.equippedWeapons.ranged],
+        this.currentMap.id,
+      );
+      this.screenState = "upgrade";
+      this.upgradeSelectionDelay = 0.5;
+      this.input.pointer.down = false;
     }
 
     finishRun() {
@@ -4326,8 +6840,45 @@
         weaponStatsAtLevel(baseWeapon, effectiveLevel),
         this.player,
       );
+      const fireFeedback = weapon.slot === "melee" ? null : rangedFireFeedback(weapon);
       this.attackCooldowns[this.weaponSlot] = weapon.cooldown * this.player.cooldownMultiplier;
       this.attackCooldown = this.attackCooldowns[this.weaponSlot];
+      const aimAngle = weapon.slot === "melee"
+        ? this.player.facing
+        : Math.atan2(aimPoint.y - this.player.y, aimPoint.x - this.player.x);
+      (this.attackEffects ??= []).push({
+        x: this.player.x,
+        y: this.player.y - 8,
+        angle: aimAngle,
+        color: weapon.color ?? "#f4d36c",
+        kind: weapon.slot === "melee" ? "melee" : "muzzle",
+        radius: weapon.range ?? 42,
+        strength: fireFeedback?.strength ?? 1,
+        lengthMultiplier: fireFeedback?.lengthMultiplier ?? 1,
+        lifetime: fireFeedback?.lifetime ?? 0.18,
+        maxLifetime: fireFeedback?.lifetime ?? 0.18,
+      });
+      if (fireFeedback) {
+        const flashX = this.player.x + Math.cos(aimAngle) * 24;
+        const flashY = this.player.y + Math.sin(aimAngle) * 24;
+        (this.weaponFlashes ??= []).push({
+          x: flashX,
+          y: flashY,
+          radius: 144 * (fireFeedback?.radiusMultiplier ?? 1),
+          strength: fireFeedback.strength,
+          lifetime: fireFeedback.lifetime,
+          maxLifetime: fireFeedback.lifetime,
+        });
+      }
+      const shakeStrength = weapon.slot === "melee" ? 0.1 : 0.08 + (fireFeedback?.strength ?? 1) * 0.025;
+      const shakeDuration = weapon.slot === "melee" ? 0.16 : 0.09 + (fireFeedback?.lifetime ?? 0.11) * 0.24;
+      const screenKick = weapon.slot === "melee" ? 2.5 : 4 + (fireFeedback?.strength ?? 1) * 2;
+      this.addScreenShake(
+        shakeStrength,
+        shakeDuration,
+        -Math.cos(aimAngle) * screenKick,
+        -Math.sin(aimAngle) * screenKick,
+      );
 
       if (weapon.slot === "melee") {
         this.meleePulse = 0.16;
@@ -4336,7 +6887,7 @@
           for (const enemy of this.enemies) {
             if (enemy.active && enemy.targetable !== false
               && isEnemyHitByMelee(this.player, enemy, weapon, this.player.meleeRangeMultiplier)) {
-              this.damageEnemy(enemy, Math.round(weapon.damage * this.player.damageMultiplier), weapon.lifesteal);
+              this.damageEnemy(enemy, Math.round(weapon.damage * this.player.damageMultiplier), weapon.lifesteal, weaponId);
               applyKnockback(enemy, this.player.x, this.player.y, weapon.knockback, this.world);
               if (enemy.active && weapon.knockbackCollisionDamage > 0) {
                 for (const otherEnemy of this.enemies) {
@@ -4360,8 +6911,150 @@
       const offsetX = aimPoint.x - this.player.x;
       const offsetY = aimPoint.y - this.player.y;
       const holdMultiplier = 1 + Math.min(1, this.player.attackHoldTime * 0.35);
+      this.applyWeaponKickback(weapon, aimAngle, holdMultiplier);
       const shotRecoil = weapon.perfectAccuracy ? 0 : (weapon.recoil + this.player.recoil) / this.player.accuracy;
-      const bonusAppleProjectiles = weaponId === "apples" ? this.player.appleCount - 1 : 0;
+      if (weapon.projectileKind === "sprinkler-mine") {
+        if (this.sprinklerMines.length >= weapon.maxMines) this.sprinklerMines.shift();
+        this.sprinklerMines.push({ x: this.player.x, y: this.player.y, active: true, warningTime: weapon.mineWarningDuration, triggerRadius: weapon.mineTriggerRadius, explosionRadius: weapon.mineExplosionRadius, damage: weapon.damage * this.player.damageMultiplier, freezeDuration: weapon.freezeDuration, color: weapon.color });
+        return;
+      }
+      if (weapon.projectileKind === "bug-zapper") {
+        this.bugZappers.push({ x: this.player.x, y: this.player.y, active: true, lifetime: weapon.zapperDuration, cooldown: 0, zapCooldown: weapon.zapCooldown, range: weapon.zapperRange, damage: weapon.damage * this.player.damageMultiplier, chainCount: weapon.chainCount, chainDamageMultiplier: weapon.chainDamageMultiplier, color: weapon.color });
+        return;
+      }
+      if (weapon.projectileKind === "garden-gnome") {
+        const count = weapon.decoyCount ?? 1;
+        for (let index = 0; index < count; index += 1) {
+          const angle = count === 1 ? 0 : index / count * Math.PI * 2;
+          this.gardenDecoys.push({ x: this.player.x + Math.cos(angle) * 28, y: this.player.y + Math.sin(angle) * 28, radius: weapon.projectileRadius, health: weapon.decoyHealth, lifetime: weapon.decoyDuration, explosionDamage: weapon.decoyExplosionDamage * this.player.damageMultiplier, explosionRadius: weapon.decoyExplosionRadius, color: weapon.color, active: true });
+        }
+        return;
+      }
+      if (weapon.projectileKind === "pebble") {
+        const count = weapon.burstCount ?? 3;
+        for (let index = 0; index < count; index += 1) {
+          this.pendingBurstShots.push({ delay: index * (weapon.burstInterval ?? 0.09), angle: Math.atan2(offsetY, offsetX) + (index - (count - 1) / 2) * (weapon.burstSpacing ?? 0.14) + (Math.random() - 0.5) * shotRecoil, weapon, damage: weapon.damage * this.player.damageMultiplier });
+        }
+        this.player.addRecoil(weapon.recoil * holdMultiplier);
+        return;
+      }
+      if (weapon.id === "ordinance-undefined") {
+        const aimAngle = Math.atan2(offsetY, offsetX);
+        const burstRounds = weapon.burstRounds ?? 2;
+        for (let burst = 0; burst < burstRounds; burst += 1) {
+          for (let index = 0; index < weapon.projectileCount; index += 1) {
+            const fanOffset = (index - (weapon.projectileCount - 1) / 2) * (weapon.fanSpacing ?? 0.14);
+            const jitter = weapon.spread ? (Math.random() - 0.5) * weapon.spread : 0;
+            const angle = aimAngle + fanOffset + jitter + (Math.random() - 0.5) * shotRecoil * 2;
+            this.pendingBurstShots.push({
+              delay: burst * weapon.burstInterval,
+              projectileOptions: {
+                x: this.player.x, y: this.player.y - 8,
+                velocityX: Math.cos(angle) * weapon.projectileSpeed,
+                velocityY: Math.sin(angle) * weapon.projectileSpeed,
+                damage: Math.round(weapon.damage * this.player.damageMultiplier),
+                lifetime: weapon.projectileLifetime, kind: weapon.projectileKind,
+                color: weapon.color, radius: weapon.projectileRadius,
+                explosive: true, splashRadius: weapon.splashRadius,
+                bounces: weapon.bounces, pierces: weapon.pierces,
+                knockback: weapon.knockback, weaponId: weapon.id,
+              },
+            });
+          }
+        }
+        this.player.addRecoil(weapon.recoil * holdMultiplier);
+        return;
+      }
+      if (weapon.projectileKind === "leaf-tornado") {
+        const count = weapon.projectileCount ?? 1;
+        const aimAngle = Math.atan2(offsetY, offsetX);
+        for (let index = 0; index < count; index += 1) {
+          const angle = aimAngle + (index - (count - 1) / 2) * 0.16;
+          this.leafTornadoes.push({
+            x: this.player.x, y: this.player.y - 8,
+            velocityX: Math.cos(angle) * weapon.projectileSpeed,
+            velocityY: Math.sin(angle) * weapon.projectileSpeed,
+            lifetime: weapon.projectileLifetime, radius: weapon.projectileRadius,
+            pullRadius: weapon.tornadoPullRadius, pullForce: weapon.tornadoPullForce,
+            tick: 0, tickInterval: weapon.tornadoTickInterval,
+            damage: weapon.damage * this.player.damageMultiplier, color: weapon.color, active: true,
+          });
+        }
+        return;
+      }
+      if (weapon.projectileKind === "polarity") {
+        const angle = Math.atan2(offsetY, offsetX) + (Math.random() - 0.5) * shotRecoil * 2;
+        this.projectiles.push(new Projectile({
+          x: this.player.x, y: this.player.y - 8,
+          velocityX: Math.cos(angle) * weapon.projectileSpeed, velocityY: Math.sin(angle) * weapon.projectileSpeed,
+          damage: Math.round(weapon.damage * this.player.damageMultiplier), lifetime: weapon.projectileLifetime,
+          kind: weapon.projectileKind, color: weapon.color, radius: weapon.projectileRadius,
+          polarity: this.polarityNext, polarityRadius: weapon.polarityRadius, polarityForce: weapon.polarityForce, freezeDuration: weapon.freezeDuration,
+          detonateOnExpiry: true,
+        }));
+        this.polarityNext = this.polarityNext === "pull" ? "push" : "pull";
+        this.player.addRecoil(weapon.recoil * holdMultiplier);
+        return;
+      }
+      if (weapon.projectileKind === "horseshoe") {
+        const count = weapon.projectileCount ?? 1;
+        const aimAngle = Math.atan2(offsetY, offsetX);
+        for (let index = 0; index < count; index += 1) {
+          const angle = aimAngle + (index - (count - 1) / 2) * 0.2;
+          const horseshoe = new Projectile({
+            x: this.player.x, y: this.player.y - 8, velocityX: Math.cos(angle) * weapon.projectileSpeed, velocityY: Math.sin(angle) * weapon.projectileSpeed,
+            damage: Math.round(weapon.damage * this.player.damageMultiplier), lifetime: weapon.projectileLifetime,
+            kind: weapon.projectileKind, color: weapon.color, radius: weapon.projectileRadius,
+            pierces: weapon.pierces,
+            horseshoe: true, horseshoeRange: weapon.horseshoeRange, horseshoeArc: weapon.horseshoeArc,
+          });
+          horseshoe.horseshoeDirection = index % 2 === 0 ? 1 : -1;
+          this.projectiles.push(horseshoe);
+        }
+        this.player.addRecoil(weapon.recoil * holdMultiplier);
+        return;
+      }
+      if (weapon.projectileKind === "jumper-cables") {
+        const targets = [];
+        let origin = { x: aimPoint.x, y: aimPoint.y };
+        for (let jump = 0; jump < weapon.maxChainJumps; jump += 1) {
+          const target = this.enemies
+            .filter((enemy) => enemy.active && enemy.targetable !== false && !targets.includes(enemy))
+            .sort((a, b) => Math.hypot(a.x - origin.x, a.y - origin.y) - Math.hypot(b.x - origin.x, b.y - origin.y))[0];
+          if (!target || (targets.length > 0 && Math.hypot(target.x - origin.x, target.y - origin.y) > weapon.chainRange)) break;
+          const previous = targets.length ? targets[targets.length - 1] : { x: this.player.x, y: this.player.y - 8 };
+          targets.push(target);
+          this.lightningArcs.push({ x1: previous.x, y1: previous.y, x2: target.x, y2: target.y, lifetime: 0.24, color: weapon.color });
+          const falloff = weapon.chainFalloff === 1 ? 1 : weapon.chainFalloff ** (targets.length - 1);
+          this.damageEnemy(target, weapon.damage * this.player.damageMultiplier * falloff);
+          origin = target;
+        }
+        return;
+      }
+      if (weapon.projectileKind === "lightning-rod") {
+        if (this.lightningRods.length >= weapon.rodMax) this.lightningRods.shift();
+        this.lightningRods.push({ x: this.player.x, y: this.player.y, active: true, lifetime: weapon.rodDuration, strikeTimer: 0, strikeInterval: weapon.rodStrikeInterval, radius: weapon.rodRadius, chainRange: weapon.rodChainRange, chainCount: weapon.rodChainCount ?? 10, damage: weapon.damage * this.player.damageMultiplier, color: weapon.color, flash: 0 });
+        return;
+      }
+      if (weapon.projectileKind === "garden-mirror") {
+        const count = weapon.projectileCount ?? 1;
+        for (let index = 0; index < count; index += 1) {
+          const angle = count === 1 ? 0 : index / count * Math.PI * 2;
+          if (this.gardenMirrors.length >= weapon.mirrorMax) this.gardenMirrors.shift();
+          this.gardenMirrors.push({ x: this.player.x + Math.cos(angle) * 26, y: this.player.y + Math.sin(angle) * 26, radius: 22, lifetime: weapon.mirrorDuration, damageMultiplier: weapon.mirrorDamageMultiplier, active: true, flash: 0 });
+        }
+        return;
+      }
+      if (weapon.projectileKind === "doorbell") {
+        if (this.doorbells.length >= 3) this.doorbells.shift();
+        this.doorbells.push({ x: this.player.x, y: this.player.y, active: true, lifetime: weapon.doorbellDuration, ringTimer: 0, interval: weapon.doorbellInterval, radius: weapon.doorbellRadius, ringCount: weapon.doorbellRingCount, outerMultiplier: weapon.doorbellOuterMultiplier, damage: weapon.damage * this.player.damageMultiplier, color: weapon.color });
+        return;
+      }
+      if (weapon.projectileKind === "orbital-sprinkler") {
+        this.orbitalStrikes.push({ x: aimPoint.x, y: aimPoint.y, active: true, delay: weapon.orbitalDelay, radius: weapon.orbitalRadius, damage: weapon.damage * this.player.damageMultiplier, radialCount: weapon.radialCount, radialDamage: weapon.radialDamage * this.player.damageMultiplier, radialSpeed: weapon.radialSpeed, radialLifetime: weapon.radialLifetime, bossDamageMultiplier: 0.3, color: weapon.color, second: weapon.orbitalSecondStrike, didSecond: false });
+        return;
+      }
+      const bonusAppleProjectiles = (weaponId === "apples" || weaponId === "rainbow-apples") ? this.player.appleCount - 1 : 0;
       const projectileCount = weapon.projectileCount + bonusAppleProjectiles;
       const projectilesPerRound = weapon.projectilesPerRound ?? projectileCount;
       const rounds = weapon.rounds ?? 1;
@@ -4384,7 +7077,7 @@
           damage: Math.round(weapon.damage * this.player.damageMultiplier),
           lifetime: weapon.projectileLifetime,
           kind: weapon.projectileKind,
-          color: weapon.color,
+          color: weaponId === "party-hat" ? `hsl(${(index * 53 + Date.now() / 18) % 360} 90% 60%)` : weapon.color,
           radius: weapon.projectileRadius * (weapon.projectileRadiusMultiplier ?? 1),
           endSpeedMultiplier: weapon.endSpeedMultiplier,
           speedCurve: weapon.speedCurve,
@@ -4401,13 +7094,224 @@
           fireMaxStacks: weapon.fireMaxStacks,
           freezeDuration: weapon.freezeDuration,
           gravityPull: weapon.gravityPull, splitCount: weapon.splitCount, splitDamage: weapon.splitDamage, splitRadius: weapon.splitRadius,
+          polarity: weapon.polarity, polarityRadius: weapon.polarityRadius, polarityForce: weapon.polarityForce,
           detonateOnExpiry: weapon.detonateOnExpiry,
+          puddleDuration: weapon.puddleDuration, puddleRadius: weapon.puddleRadius,
+          boomerang: weapon.projectileKind === "trash-can-lid", boomerangRange: weapon.boomerangRange, returnSpeed: weapon.returnSpeed, returnDamageMultiplier: weapon.returnDamageMultiplier,
+          fertilizerCloudRadius: weapon.fertilizerCloudRadius, fertilizerCloudDuration: weapon.fertilizerCloudDuration, fertilizerTickInterval: weapon.fertilizerTickInterval,
           boundaryBounces: weapon.boundaryBounces,
           allowRepeatBounces: weapon.allowRepeatBounces,
+          weaponId,
         }));
         }
       }
       this.player.addRecoil(weapon.recoil * holdMultiplier);
+    }
+
+    updatePendingBurstShots(deltaTime) {
+      for (const shot of this.pendingBurstShots) {
+        shot.delay -= deltaTime;
+        if (shot.delay <= 0 && !shot.fired) {
+          shot.fired = true;
+          this.projectiles.push(new Projectile(shot.projectileOptions ?? {
+            x: this.player.x, y: this.player.y - 8,
+            velocityX: Math.cos(shot.angle) * shot.weapon.projectileSpeed,
+            velocityY: Math.sin(shot.angle) * shot.weapon.projectileSpeed,
+            damage: shot.damage, lifetime: shot.weapon.projectileLifetime,
+            kind: shot.weapon.projectileKind, color: shot.weapon.color, radius: shot.weapon.projectileRadius,
+            weaponId: shot.weapon.id,
+          }));
+        }
+      }
+      this.pendingBurstShots = this.pendingBurstShots.filter((shot) => !shot.fired);
+    }
+
+    updateWeaponDeployables(deltaTime) {
+      for (const tornado of this.leafTornadoes) {
+        if (!tornado.active) continue;
+        tornado.x += tornado.velocityX * deltaTime; tornado.y += tornado.velocityY * deltaTime;
+        tornado.lifetime -= deltaTime; tornado.tick -= deltaTime;
+        for (const enemy of this.enemies) {
+          if (!enemy.active || enemy.targetable === false) continue;
+          const dx = tornado.x - enemy.x; const dy = tornado.y - enemy.y; const distance = Math.hypot(dx, dy) || 1;
+          if (distance <= tornado.pullRadius) {
+            const pull = tornado.pullForce * deltaTime * Math.max(0.15, 1 - distance / tornado.pullRadius);
+            enemy.x += dx / distance * pull; enemy.y += dy / distance * pull;
+            if (tornado.tick <= 0) this.damageEnemy(enemy, tornado.damage);
+          }
+        }
+        if (tornado.tick <= 0) tornado.tick = tornado.tickInterval;
+        if (tornado.lifetime <= 0 || tornado.x < -80 || tornado.y < -80 || tornado.x > this.world.width + 80 || tornado.y > this.world.height + 80) tornado.active = false;
+      }
+      this.leafTornadoes = this.leafTornadoes.filter((tornado) => tornado.active);
+
+      for (const rod of this.lightningRods) {
+        if (!rod.active) continue;
+        rod.lifetime -= deltaTime; rod.strikeTimer -= deltaTime; rod.flash = Math.max(0, (rod.flash ?? 0) - deltaTime);
+        if (rod.strikeTimer <= 0) { this.strikeLightningRod(rod); rod.strikeTimer = rod.strikeInterval; }
+        if (rod.lifetime <= 0) rod.active = false;
+      }
+      this.lightningRods = this.lightningRods.filter((rod) => rod.active);
+
+      for (const mirror of this.gardenMirrors) {
+        if (!mirror.active) continue;
+        mirror.lifetime -= deltaTime; mirror.flash = Math.max(0, (mirror.flash ?? 0) - deltaTime);
+        if (mirror.lifetime <= 0) mirror.active = false;
+      }
+      this.gardenMirrors = this.gardenMirrors.filter((mirror) => mirror.active);
+
+      for (const bell of this.doorbells) {
+        if (!bell.active) continue;
+        bell.lifetime -= deltaTime; bell.ringTimer -= deltaTime;
+        if (bell.ringTimer <= 0) {
+          for (let index = 0; index < bell.ringCount; index += 1) this.doorbellWaves.push({ x: bell.x, y: bell.y, radius: 12 + index * 8, maxRadius: bell.radius, speed: 250, damage: bell.damage, outerMultiplier: bell.outerMultiplier, active: true, hitEnemies: new Set() });
+          bell.ringTimer = bell.interval;
+        }
+        if (bell.lifetime <= 0) bell.active = false;
+      }
+      this.doorbells = this.doorbells.filter((bell) => bell.active);
+      for (const wave of this.doorbellWaves) {
+        if (!wave.active) continue;
+        const previousRadius = wave.radius; wave.radius += wave.speed * deltaTime;
+        for (const enemy of this.enemies) {
+          if (!enemy.active || enemy.targetable === false || wave.hitEnemies.has(enemy)) continue;
+          const distance = Math.hypot(enemy.x - wave.x, enemy.y - wave.y);
+          if (distance >= previousRadius && distance < wave.radius + enemy.radius) {
+            wave.hitEnemies.add(enemy);
+            this.damageEnemy(enemy, wave.damage * (distance > wave.maxRadius * 0.72 ? wave.outerMultiplier : 1));
+          }
+        }
+        if (wave.radius >= wave.maxRadius) wave.active = false;
+      }
+      this.doorbellWaves = this.doorbellWaves.filter((wave) => wave.active);
+
+      for (const strike of this.orbitalStrikes) {
+        if (!strike.active) continue;
+        strike.delay -= deltaTime;
+        if (strike.delay <= 0) {
+          this.explosions.push({ x: strike.x, y: strike.y, lifetime: 0.5, radius: strike.radius, color: strike.color });
+          for (const enemy of this.enemies) if (enemy.active && Math.hypot(enemy.x - strike.x, enemy.y - strike.y) <= strike.radius) {
+            const damage = enemy.isBoss ? strike.damage * strike.bossDamageMultiplier : strike.damage;
+            this.damageEnemy(enemy, damage);
+          }
+          for (let index = 0; index < strike.radialCount; index += 1) {
+            const angle = index / strike.radialCount * Math.PI * 2;
+            this.projectiles.push(new Projectile({ x: strike.x, y: strike.y, velocityX: Math.cos(angle) * strike.radialSpeed, velocityY: Math.sin(angle) * strike.radialSpeed, damage: strike.radialDamage, lifetime: strike.radialLifetime, kind: "orbital-water", color: strike.color, radius: 7, bossDamageMultiplier: strike.bossDamageMultiplier }));
+          }
+          if (strike.second && !strike.didSecond) { strike.didSecond = true; strike.delay = 0.65; continue; }
+          strike.active = false;
+        }
+      }
+      this.orbitalStrikes = this.orbitalStrikes.filter((strike) => strike.active);
+      this.lightningArcs = this.lightningArcs.filter((arc) => (arc.lifetime -= deltaTime) > 0);
+      this.polarityPulses = this.polarityPulses.filter((pulse) => (pulse.lifetime -= deltaTime) > 0);
+      for (const mine of this.sprinklerMines) {
+        if (!mine.active) continue;
+        mine.warningTime -= deltaTime;
+        const target = this.enemies.find((enemy) => enemy.active && enemy.targetable !== false
+          && Math.hypot(enemy.x - mine.x, enemy.y - mine.y) <= mine.triggerRadius + enemy.radius);
+        if (target && mine.warningTime <= 0) {
+          this.explosions.push({ x: mine.x, y: mine.y, lifetime: 0.32, radius: mine.explosionRadius, color: mine.color });
+          for (const enemy of this.enemies) {
+            if (!enemy.active || Math.hypot(enemy.x - mine.x, enemy.y - mine.y) > mine.explosionRadius) continue;
+            this.damageEnemy(enemy, mine.damage);
+            if (enemy.active) applyFreeze(enemy, mine.freezeDuration);
+          }
+          mine.active = false;
+        }
+      }
+      this.sprinklerMines = this.sprinklerMines.filter((mine) => mine.active);
+
+      for (const zapper of this.bugZappers) {
+        if (!zapper.active) continue;
+        zapper.lifetime -= deltaTime; zapper.cooldown -= deltaTime;
+        if (zapper.lifetime <= 0) { zapper.active = false; continue; }
+        if (zapper.cooldown <= 0) {
+          const candidates = this.enemies.filter((enemy) => enemy.active && enemy.targetable !== false
+            && Math.hypot(enemy.x - zapper.x, enemy.y - zapper.y) <= zapper.range).sort((a, b) => Math.hypot(a.x - zapper.x, a.y - zapper.y) - Math.hypot(b.x - zapper.x, b.y - zapper.y));
+          const targets = candidates.slice(0, 1 + zapper.chainCount);
+          targets.forEach((enemy, index) => this.damageEnemy(enemy, zapper.damage * (index ? zapper.chainDamageMultiplier : 1)));
+          if (targets.length) this.explosions.push({ x: zapper.x, y: zapper.y, lifetime: 0.18, radius: zapper.range * 0.18, color: zapper.color, ring: true });
+          zapper.cooldown = zapper.zapCooldown;
+        }
+      }
+      this.bugZappers = this.bugZappers.filter((zapper) => zapper.active);
+
+      for (const decoy of this.gardenDecoys) {
+        if (!decoy.active) continue;
+        decoy.lifetime -= deltaTime;
+        for (const enemy of this.enemies) {
+          if (enemy.active && !enemy.isBoss && Math.hypot(enemy.x - decoy.x, enemy.y - decoy.y) <= enemy.radius + decoy.radius) {
+            decoy.health -= (enemy.damage ?? 4) * deltaTime;
+          }
+        }
+        if (decoy.lifetime <= 0 || decoy.health <= 0) {
+          this.explosions.push({ x: decoy.x, y: decoy.y, lifetime: 0.3, radius: decoy.explosionRadius, color: decoy.color });
+          for (const enemy of this.enemies) if (enemy.active && Math.hypot(enemy.x - decoy.x, enemy.y - decoy.y) <= decoy.explosionRadius) this.damageEnemy(enemy, decoy.explosionDamage);
+          decoy.active = false;
+        }
+      }
+      this.gardenDecoys = this.gardenDecoys.filter((decoy) => decoy.active);
+
+      for (const cloud of this.fertilizerClouds) {
+        if (!cloud.active) continue;
+        cloud.lifetime -= deltaTime; cloud.tick -= deltaTime;
+        if (cloud.tick <= 0) {
+          for (const enemy of this.enemies) if (enemy.active && Math.hypot(enemy.x - cloud.x, enemy.y - cloud.y) <= cloud.radius) this.damageEnemy(enemy, cloud.damage);
+          cloud.tick = cloud.tickInterval;
+        }
+        if (cloud.lifetime <= 0) cloud.active = false;
+      }
+      this.fertilizerClouds = this.fertilizerClouds.filter((cloud) => cloud.active);
+    }
+
+    strikeLightningRod(rod) {
+      rod.flash = 0.2;
+      this.lightningArcs.push({ x1: rod.x, y1: rod.y - 180, x2: rod.x, y2: rod.y, lifetime: 0.22, color: rod.color });
+      const struckEnemies = new Set();
+      for (const enemy of this.enemies) {
+        if (enemy.active && Math.hypot(enemy.x - rod.x, enemy.y - rod.y) <= rod.radius) {
+          struckEnemies.add(enemy);
+          this.damageEnemy(enemy, rod.damage);
+        }
+      }
+      let previous = { x: rod.x, y: rod.y };
+      for (let jump = 0; jump < (rod.chainCount ?? 0); jump += 1) {
+        const target = this.enemies
+          .filter((enemy) => enemy.active && enemy.targetable !== false && !struckEnemies.has(enemy))
+          .sort((a, b) => Math.hypot(a.x - previous.x, a.y - previous.y) - Math.hypot(b.x - previous.x, b.y - previous.y))[0];
+        if (!target || Math.hypot(target.x - previous.x, target.y - previous.y) > rod.chainRange) break;
+        this.lightningArcs.push({ x1: previous.x, y1: previous.y, x2: target.x, y2: target.y, lifetime: 0.22, color: rod.color });
+        this.damageEnemy(target, rod.damage * 0.5);
+        struckEnemies.add(target);
+        previous = target;
+      }
+      for (const other of this.lightningRods) if (other !== rod && other.active && Math.hypot(other.x - rod.x, other.y - rod.y) <= rod.chainRange) {
+        this.lightningArcs.push({ x1: rod.x, y1: rod.y, x2: other.x, y2: other.y, lifetime: 0.22, color: rod.color });
+        for (const enemy of this.enemies) if (enemy.active && Math.hypot(enemy.x - (rod.x + other.x) / 2, enemy.y - (rod.y + other.y) / 2) <= 35) this.damageEnemy(enemy, rod.damage * 0.5);
+      }
+    }
+
+    detonatePolarityProjectile(projectile) {
+      const radius = projectile.polarityRadius || 82;
+      const pull = projectile.polarity === "pull";
+      this.polarityPulses.push({ x: projectile.x, y: projectile.y, radius, polarity: projectile.polarity, lifetime: 0.28, color: projectile.color });
+      this.explosions.push({ x: projectile.x, y: projectile.y, lifetime: 0.28, radius, color: projectile.color, ring: true });
+      for (const enemy of this.enemies) {
+        if (!enemy.active || enemy.targetable === false) continue;
+        const dx = projectile.x - enemy.x; const dy = projectile.y - enemy.y; const distance = Math.hypot(dx, dy) || 1;
+        if (distance > radius) continue;
+        this.damageEnemy(enemy, projectile.damage * 0.65);
+        if (projectile.freezeDuration > 0) applyFreeze(enemy, projectile.freezeDuration);
+        const direction = pull ? 1 : -1;
+        const force = projectile.polarityForce * direction * (1 - distance / radius);
+        enemy.x += dx / distance * force; enemy.y += dy / distance * force;
+      }
+    }
+
+    createFertilizerCloud(x, y, projectile) {
+      this.explosions.push({ x, y, lifetime: 0.25, radius: projectile.fertilizerCloudRadius, color: projectile.color, ring: true });
+      this.fertilizerClouds.push({ x, y, radius: projectile.fertilizerCloudRadius, lifetime: projectile.fertilizerCloudDuration, tick: 0, tickInterval: projectile.fertilizerTickInterval, damage: projectile.damage, color: projectile.color, active: true });
     }
 
     updatePassiveAbilities(deltaTime) {
@@ -4446,6 +7350,14 @@
           }
           this.explosions.push({ x: this.player.x, y: this.player.y, lifetime: 0.35, maxLifetime: 0.35, radius: 170, color: "#e5ca58" });
           this.passiveCooldowns.scarecrow = 5;
+        }
+      }
+      if (this.player.flamingoTube) {
+        const radius = 105;
+        for (const enemy of this.enemies) {
+          if (enemy.active && enemy.targetable !== false && distanceBetween(enemy, this.player) <= radius) {
+            applyKnockback(enemy, this.player.x, this.player.y, 90 * deltaTime, this.world);
+          }
         }
       }
 
@@ -4505,7 +7417,7 @@
       context.fillStyle = hovered ? (options.hoverText ?? "#242116") : (options.text ?? "#f3e7bd");
       context.font = options.font ?? "bold 13px 'Courier New', monospace";
       context.textAlign = "center";
-      context.fillText(label, x + width / 2, y + height / 2 + 5);
+      context.fillText(label, x + width / 2, options.textY ?? y + height / 2 + 5);
       this.uiHitTargets.push({ x, y, width, height, action });
     }
 
@@ -4519,6 +7431,76 @@
       }
     }
 
+    renderWeaponDeployables(context) {
+      for (const tornado of this.leafTornadoes) {
+        const x = Math.round(tornado.x - this.camera.x); const y = Math.round(tornado.y - this.camera.y);
+        context.save(); context.globalAlpha = Math.max(0.18, Math.min(1, tornado.lifetime / 0.8));
+        context.fillStyle = "rgba(182,201,87,0.22)"; context.beginPath(); context.arc(x, y, tornado.radius, 0, Math.PI * 2); context.fill();
+        context.strokeStyle = tornado.color; context.lineWidth = 4; context.beginPath(); context.arc(x, y, tornado.radius * 0.7, 0, Math.PI * 1.5); context.stroke(); context.restore();
+      }
+      for (const rod of this.lightningRods) {
+        const x = Math.round(rod.x - this.camera.x); const y = Math.round(rod.y - this.camera.y);
+        context.fillStyle = "#53606c"; context.fillRect(x - 4, y - 24, 8, 30); context.fillStyle = rod.color; context.fillRect(x - 8, y - 27, 16, 5);
+        context.strokeStyle = "rgba(233,237,255,0.2)"; context.beginPath(); context.arc(x, y, rod.radius, 0, Math.PI * 2); context.stroke();
+        if (rod.flash > 0) { context.globalAlpha = rod.flash / 0.2; context.strokeStyle = rod.color; context.lineWidth = 4; context.beginPath(); context.moveTo(x, y - 180); context.lineTo(x, y); context.stroke(); context.globalAlpha = 1; }
+      }
+      for (const mirror of this.gardenMirrors) {
+        const x = Math.round(mirror.x - this.camera.x); const y = Math.round(mirror.y - this.camera.y);
+        context.save(); context.globalAlpha = mirror.flash > 0 ? 1 : 0.82; context.fillStyle = "#456070"; context.fillRect(x - 10, y - 16, 20, 32); context.fillStyle = "#bdeff6"; context.fillRect(x - 7, y - 13, 14, 26); context.fillStyle = "#ffffff"; context.fillRect(x - 5, y - 10, 3, 16); context.restore();
+      }
+      for (const bell of this.doorbells) {
+        const x = Math.round(bell.x - this.camera.x); const y = Math.round(bell.y - this.camera.y);
+        context.fillStyle = "#80552c"; context.fillRect(x - 10, y + 5, 20, 5); context.fillStyle = bell.color; context.fillRect(x - 8, y - 10, 16, 16);
+      }
+      for (const wave of this.doorbellWaves) {
+        const x = Math.round(wave.x - this.camera.x); const y = Math.round(wave.y - this.camera.y);
+        context.globalAlpha = 0.45; context.strokeStyle = "#f1d079"; context.lineWidth = 3; context.beginPath(); context.arc(x, y, wave.radius, 0, Math.PI * 2); context.stroke(); context.globalAlpha = 1;
+      }
+      for (const strike of this.orbitalStrikes) {
+        if (!strike.active || strike.delay <= 0) continue;
+        const x = Math.round(strike.x - this.camera.x); const y = Math.round(strike.y - this.camera.y);
+        context.globalAlpha = 0.45; context.strokeStyle = strike.color; context.lineWidth = 3; context.beginPath(); context.arc(x, y, strike.radius, 0, Math.PI * 2); context.stroke(); context.globalAlpha = 1;
+      }
+      for (const arc of this.lightningArcs) {
+        context.globalAlpha = Math.min(1, arc.lifetime / 0.12); context.strokeStyle = arc.color ?? "#e9edff"; context.lineWidth = 3; context.beginPath(); context.moveTo(arc.x1 - this.camera.x, arc.y1 - this.camera.y); context.lineTo(arc.x2 - this.camera.x, arc.y2 - this.camera.y); context.stroke(); context.globalAlpha = 1;
+      }
+      for (const pulse of this.polarityPulses) {
+        const x = Math.round(pulse.x - this.camera.x); const y = Math.round(pulse.y - this.camera.y);
+        context.globalAlpha = pulse.lifetime / 0.28; context.strokeStyle = pulse.polarity === "pull" ? "#b98cff" : "#ff9a75"; context.lineWidth = 4; context.beginPath(); context.arc(x, y, pulse.radius * (1 - pulse.lifetime / 0.28 * 0.35), 0, Math.PI * 2); context.stroke(); context.globalAlpha = 1;
+      }
+      for (const mine of this.sprinklerMines) {
+        const x = Math.round(mine.x - this.camera.x); const y = Math.round(mine.y - this.camera.y);
+        context.save(); context.globalAlpha = mine.warningTime > 0 ? 0.45 : 1;
+        context.fillStyle = mine.color; context.fillRect(x - 9, y - 9, 18, 18);
+        context.strokeStyle = mine.color; context.lineWidth = 2; context.strokeRect(x - mine.explosionRadius, y - mine.explosionRadius, mine.explosionRadius * 2, mine.explosionRadius * 2);
+        context.restore();
+      }
+      for (const zapper of this.bugZappers) {
+        const x = Math.round(zapper.x - this.camera.x); const y = Math.round(zapper.y - this.camera.y);
+        context.fillStyle = zapper.color; context.fillRect(x - 12, y - 12, 24, 24);
+        context.strokeStyle = "rgba(244,223,99,0.22)"; context.beginPath(); context.arc(x, y, zapper.range, 0, Math.PI * 2); context.stroke();
+      }
+      for (const decoy of this.gardenDecoys) {
+        const x = Math.round(decoy.x - this.camera.x); const y = Math.round(decoy.y - this.camera.y);
+        // Blocky gnome silhouette: tall red cap, face, beard, tunic, and boots.
+        context.fillStyle = "#30231d"; context.fillRect(x - 14, y - 3, 28, 27);
+        context.fillStyle = "#d64235";
+        context.fillRect(x - 13, y - 22, 26, 8); context.fillRect(x - 9, y - 29, 18, 8); context.fillRect(x - 4, y - 35, 8, 7);
+        context.fillStyle = "#f0bd91"; context.fillRect(x - 9, y - 13, 18, 13);
+        context.fillStyle = "#211c18"; context.fillRect(x - 5, y - 9, 3, 3); context.fillRect(x + 2, y - 9, 3, 3);
+        context.fillStyle = "#eee2c6"; context.fillRect(x - 8, y - 1, 16, 12); context.fillRect(x - 5, y + 9, 10, 8);
+        context.fillStyle = decoy.color; context.fillRect(x - 11, y + 11, 22, 13);
+        context.fillStyle = "#3b5065"; context.fillRect(x - 11, y + 22, 8, 8); context.fillRect(x + 3, y + 22, 8, 8);
+        context.fillStyle = "#211c18"; context.fillRect(x - 15, y - 39, 30, 5);
+        context.fillStyle = "#d7ef62"; context.fillRect(x - 13, y - 37, 26 * Math.max(0, decoy.health / 140), 2);
+      }
+      for (const cloud of this.fertilizerClouds) {
+        const x = Math.round(cloud.x - this.camera.x); const y = Math.round(cloud.y - this.camera.y);
+        context.fillStyle = "rgba(159,120,61,0.25)"; context.beginPath(); context.arc(x, y, cloud.radius, 0, Math.PI * 2); context.fill();
+        context.strokeStyle = cloud.color; context.lineWidth = 3; context.stroke();
+      }
+    }
+
     render() {
       const { context } = this;
       const width = this.camera.viewWidth;
@@ -4526,14 +7508,33 @@
       this.uiHitTargets = [];
       this.canvas.style.cursor = this.screenState === "running" ? "crosshair" : "default";
       context.clearRect(0, 0, width, height);
+      context.save();
+      if (this.screenState === "running" && (this.screenShakeTime ?? 0) > 0
+        && this.progress.settings.screenShake && !this.progress.settings.reducedMotion) {
+        const directionIndex = Math.floor((this.screenShakeFrame ?? 0) / 3) % SCREEN_SHAKE_DIRECTIONS.length;
+        const direction = SCREEN_SHAKE_DIRECTIONS[directionIndex];
+        const duration = Math.max(0.001, this.screenShakeDuration ?? this.screenShakeTime);
+        const remaining = clamp(this.screenShakeTime / duration, 0, 1);
+        const magnitude = Math.max(4, (this.screenShakeStrength ?? 0) * 70) * (0.55 + remaining * 0.45);
+        context.translate(
+          direction[0] * magnitude + (this.screenKickX ?? 0),
+          direction[1] * magnitude + (this.screenKickY ?? 0),
+        );
+        this.screenShakeFrame = (this.screenShakeFrame ?? 0) + 1;
+      }
       this.renderLawn(context, width, height);
       this.renderGardenBeds(context);
       this.renderFence(context);
       this.renderLandmarks(context);
+      this.renderSlimeTerrain(context);
+      this.renderIcePuddles(context);
+      for (const lilyPad of this.lilypads) lilyPad.render(context, this.camera);
+      this.renderWeaponDeployables(context);
       for (const enemy of this.enemies) {
-        enemy.render(context, this.camera);
+        renderEnemyArtwork(context, enemy, this.camera);
         this.renderEnemyStatus(context, enemy);
       }
+      this.renderDeathEffects(context);
       for (const thrownGnome of this.thrownGnomes) thrownGnome.render(context, this.camera);
       for (const spore of this.bossProjectiles) spore.render(context, this.camera);
       for (const splat of this.syrupSplats) {
@@ -4551,9 +7552,17 @@
         const y = Math.round(explosion.y - this.camera.y);
         context.globalAlpha = 0.55 * (1 - progress);
         context.fillStyle = explosion.color ?? "#eb9931";
-        for (let index = 0; index < 16; index += 1) {
-          const angle = index / 16 * Math.PI * 2;
-          context.fillRect(Math.round(x + Math.cos(angle) * radius) - 4, Math.round(y + Math.sin(angle) * radius) - 4, 8, 8);
+        if (explosion.ring) {
+          context.strokeStyle = explosion.color ?? "#eb9931";
+          context.lineWidth = 5;
+          context.beginPath();
+          context.arc(x, y, radius, 0, Math.PI * 2);
+          context.stroke();
+        } else {
+          for (let index = 0; index < 16; index += 1) {
+            const angle = index / 16 * Math.PI * 2;
+            context.fillRect(Math.round(x + Math.cos(angle) * radius) - 4, Math.round(y + Math.sin(angle) * radius) - 4, 8, 8);
+          }
         }
         context.globalAlpha = 1;
       }
@@ -4561,13 +7570,22 @@
         projectile.render(context, this.camera);
       }
       for (const ability of this.abilityProjectiles) this.renderAbilityProjectile(context, ability);
-      this.player.render(context, this.camera);
+      if (this.player.flamingoTube) this.renderFlamingoTube(context);
+      this.player.render(
+        context,
+        this.camera,
+        weaponForSlot(this.weaponSlot, this.progress.equippedWeapons),
+      );
       this.renderMeleePulse(context);
+      this.renderAttackEffects(context);
+      this.renderHitEffects(context);
+      this.renderFloatingDamageNumbers(context);
       if (this.screenState === "running") {
         this.renderAim(context);
       }
       this.renderLighting(context, width, height);
       this.renderBossLighting(context, width, height);
+      this.renderWeaponFlashes(context);
       this.renderPixelFrame(context, width, height);
       if (["running", "paused", "upgrade", "defeat", "victory"].includes(this.screenState)) {
         this.renderCombatHud(context, width, height);
@@ -4582,6 +7600,10 @@
         this.renderTutorialOverlay(context, width, height);
       } else if (this.screenState === "shop") {
         this.renderShopOverlay(context, width, height);
+      } else if (this.screenState === "quests") {
+        this.renderQuestsOverlay(context, width, height);
+      } else if (this.screenState === "season-shop") {
+        this.renderSeasonShopOverlay(context, width, height);
       } else if (this.screenState === "permanent-upgrades") {
         this.renderPermanentUpgradesOverlay(context, width, height);
       } else if (this.screenState === "settings") {
@@ -4597,6 +7619,27 @@
       } else if (this.screenState === "victory") {
         this.renderVictoryOverlay(context, width, height);
       }
+      context.restore();
+    }
+
+    addScreenShake(strength = 0.06, duration = 0.12, kickX = 0, kickY = 0) {
+      if (this.screenState !== "running" || !this.progress?.settings?.screenShake || this.progress.settings.reducedMotion) return;
+      const heavyDuration = duration * 1.25;
+      if ((this.screenShakeTime ?? 0) <= 0) this.screenShakeFrame = 0;
+      this.screenShakeTime = Math.max(this.screenShakeTime ?? 0, heavyDuration);
+      this.screenShakeDuration = Math.max(this.screenShakeDuration ?? 0, heavyDuration);
+      this.screenShakeStrength = Math.max(this.screenShakeStrength ?? 0, strength);
+      this.screenKickX = clamp((this.screenKickX ?? 0) + kickX * 0.6, -8, 8);
+      this.screenKickY = clamp((this.screenKickY ?? 0) + kickY * 0.6, -8, 8);
+    }
+
+    applyWeaponKickback(weapon, aimAngle, holdMultiplier = 1) {
+      const kickback = weapon.playerKickback ?? (weapon.recoil ?? 0) * 80;
+      if (!(kickback > 0) || !this.player) return;
+      const distance = kickback * holdMultiplier;
+      this.player.x = clamp(this.player.x - Math.cos(aimAngle) * distance, this.player.radius, this.world.width - this.player.radius);
+      this.player.y = clamp(this.player.y - Math.sin(aimAngle) * distance, this.player.radius, this.world.height - this.player.radius);
+      resolvePlayerObstacleCollisions(this.player, this.activeObstacles ?? []);
     }
 
     renderMeleePulse(context) {
@@ -4613,6 +7656,131 @@
       context.globalAlpha = 0.6 * (1 - progress);
       renderMeleePattern(context, centerX, centerY, this.player.facing, weapon, radius);
       context.globalAlpha = 1;
+    }
+
+    renderAttackEffects(context) {
+      for (const effect of this.attackEffects ?? []) {
+        const progress = 1 - effect.lifetime / effect.maxLifetime;
+        const alpha = Math.max(0, 1 - progress);
+        const strength = effect.strength ?? 1;
+        const lengthMultiplier = effect.lengthMultiplier ?? 1;
+        const x = Math.round(effect.x - this.camera.x);
+        const y = Math.round(effect.y - this.camera.y);
+        context.save();
+        context.translate(x, y);
+        context.rotate(effect.angle);
+        context.globalAlpha = Math.min(1, alpha * (0.72 + strength * 0.18));
+        context.fillStyle = "#fff4bb";
+        if (effect.kind === "melee") {
+          const reach = 18 + progress * Math.min(effect.radius, 72) * 0.35;
+          context.fillRect(Math.round(reach), -4, 12, 8);
+          context.fillRect(Math.round(reach + 10), -13, 7, 5);
+          context.fillRect(Math.round(reach + 10), 8, 7, 5);
+        } else {
+          // Layered, high-contrast muzzle flash: a bright core, warm shell, and
+          // short pixel trail make every ranged weapon's shot readable.
+          context.fillStyle = "#fffef0";
+          context.fillRect(7, Math.round(-8 * strength), Math.round(17 * lengthMultiplier), Math.round(16 * strength));
+          context.fillStyle = "#fff4a8";
+          context.fillRect(17 + Math.round(progress * 5 * lengthMultiplier), Math.round(-11 * strength), Math.round(14 * lengthMultiplier), Math.round(22 * strength));
+          context.fillStyle = effect.color;
+          context.fillRect(25 + Math.round(progress * 9 * lengthMultiplier), Math.round(-8 * strength), Math.round(13 * lengthMultiplier), Math.round(16 * strength));
+          context.globalAlpha = Math.min(1, alpha * (0.3 + strength * 0.12));
+          context.fillRect(36 + Math.round(progress * 13 * lengthMultiplier), Math.round(-3 * strength), Math.round(18 * lengthMultiplier), Math.max(2, Math.round(6 * strength)));
+        }
+        context.restore();
+      }
+      context.globalAlpha = 1;
+    }
+
+    renderWeaponFlashes(context) {
+      for (const flash of this.weaponFlashes ?? []) {
+        const progress = 1 - flash.lifetime / flash.maxLifetime;
+        const alpha = Math.max(0, 1 - progress);
+        const x = Math.round(flash.x - this.camera.x);
+        const y = Math.round(flash.y - this.camera.y);
+        const radius = flash.radius * (0.72 + progress * 0.28);
+        const intensity = Math.min(0.72, 0.5 + (flash.strength ?? 1) * 0.08);
+        const glow = context.createRadialGradient(x, y, 0, x, y, radius);
+        glow.addColorStop(0, `rgba(255, 255, 235, ${intensity * alpha})`);
+        glow.addColorStop(0.12, `rgba(255, 241, 165, ${0.56 * alpha})`);
+        glow.addColorStop(0.38, `rgba(255, 214, 95, ${0.2 * alpha})`);
+        glow.addColorStop(1, "rgba(255, 199, 76, 0)");
+        context.save();
+        context.globalCompositeOperation = "screen";
+        context.fillStyle = glow;
+        context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+        context.restore();
+      }
+    }
+
+    renderDeathEffects(context) {
+      for (const effect of this.deathEffects ?? []) {
+        const progress = 1 - effect.lifetime / effect.maxLifetime;
+        const scale = Math.max(0.08, 1 - progress * 0.92);
+        const alpha = Math.max(0, 1 - progress);
+        const enemy = effect.enemy;
+        const x = Math.round(enemy.x - this.camera.x);
+        const y = Math.round(enemy.y - this.camera.y);
+        const previousHealth = enemy.health;
+        // Enemy renderers intentionally skip inactive entities during normal
+        // gameplay. Temporarily make this snapshot renderable, then restore its
+        // defeated state immediately after drawing the animation frame.
+        enemy.health = Math.max(1, enemy.maxHealth ?? 1);
+        context.save();
+        context.globalAlpha = alpha;
+        context.translate(x, y);
+        context.rotate(effect.angle);
+        context.scale(scale, scale);
+        context.translate(-x, -y);
+        renderEnemyArtwork(context, enemy, this.camera);
+        context.restore();
+        enemy.health = previousHealth;
+      }
+    }
+
+    renderHitEffects(context) {
+      for (const effect of this.hitEffects ?? []) {
+        const progress = 1 - effect.lifetime / effect.maxLifetime;
+        const alpha = Math.max(0, 1 - progress);
+        const x = Math.round(effect.x - this.camera.x);
+        const y = Math.round(effect.y - this.camera.y);
+        const distance = effect.radius * (0.45 + progress * 0.95);
+        context.save();
+        context.globalAlpha = alpha;
+        context.fillStyle = effect.color;
+        context.fillRect(x - 3, y - 3, 6, 6);
+        for (let index = 0; index < 6; index += 1) {
+          const angle = effect.angle + index / 6 * Math.PI * 2;
+          const particleX = Math.round(x + Math.cos(angle) * distance);
+          const particleY = Math.round(y + Math.sin(angle) * distance);
+          context.fillRect(particleX - 2, particleY - 2, 4, 4);
+        }
+        context.restore();
+      }
+    }
+
+    renderFloatingDamageNumbers(context) {
+      if (!this.floatingDamageNumbers?.length) return;
+      const previousAlign = context.textAlign;
+      const previousBaseline = context.textBaseline;
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.font = "bold 18px 'Courier New', monospace";
+      context.lineWidth = 4;
+      for (const number of this.floatingDamageNumbers) {
+        const progress = 1 - number.lifetime / number.maxLifetime;
+        const x = Math.round(number.x - this.camera.x);
+        const y = Math.round(number.y - this.camera.y);
+        context.globalAlpha = Math.max(0, 1 - progress);
+        context.strokeStyle = "rgba(28, 28, 20, 0.9)";
+        context.strokeText(number.text, x, y);
+        context.fillStyle = number.color;
+        context.fillText(number.text, x, y);
+      }
+      context.globalAlpha = 1;
+      context.textAlign = previousAlign;
+      context.textBaseline = previousBaseline;
     }
 
     renderEnemyStatus(context, enemy) {
@@ -4646,6 +7814,18 @@
         context.fillStyle = "#9ea5a2";
         context.fillRect(x - 14, y + 5, 28, 4);
       }
+    }
+
+    renderFlamingoTube(context) {
+      const x = Math.round(this.player.x - this.camera.x);
+      const y = Math.round(this.player.y - this.camera.y);
+      context.save();
+      context.strokeStyle = "rgba(242, 154, 181, 0.82)";
+      context.lineWidth = 4;
+      context.beginPath();
+      context.arc(x, y, 105, 0, Math.PI * 2);
+      context.stroke();
+      context.restore();
     }
 
     renderCombatHud(context, width, height) {
@@ -4733,6 +7913,7 @@
         { enabled: this.player.batteryPack, name: "BATTERY", timer: this.passiveCooldowns.battery },
         { enabled: this.player.freezePulse, name: "FREEZE", timer: this.passiveCooldowns.freeze },
         { enabled: this.player.scarecrowPulse, name: "SCARECROW", timer: this.passiveCooldowns.scarecrow },
+        { enabled: this.player.flamingoTube, name: "FLAMINGO TUBE", ready: "ACTIVE" },
       ].filter((ability) => ability.enabled);
       if (abilities.length === 0) return;
       const panelWidth = 188;
@@ -4770,10 +7951,13 @@
       context.font = "12px 'Courier New', monospace";
       context.fillText(`${this.unlockedMaps.size} MAP${this.unlockedMaps.size === 1 ? "" : "S"} UNLOCKED`, width / 2, height / 2 + 4);
       this.renderButton(context, width / 2 - 145, height / 2 + 28, 290, 42, "START RUN", "start");
-      this.renderButton(context, width / 2 - 290, height / 2 + 88, 135, 34, "SHOP", { type: "menu", value: "shop" });
-      this.renderButton(context, width / 2 - 145, height / 2 + 88, 135, 34, "UPGRADES", { type: "menu", value: "upgrades" });
-      this.renderButton(context, width / 2, height / 2 + 88, 135, 34, "GLOSSARY", { type: "menu", value: "glossary" });
-      this.renderButton(context, width / 2 + 145, height / 2 + 88, 135, 34, "SETTINGS", { type: "menu", value: "settings" });
+      const menuButtonWidth = 106;
+      const menuButtonGap = 8;
+      const menuItems = [["SHOP", "shop"], ...(SEASON_ACTIVE ? [["SEASON", "season-shop"]] : []), ["UPGRADES", "upgrades"], ["QUESTS", "quests"], ["GLOSSARY", "glossary"], ["SETTINGS", "settings"]];
+      const menuButtonStart = width / 2 - (menuButtonWidth * menuItems.length + menuButtonGap * (menuItems.length - 1)) / 2;
+      menuItems.forEach(([label, value], index) => {
+        this.renderButton(context, menuButtonStart + index * (menuButtonWidth + menuButtonGap), height / 2 + 88, menuButtonWidth, 34, label, { type: "menu", value }, { font: "11px 'Courier New', monospace" });
+      });
       if (this.menuMessage) {
         context.fillStyle = "#9fcf71";
         context.fillText(this.menuMessage, width / 2, height / 2 + 172);
@@ -4824,20 +8008,22 @@
         context.strokeStyle = defeated > 0 ? "#9a9256" : "#5b5747";
         context.lineWidth = 3;
         context.strokeRect(x, y, 570, cardHeight);
+        if (defeated > 0) renderBestiaryEnemyPortrait(context, enemy.id, x + 55, y + 52);
         context.fillStyle = defeated > 0 ? "#ead77b" : "#77715d";
         context.font = "bold 16px 'Courier New', monospace";
-        context.fillText(defeated > 0 ? enemy.name.toUpperCase() : "UNDISCOVERED", width / 2, y + 25);
+        const textCenterX = defeated > 0 ? x + 340 : width / 2;
+        context.fillText(defeated > 0 ? enemy.name.toUpperCase() : "UNDISCOVERED", textCenterX, y + 25);
         context.fillStyle = defeated > 0 ? "#9fcf71" : "#77715d";
         context.font = "bold 11px 'Courier New', monospace";
-        context.fillText(`DEFEATED ${defeated}`, width / 2, y + 45);
+        context.fillText(`DEFEATED ${defeated}`, textCenterX, y + 45);
         context.fillStyle = defeated > 0 ? "#d8d0ae" : "#5f5b4c";
         context.font = "11px 'Courier New', monospace";
         wrapCenteredText(
           context,
           defeated > 0 ? enemy.description : "Defeat this enemy to reveal its entry.",
-          width / 2,
+          textCenterX,
           y + 64,
-          530,
+          defeated > 0 ? 430 : 530,
           13,
           3,
         );
@@ -4852,21 +8038,25 @@
     glossaryMaxScroll(width, height) {
       const listTop = height / 2 - 165;
       const visibleHeight = height - 92 - listTop;
-      const itemCount = this.glossaryTab === "bestiary" ? ENEMY_GLOSSARY.length : WEAPONS_SORTED_BY_RARITY.length + 4;
-      const contentHeight = this.glossaryTab === "bestiary" ? itemCount * 112 : Math.ceil(WEAPON_DEFINITIONS.length / 2) * 26 + 160;
+      const collectionWeapons = weaponsVisibleInCollection(this.progress.ownedWeapons);
+      const itemCount = this.glossaryTab === "bestiary" ? ENEMY_GLOSSARY.length : collectionWeapons.length + 4;
+      const contentHeight = this.glossaryTab === "bestiary" ? itemCount * 112 : Math.ceil(collectionWeapons.length / 2) * 56 + 160;
       return Math.max(0, contentHeight - visibleHeight);
     }
 
     renderCollection(context, width, height) {
       const owned = new Set(this.progress.ownedWeapons);
-      const rowsPerColumn = Math.ceil(WEAPON_DEFINITIONS.length / 2);
+      const collectionWeapons = weaponsVisibleInCollection(this.progress.ownedWeapons);
+      const rowsPerColumn = Math.ceil(collectionWeapons.length / 2);
       const weaponListTop = height / 2 - 135;
-      const weaponRowSpacing = 26;
+      const weaponRowSpacing = 56;
       context.fillStyle = "#ead77b";
       context.font = "bold 14px 'Courier New', monospace";
-      context.fillText(`WEAPONS ${owned.size}/${WEAPON_DEFINITIONS.length}`, width / 2, weaponListTop - 20);
+      const ordinaryWeaponCount = WEAPON_DEFINITIONS.filter((weapon) => !weapon.limited).length;
+      const ownedLimitedCount = collectionWeapons.filter((weapon) => weapon.limited).length;
+      context.fillText(`WEAPONS ${owned.size}/${ordinaryWeaponCount + ownedLimitedCount}`, width / 2, weaponListTop - 20);
       const listTop = height / 2 - 135;
-      const contentHeight = Math.ceil(WEAPON_DEFINITIONS.length / 2) * weaponRowSpacing + 170;
+      const contentHeight = Math.ceil(collectionWeapons.length / 2) * weaponRowSpacing + 170;
       const visibleHeight = height - 92 - listTop;
       const maxScroll = Math.max(0, contentHeight - visibleHeight);
       this.glossaryScroll = clamp(this.glossaryScroll, 0, maxScroll);
@@ -4874,7 +8064,7 @@
       context.beginPath();
       context.rect(width / 2 - 300, listTop - 28, 600, visibleHeight + 28);
       context.clip();
-      WEAPONS_SORTED_BY_RARITY.forEach((weapon, index) => {
+      collectionWeapons.forEach((weapon, index) => {
         const column = index < rowsPerColumn ? 0 : 1;
         const row = column === 0 ? index : index - rowsPerColumn;
         const boxWidth = Math.min(275, Math.max(130, (width - 70) / 2));
@@ -4882,21 +8072,18 @@
         const y = weaponListTop + row * weaponRowSpacing - this.glossaryScroll;
         const unlocked = owned.has(weapon.id);
         context.fillStyle = unlocked ? "#343621" : "#29291f";
-        context.fillRect(x, y, boxWidth, 24);
+        context.fillRect(x, y, boxWidth, 52);
         context.strokeStyle = unlocked ? "#807a4b" : "#4d493a";
         context.lineWidth = 2;
-        context.strokeRect(x, y, boxWidth, 24);
+        context.strokeRect(x, y, boxWidth, 52);
         context.fillStyle = unlocked ? "#f3e7bd" : "#696453";
         context.textAlign = "center";
-        fitCenteredText(
-          context,
-          unlocked ? `${weapon.name} · ${weapon.rarity} · LV ${this.progress.weaponLevels[weapon.id]}` : "??? · LOCKED",
-          x + boxWidth / 2,
-          y + 16,
-          boxWidth - 16,
-          10,
-          7,
-        );
+        if (unlocked) {
+          renderWeaponMenuEntry(context, weapon, x + 25, y + 30, x + 67, y + 19,
+            `${weapon.name} · LV ${this.progress.weaponLevels[weapon.id]}`, boxWidth - 78, 0.72);
+        } else {
+          fitCenteredText(context, "??? · LOCKED", x + boxWidth / 2, y + 30, boxWidth - 16, 10, 7);
+        }
       });
 
       context.textAlign = "center";
@@ -5004,19 +8191,28 @@
       renderDarkOverlay(context, width, height);
       this.renderButton(context, 30, height - 62, 110, 34, "BACK", "back", { font: "12px 'Courier New', monospace" });
       const slot = this.screenState === "melee-selection" ? "melee" : "ranged";
-      const weapons = this.ownedWeaponsForSlot(slot);
+      const allWeapons = this.ownedWeaponsForSlot(slot);
+      const query = (this.weaponSearch[slot] ?? "").trim().toLowerCase();
+      const weapons = query
+        ? allWeapons.filter((weapon) => `${weapon.name} ${weapon.rarity} ${weapon.id}`.toLowerCase().includes(query))
+        : allWeapons;
       const equippedId = this.progress.equippedWeapons[slot];
       const visibleCount = Math.min(5, weapons.length);
       const maxOffset = Math.max(0, weapons.length - visibleCount);
       const offset = clamp(this.weaponSelectionScroll[slot], 0, maxOffset);
       this.weaponSelectionScroll[slot] = offset;
-      const listTop = Math.max(125, height / 2 - 170);
-      const listBottom = listTop + visibleCount * 32;
+      const listTop = Math.max(155, height / 2 - 145);
+      const weaponRowHeight = 54;
+      const listBottom = listTop + visibleCount * weaponRowHeight;
       const descriptionY = Math.min(height - 170, listBottom + 38);
       context.textAlign = "center";
       context.fillStyle = "#ead77b";
       context.font = "bold 34px 'Courier New', monospace";
-      context.fillText(`CHOOSE LOADOUT ${slot === "melee" ? "1" : "2"} WEAPON`, width / 2, listTop - 42);
+      context.fillText(`CHOOSE LOADOUT ${slot === "melee" ? "1" : "2"} WEAPON`, width / 2, listTop - 82);
+      this.renderButton(context, width / 2 - 245, listTop - 58, 400, 28,
+        `SEARCH: ${this.weaponSearch[slot] || "type to filter"}`,
+        { type: "weapon-search-focus" }, { font: "11px 'Courier New', monospace", text: this.weaponSearch[slot] ? "#f3e7bd" : "#a9a27d" });
+      this.renderButton(context, width / 2 + 165, listTop - 58, 80, 28, "CLEAR", { type: "weapon-search-clear" }, { font: "11px 'Courier New', monospace" });
       context.fillStyle = "#f3e7bd";
       context.font = "14px 'Courier New', monospace";
       weapons.slice(offset, offset + visibleCount).forEach((weapon, visibleIndex) => {
@@ -5027,14 +8223,22 @@
           this.progress.equippedWeapons,
         );
         const synergy = effectiveLevel > this.progress.weaponLevels[weapon.id] ? " · PAIR +1" : "";
-        this.renderButton(context, width / 2 - 245, listTop + visibleIndex * 32, 490, 27,
-          `${visibleIndex + 1}. ${selected ? "> " : ""}${weapon.name} · ${weapon.rarity} · LV ${effectiveLevel}${synergy}`,
+        const rowY = listTop + visibleIndex * weaponRowHeight;
+        this.renderButton(context, width / 2 - 245, rowY, 490, 49,
+          "",
           { type: "choice", value: visibleIndex + 1 },
-          { fill: selected ? "#5a5530" : "#343621", font: "12px 'Courier New', monospace" });
+          { fill: selected ? "#5a5530" : "#343621", font: "12px 'Courier New', monospace", textY: rowY + 15 });
+        renderWeaponMenuEntry(context, weapon, width / 2 - 213, rowY + 28, width / 2 - 155, rowY + 18,
+          `${visibleIndex + 1}. ${selected ? "> " : ""}${weapon.name} · LV ${effectiveLevel}${synergy}`, 375, 0.78);
       });
+      if (weapons.length === 0) {
+        context.fillStyle = "#c9b95f";
+        context.font = "12px 'Courier New', monospace";
+        context.fillText("NO MATCHING WEAPONS", width / 2, listTop + 19);
+      }
       if (maxOffset > 0) {
         this.renderButton(context, width / 2 + 255, listTop, 54, 27, "▲", { type: "weapon-scroll", value: -1 });
-        this.renderButton(context, width / 2 + 255, listTop + (visibleCount - 1) * 32, 54, 27, "▼", { type: "weapon-scroll", value: 1 });
+        this.renderButton(context, width / 2 + 255, listTop + (visibleCount - 1) * weaponRowHeight, 54, 27, "▼", { type: "weapon-scroll", value: 1 });
         context.fillStyle = "#d8d0ae";
         context.font = "10px 'Courier New', monospace";
         context.fillText(`${offset + 1}-${offset + visibleCount} / ${weapons.length}`, width / 2 + 282, listTop + 91);
@@ -5049,7 +8253,7 @@
         slot === "melee" ? "CONTINUE TO RANGED" : "BEGIN RUN", "confirm");
       context.fillStyle = "#d8d0ae";
       context.font = "11px 'Courier New', monospace";
-      context.fillText("Click a weapon · Mouse wheel or arrows scroll · Escape returns", width / 2, descriptionY + 94);
+      context.fillText("Type to search · Click a weapon · Wheel/arrows move one item · Escape returns", width / 2, descriptionY + 94);
       context.textAlign = "start";
     }
 
@@ -5085,14 +8289,12 @@
     renderShopOverlay(context, width, height) {
       renderDarkOverlay(context, width, height);
       this.renderButton(context, 30, height - 62, 110, 34, "BACK", "back", { font: "12px 'Courier New', monospace" });
-      const options = [
-        `1 Tennis Balls — ${ownedOrPrice(this.progress, "tennis-balls")}`,
-        `2 Hedge Clippers — ${ownedOrPrice(this.progress, "hedge-clippers")}`,
-        `3 Acorn Slingshot — ${ownedOrPrice(this.progress, "acorn-slingshot")}`,
-        `4 Beach Ball — ${ownedOrPrice(this.progress, "beach-ball")}`,
-        `5 Diet Cola Launcher — ${ownedOrPrice(this.progress, "diet-cola-launcher")}`,
-        `6 WEAPON CHEST — ${CHEST_COST} coins`,
-      ];
+      const items = this.shopItems();
+      const visibleCount = 6;
+      const rowHeight = 48;
+      const maxScroll = Math.max(0, items.length - visibleCount);
+      this.shopScroll = clamp(this.shopScroll, 0, maxScroll);
+      const visibleItems = items.slice(this.shopScroll, this.shopScroll + visibleCount);
       context.textAlign = "center";
       context.fillStyle = "#ead77b";
       context.font = "bold 34px 'Courier New', monospace";
@@ -5100,15 +8302,127 @@
       context.fillStyle = "#f3e7bd";
       context.font = "bold 15px 'Courier New', monospace";
       context.fillText(`COINS ${this.bankCoins}`, width / 2, height / 2 - 177);
-      options.forEach((option, index) => this.renderButton(
-        context, width / 2 - 260, height / 2 - 126 + index * 43, 520, 34,
-        option.replace(/^\d\s+/, ""), { type: "choice", value: index + 1 },
-        { font: "12px 'Courier New', monospace" },
-      ));
+      visibleItems.forEach((item, index) => {
+        const rowY = height / 2 - 132 + index * rowHeight;
+        const weapon = item.id ? weaponById(item.id) : null;
+        const label = item.chest
+          ? `WEAPON CHEST — ${chestCost(this.progress)} coins`
+          : "";
+        this.renderButton(context, width / 2 - 260, rowY, 520, 43, label,
+          { type: "choice", value: index + 1 }, { font: "12px 'Courier New', monospace", textY: rowY + 14 });
+        if (weapon) renderWeaponMenuEntry(context, weapon, width / 2 - 225, rowY + 24, width / 2 - 165, rowY + 16,
+          `${weapon.name} — ${ownedOrPrice(this.progress, item.id)}`, 390, 0.74);
+      });
+      this.renderScrollBar(context, Math.min(width / 2 + 294, width - 14), height / 2 - 132, visibleCount * rowHeight, maxScroll, this.shopScroll);
+      if (maxScroll > 0) {
+        this.renderButton(context, width / 2 + 268, height / 2 - 164, 58, 24, "▲", { type: "shop-scroll", value: -1 }, { font: "bold 12px 'Courier New', monospace" });
+        this.renderButton(context, width / 2 + 268, height / 2 - 126 + visibleCount * rowHeight, 58, 24, "▼", { type: "shop-scroll", value: 1 }, { font: "bold 12px 'Courier New', monospace" });
+      }
       context.fillStyle = "#9fcf71";
-      context.fillText(this.menuMessage, width / 2, height / 2 + 160);
+      context.fillText(this.menuMessage, width / 2, height / 2 + 200);
       context.fillStyle = "#d8d0ae";
-      context.fillText("Click an item to buy · Escape to return", width / 2, height / 2 + 194);
+      context.fillText("Click an item to buy · Escape to return", width / 2, height / 2 + 228);
+      context.textAlign = "start";
+    }
+
+    renderQuestsOverlay(context, width, height) {
+      renderDarkOverlay(context, width, height);
+      this.renderButton(context, 30, height - 62, 110, 34, "BACK", "back", { font: "12px 'Courier New', monospace" });
+      const daily = ensureDailyQuests(this.progress);
+      context.textAlign = "center";
+      context.fillStyle = "#ead77b";
+      context.font = "bold 34px 'Courier New', monospace";
+      context.fillText("DAILY QUESTS", width / 2, height / 2 - 225);
+      context.fillStyle = "#d8d0ae";
+      context.font = "bold 13px 'Courier New', monospace";
+      context.fillText(`REFRESH IN ${formatQuestTimer(dailyQuestTimeRemaining(this.progress))}`, width / 2, height / 2 - 190);
+      daily.quests.forEach((quest, index) => {
+        const x = width / 2 - 290;
+        const y = height / 2 - 145 + index * 112;
+        context.fillStyle = quest.completed ? "rgba(52, 82, 48, 0.95)" : "rgba(48, 49, 32, 0.95)";
+        context.fillRect(x, y, 580, 94);
+        context.strokeStyle = quest.completed ? "#9fcf71" : "#817b4d";
+        context.lineWidth = 3;
+        context.strokeRect(x, y, 580, 94);
+        context.fillStyle = "#f3e7bd";
+        context.font = "bold 15px 'Courier New', monospace";
+        context.fillText(quest.label.toUpperCase(), width / 2, y + 25);
+        context.fillStyle = quest.completed ? "#9fcf71" : "#ead77b";
+        context.font = "bold 12px 'Courier New', monospace";
+        const questProgress = quest.type === "play-time"
+          ? `${Math.floor(quest.progress / 60)} / ${Math.floor(quest.goal / 60)} MINUTES`
+          : `${Math.floor(quest.progress)} / ${quest.goal}`;
+        context.fillText(quest.completed ? `COMPLETE · +${quest.reward} COINS` : `${questProgress} · REWARD ${quest.reward} COINS`, width / 2, y + 50);
+        context.fillStyle = "#24251c";
+        context.fillRect(x + 40, y + 66, 500, 12);
+        context.fillStyle = quest.completed ? "#9fcf71" : "#d8b94f";
+        context.fillRect(x + 42, y + 68, 496 * Math.min(1, quest.progress / quest.goal), 8);
+      });
+      context.fillStyle = "#d8d0ae";
+      context.font = "12px 'Courier New', monospace";
+      context.fillText("Rewards are collected automatically · Escape to return", width / 2, height / 2 + 220);
+      context.textAlign = "start";
+    }
+
+    renderSeasonShopOverlay(context, width, height) {
+      renderDarkOverlay(context, width, height);
+      this.renderButton(context, 30, height - 62, 110, 34, "BACK", "back", { font: "12px 'Courier New', monospace" });
+      const season = ensureSeasonState(this.progress);
+      const rainbowApple = weaponById("rainbow-apples");
+      const partyHat = weaponById("party-hat");
+      context.textAlign = "center";
+      context.fillStyle = "#ead77b";
+      context.font = "bold 28px 'Courier New', monospace";
+      context.fillText("LAWN ENFORCEMENT SEASON", width / 2, height / 2 - 282);
+      context.fillStyle = "#f3e7bd";
+      context.font = "bold 12px 'Courier New', monospace";
+      context.fillText(`SEASON SHOP · ENDS OCTOBER 1 · ${season.coins} SEASON COINS · ${season.claimsToday}/${SEASON_DAILY_CLAIM_LIMIT} REWARDS TODAY`, width / 2, height / 2 - 252);
+
+      [[rainbowApple, RAINBOW_APPLE_COST, width / 2 - 290], [partyHat, PARTY_HAT_COST, width / 2 + 10]].forEach(([weapon, cost, x]) => {
+        const owned = this.progress.ownedWeapons.includes(weapon.id);
+        context.fillStyle = "rgba(48, 49, 32, 0.96)";
+        context.fillRect(x, height / 2 - 230, 280, 90);
+        context.strokeStyle = "#817b4d";
+        context.strokeRect(x, height / 2 - 230, 280, 90);
+        renderWeaponMenuEntry(context, weapon, x + 32, height / 2 - 185, x + 68, height / 2 - 207,
+          weapon.name.toUpperCase(), 125, 0.86);
+        context.fillStyle = "#ead77b";
+        context.font = "bold 10px 'Courier New', monospace";
+        context.textAlign = "left";
+        context.fillText(owned ? "OWNED" : `${cost} SEASON COINS`, x + 68, height / 2 - 167);
+        this.renderButton(context, x + 198, height / 2 - 213, 66, 56, owned ? "OWNED" : "BUY",
+          { type: "season-buy", value: weapon.id }, { font: "bold 10px 'Courier New', monospace" });
+      });
+      context.textAlign = "center";
+
+      season.quests.forEach((quest, index) => {
+        const x = width / 2 - 290;
+        const y = height / 2 - 118 + index * 76;
+        context.fillStyle = quest.completed ? "rgba(52, 82, 48, 0.95)" : "rgba(48, 49, 32, 0.95)";
+        context.fillRect(x, y, 580, 64);
+        context.strokeStyle = quest.completed ? "#9fcf71" : "#817b4d";
+        context.strokeRect(x, y, 580, 64);
+        context.fillStyle = "#f3e7bd";
+        context.font = "bold 13px 'Courier New', monospace";
+        context.fillText(quest.label.toUpperCase(), width / 2, y + 21);
+        const shownProgress = quest.type === "play-time"
+          ? `${Math.floor(quest.progress / 60)} / ${Math.floor(quest.goal / 60)} MIN`
+          : `${Math.floor(quest.progress)} / ${quest.goal}`;
+        context.fillStyle = quest.completed ? "#9fcf71" : "#ead77b";
+        context.font = "bold 11px 'Courier New', monospace";
+        context.fillText(`${shownProgress} · ${quest.reward} SEASON COINS`, width / 2, y + 43);
+      });
+      const completed = season.quests.filter((quest) => quest.completed).length;
+      this.renderButton(context, width / 2 - 220, height / 2 + 124, 440, 42,
+        completed ? `CLAIM REWARDS & REFRESH (${completed})` : "COMPLETE QUESTS TO CLAIM", "season-claim", { font: "bold 12px 'Courier New', monospace" });
+      this.renderButton(context, width / 2 - 220, height / 2 + 174, 440, 38,
+        "EXCHANGE 1 SEASON COIN FOR 800 REGULAR COINS", "season-exchange", { font: "bold 11px 'Courier New', monospace" });
+      context.fillStyle = "#d8d0ae";
+      context.font = "11px 'Courier New', monospace";
+      context.fillText("Quests refresh only when completed rewards are claimed.", width / 2, height / 2 + 226);
+      context.fillText("After 6 rewarded quests in a day, completed quests wait in their slots until tomorrow.", width / 2, height / 2 + 244);
+      context.fillStyle = "#9fcf71";
+      context.fillText(this.menuMessage, width / 2, height / 2 + 268);
       context.textAlign = "start";
     }
 
@@ -5129,21 +8443,25 @@
       context.fillText(`COINS ${this.bankCoins} · STAT CAP ${statCap}`, width / 2, height / 2 - 220);
       context.font = "bold 14px 'Courier New', monospace";
       context.fillStyle = "#ead77b";
-      context.fillText("STAT UPGRADES", width / 2, height / 2 - 195);
+      context.fillText("STAT UPGRADES", width / 2, height / 2 - 205);
       context.font = "12px 'Courier New', monospace";
-      ["health", "damage", "speed", "attackSpeed", "accuracy"].forEach((stat, index) => {
+      ["health", "damage", "speed", "attackSpeed", "accuracy", "shield", "regeneration"].forEach((stat, index) => {
         const level = this.progress.characterStats[stat];
-        const cost = level >= statCap ? "MAX FOR MAPS" : `${CHARACTER_STAT_COSTS[level]} coins`;
-        this.renderButton(context, width / 2 - 225, height / 2 - 174 + index * 30, 450, 27,
+        const unavailable = (stat === "shield" && !this.progress.shieldUnlocked)
+          || (stat === "regeneration" && !this.unlockedMaps.has("aquatic-garden"));
+        const statMaxLevel = stat === "regeneration" ? 1 : statCap;
+        const unlockLabel = stat === "regeneration" ? "BEAT GOLF COURSE" : "UNLOCK REDWOOD TRAIL BOSS";
+        const cost = unavailable ? unlockLabel : level >= statMaxLevel ? "MAX" : `${CHARACTER_STAT_COSTS[level] * (this.progress.shieldUnlocked ? 2 : 1)} coins`;
+        this.renderButton(context, width / 2 - 225, height / 2 - 185 + index * 27, 450, 24,
           `${stat.toUpperCase()} LV ${level} → ${cost}`, { type: "choice", value: index + 3 },
           { font: "12px 'Courier New', monospace" });
       });
       context.fillStyle = "#ead77b";
       context.font = "bold 14px 'Courier New', monospace";
-      context.fillText("WEAPON UPGRADES", width / 2, height / 2 - 5);
+      context.fillText("WEAPON UPGRADES", width / 2, height / 2 + 10);
       context.fillStyle = "#f3e7bd";
       context.font = "12px 'Courier New', monospace";
-      this.renderButton(context, width / 2 - 225, height / 2 + 72, 450, 34,
+      this.renderButton(context, width / 2 - 225, height / 2 + 50, 450, 34,
         `OPEN WEAPON ARSENAL · ${this.ownedWeaponsForSlot("all").length} OWNED`, { type: "choice", value: 1 });
       context.fillStyle = "#9fcf71";
       context.fillText(this.menuMessage, width / 2, height / 2 + 125);
@@ -5238,7 +8556,9 @@
       });
       context.fillStyle = "#f3e7bd";
       context.font = "bold 14px 'Courier New', monospace";
-      context.fillText("Click an upgrade card", width / 2, height / 2 + 92);
+      context.fillText(this.upgradeSelectionDelay > 0
+        ? `CHOICES READY IN ${this.upgradeSelectionDelay.toFixed(1)}s`
+        : "Click an upgrade card", width / 2, height / 2 + 92);
       context.textAlign = "start";
     }
 
@@ -5265,7 +8585,7 @@
       context.fillText("LAWN SECURED", width / 2, height / 2 - 62);
       context.fillStyle = "#f3e7bd";
       context.font = "bold 16px 'Courier New', monospace";
-      context.fillText(`${this.currentMap.boss.name} has been defeated in ${this.currentMap.name}!`, width / 2, height / 2 - 24);
+      context.fillText(`${this.boss?.name ?? this.currentMap.boss.name} has been defeated in ${this.currentMap.name}!`, width / 2, height / 2 - 24);
       context.fillText(`Victory reward: ${this.runCoins} × 2 + ${this.currentMap.victoryCoinBonus} = ${this.victoryReward} coins`, width / 2, height / 2 + 8);
       context.fillText(this.currentMap.unlocks ? `${mapById(this.currentMap.unlocks).name} unlocked` : `${this.currentMap.name} secured`, width / 2, height / 2 + 38);
       this.renderButton(context, width / 2 - 205, height / 2 + 62, 190, 40, "REPLAY", "retry");
@@ -5312,6 +8632,18 @@
 
     renderLandmarks(context) {
       if (this.currentMap.id === "garden") return;
+      if (this.currentMap.id === "redwood-trail") {
+        this.renderRedwoodLandmarks(context);
+        return;
+      }
+      if (this.currentMap.id === "school-field") {
+        this.renderSchoolFieldLandmarks(context);
+        return;
+      }
+      if (this.currentMap.id === "aquatic-garden") {
+        this.renderAquaticGardenLandmarks(context);
+        return;
+      }
       if (this.currentMap.id === "golf-course") {
         this.renderGolfLandmarks(context);
         return;
@@ -5354,6 +8686,82 @@
         context.strokeRect(Math.round(x), Math.round(y), landmark.width, landmark.height);
         context.fillStyle = "rgba(255, 255, 255, 0.12)";
         context.fillRect(Math.round(x + 10), Math.round(y + 10), landmark.width - 20, 8);
+      }
+    }
+
+    renderSlimeTerrain(context) {
+      for (const puddle of this.slimeTerrain ?? []) {
+        const x = Math.round(puddle.x - this.camera.x); const y = Math.round(puddle.y - this.camera.y);
+        const alpha = puddle.permanent ? 0.62 : Math.min(0.62, 0.15 + puddle.lifetime / 8);
+        context.fillStyle = `rgba(100, 181, 91, ${alpha})`;
+        context.beginPath(); context.arc(x, y, puddle.radius, 0, Math.PI * 2); context.fill();
+        context.strokeStyle = "rgba(184, 231, 118, 0.58)"; context.lineWidth = 3; context.stroke();
+      }
+    }
+
+    renderRedwoodLandmarks(context) {
+      for (const obstacle of this.activeObstacles ?? []) {
+        if (obstacle.kind !== "redwood-trunk") continue;
+        const x = Math.round(obstacle.x - this.camera.x); const y = Math.round(obstacle.y - this.camera.y);
+        context.fillStyle = "rgba(22, 38, 22, 0.32)"; context.fillRect(x + 12, y + 14, obstacle.width, obstacle.height);
+        context.fillStyle = "#663f2d"; context.fillRect(x, y, obstacle.width, obstacle.height);
+        context.fillStyle = "#935a37"; context.fillRect(x + 13, y + 10, obstacle.width - 26, obstacle.height - 20);
+        context.fillStyle = "#b87543"; context.fillRect(x + obstacle.width * 0.35, y + 16, 10, obstacle.height - 32);
+        context.strokeStyle = "#3c2a22"; context.lineWidth = 5; context.strokeRect(x, y, obstacle.width, obstacle.height);
+      }
+      context.fillStyle = "rgba(31, 79, 40, 0.22)";
+      for (let index = 0; index < 18; index += 1) {
+        const x = (index * 197 + 90) % this.world.width - this.camera.x;
+        const y = (index * 131 + 60) % this.world.height - this.camera.y;
+        context.fillRect(Math.round(x), Math.round(y), 46, 18);
+        context.fillRect(Math.round(x + 12), Math.round(y - 18), 24, 18);
+      }
+    }
+
+    renderSchoolFieldLandmarks(context) {
+      const width = this.world.width; const height = this.world.height;
+      const track = 110;
+      context.fillStyle = "#9b5542";
+      context.fillRect(-this.camera.x, -this.camera.y, width, track);
+      context.fillRect(-this.camera.x, height - track - this.camera.y, width, track);
+      context.fillRect(-this.camera.x, -this.camera.y, track, height);
+      context.fillRect(width - track - this.camera.x, -this.camera.y, track, height);
+      context.strokeStyle = "rgba(255, 224, 180, 0.65)"; context.lineWidth = 5;
+      context.strokeRect(track - this.camera.x, track - this.camera.y, width - track * 2, height - track * 2);
+      context.setLineDash([26, 18]); context.strokeStyle = "rgba(255, 229, 185, 0.55)"; context.lineWidth = 3;
+      context.strokeRect(18 - this.camera.x, 18 - this.camera.y, width - 36, height - 36); context.setLineDash([]);
+      context.strokeStyle = "rgba(246, 238, 194, 0.72)"; context.lineWidth = 4;
+      context.beginPath(); context.moveTo(width / 2 - this.camera.x, track - this.camera.y); context.lineTo(width / 2 - this.camera.x, height - track - this.camera.y); context.stroke();
+      context.beginPath(); context.arc(width / 2 - this.camera.x, height / 2 - this.camera.y, 110, 0, Math.PI * 2); context.stroke();
+      for (const obstacle of this.activeObstacles ?? []) {
+        const x = Math.round(obstacle.x - this.camera.x); const y = Math.round(obstacle.y - this.camera.y);
+        if (x + obstacle.width < 0 || y + obstacle.height < 0 || x > this.camera.viewWidth || y > this.camera.viewHeight) continue;
+        if (obstacle.kind === "soccer-goal") {
+          context.strokeStyle = "#f4f0d0"; context.lineWidth = 6; context.strokeRect(x, y, obstacle.width, obstacle.height);
+          context.strokeStyle = "rgba(245,245,230,0.55)"; context.lineWidth = 2; for (let net = 1; net < 5; net += 1) context.strokeRect(x + net * obstacle.width / 5, y, 1, obstacle.height);
+        } else if (obstacle.kind === "bench") {
+          context.fillStyle = "#71452f"; context.fillRect(x, y, obstacle.width, obstacle.height); context.fillStyle = "#b27642"; context.fillRect(x + 10, y + 6, obstacle.width - 20, 7);
+        }
+      }
+      context.fillStyle = "#f1d75c";
+      for (let index = 0; index < 12; index += 1) {
+        const x = 160 + (index * 173) % Math.max(220, width - 320) - this.camera.x;
+        const y = 185 + (index * 241) % Math.max(220, height - 370) - this.camera.y;
+        context.fillRect(Math.round(x), Math.round(y), 10, 14); context.fillRect(Math.round(x - 4), Math.round(y + 14), 18, 4);
+      }
+    }
+
+    renderIcePuddles(context) {
+      for (const puddle of this.activeObstacles ?? []) {
+        if (puddle.kind !== "ice-puddle") continue;
+        const x = Math.round(puddle.x - this.camera.x);
+        const y = Math.round(puddle.y - this.camera.y);
+        const radius = puddle.radius;
+        context.fillStyle = "rgba(126, 221, 245, 0.34)";
+        context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+        context.strokeStyle = "rgba(218, 250, 255, 0.8)";
+        context.lineWidth = 3;
+        context.strokeRect(x - radius + 3, y - radius + 3, radius * 2 - 6, radius * 2 - 6);
       }
     }
 
@@ -5405,6 +8813,24 @@
       context.strokeStyle = "#8fb7a1"; context.lineWidth = 8; context.strokeRect(x, y, lake.width, lake.height);
       context.fillStyle = "rgba(216, 239, 213, 0.28)";
       for (let wave = 0; wave < 8; wave += 1) context.fillRect(x + 40, y + 42 + wave * 68, lake.width - 80, 4);
+    }
+
+    renderAquaticGardenLandmarks(context) {
+      const river = this.currentMap.obstacles?.find((obstacle) => obstacle.kind === "river");
+      if (!river) return;
+      const x = Math.round(river.x - this.camera.x);
+      const y = Math.round(river.y - this.camera.y);
+      context.fillStyle = "#27536b";
+      context.fillRect(x, y, river.width, river.height);
+      context.fillStyle = "#3a7890";
+      context.fillRect(x, y + 18, river.width, river.height - 36);
+      context.fillStyle = "rgba(175, 225, 214, 0.25)";
+      for (let wave = 0; wave < 7; wave += 1) {
+        context.fillRect(x, y + 28 + wave * 37, river.width, 4);
+      }
+      context.fillStyle = "#b8a36a";
+      context.fillRect(x, y - 9, river.width, 9);
+      context.fillRect(x, y + river.height, river.width, 9);
     }
 
     renderGolfLandmarks(context) {
@@ -5617,7 +9043,7 @@
   }
 
   function resolveEnemyObstacles(enemy, obstacles) {
-    if (enemy.isBoss || enemy.targetable === false) return;
+    if (enemy.isBoss || enemy.targetable === false || enemy.ignoresObstacles || enemy.chargeTime > 0) return;
     for (const obstacle of obstacles) {
       if (obstacle.solid === false) continue;
       const closestX = Math.max(obstacle.x, Math.min(enemy.x, obstacle.x + obstacle.width));
@@ -5677,6 +9103,36 @@
     return Math.max(min, Math.min(max, value));
   }
 
+  function resolvePlayerObstacleCollisions(circle, obstacles) {
+    for (const obstacle of obstacles) {
+      if (obstacle.solid === false) continue;
+      const closestX = Math.max(obstacle.x, Math.min(circle.x, obstacle.x + obstacle.width));
+      const closestY = Math.max(obstacle.y, Math.min(circle.y, obstacle.y + obstacle.height));
+      const offsetX = circle.x - closestX;
+      const offsetY = circle.y - closestY;
+      if (offsetX * offsetX + offsetY * offsetY >= circle.radius * circle.radius) continue;
+      const pushX = Math.min(Math.abs(circle.x - obstacle.x), Math.abs(circle.x - (obstacle.x + obstacle.width)));
+      const pushY = Math.min(Math.abs(circle.y - obstacle.y), Math.abs(circle.y - (obstacle.y + obstacle.height)));
+      if (pushX < pushY) circle.x = circle.x < obstacle.x + obstacle.width / 2
+        ? obstacle.x - circle.radius : obstacle.x + obstacle.width + circle.radius;
+      else circle.y = circle.y < obstacle.y + obstacle.height / 2
+        ? obstacle.y - circle.radius : obstacle.y + obstacle.height + circle.radius;
+    }
+  }
+
+  // Reverse reload feedback: quick-firing weapons get a compact, restrained
+  // cue, while slower/heavier weapons earn a brighter, longer-lived flash.
+  function rangedFireFeedback(weapon) {
+    const reload = Math.max(0.05, weapon.cooldown ?? 0.5);
+    const reloadFactor = clamp(reload / 1.5, 0.25, 3);
+    return {
+      strength: 0.62 + reloadFactor * 0.28,
+      lengthMultiplier: 0.7 + reloadFactor * 0.12,
+      lifetime: 0.075 + reloadFactor * 0.027,
+      radiusMultiplier: 0.65 + reloadFactor * 0.12,
+    };
+  }
+
   function formatTime(seconds) {
     const wholeSeconds = Math.floor(seconds);
     const minutes = Math.floor(wholeSeconds / 60).toString().padStart(2, "0");
@@ -5691,13 +9147,193 @@
     context.textAlign = "left";
     fitCenteredText(context, `${weapon.slotNumber}  ${weapon.name}`, x + 7, y + 11, 119, 11, 7, true);
     context.font = "9px 'Courier New', monospace";
-    context.fillText(`LV ${level} · ${weapon.rarity}`, x + 7, y + 21);
+    context.fillText(`LV ${level} · ${weapon.rarity}${weapon.limited ? " · LIMITED" : ""}`, x + 7, y + 21);
+  }
+
+  function renderWeaponMenuEntry(context, weapon, iconX, iconY, textX, topY, topText, maxTextWidth, scale = 0.72) {
+    context.save();
+    context.translate(iconX, iconY);
+    context.scale(scale, scale);
+    renderHeldWeaponVisual(context, weapon);
+    context.restore();
+    context.save();
+    context.fillStyle = "#f3e7bd";
+    context.font = "bold 11px 'Courier New', monospace";
+    context.textAlign = "left";
+    context.fillText(topText, textX, topY, maxTextWidth);
+    context.fillStyle = rarityColor(weapon.rarity);
+    context.font = "bold 10px 'Courier New', monospace";
+    context.fillText(weapon.rarity.toUpperCase(), textX, topY + 17);
+    if (weapon.limited) {
+      const hue = typeof performance === "undefined" ? 0 : performance.now() / 12 % 360;
+      const rarityWidth = context.measureText(weapon.rarity.toUpperCase()).width;
+      context.fillStyle = `hsl(${hue} 90% 65%)`;
+      context.fillText(" · LIMITED", textX + rarityWidth, topY + 17);
+    }
+    context.restore();
+  }
+
+  function rarityColor(rarity) {
+    return {
+      Common: "#d8d0ae",
+      Uncommon: "#9fcf71",
+      Rare: "#72bde3",
+      Epic: "#c58bea",
+      Legendary: "#e8bd55",
+      Mythical: "#ef7272",
+      Secret: "#f1f1f1",
+      Developer: "#51f0de",
+    }[rarity] ?? "#d8d0ae";
+  }
+
+  function renderBestiaryEnemyPortrait(context, enemyId, x, y) {
+    const preview = bestiaryEnemyPreview(enemyId);
+    if (preview) {
+      const scale = preview.isBoss ? 0.5 : 0.82;
+      context.save();
+      context.translate(Math.round(x), Math.round(y + (preview.isBoss ? 8 : 5)));
+      context.scale(scale, scale);
+      renderEnemyArtwork(context, preview, { x: 0, y: 0 }, { portrait: true });
+      context.restore();
+      return;
+    }
+    const bossIds = ["king-gnomulus", "dandelion", "lily-queen", "groundskeeper", "pondfather", "pro-golfer", "ancient-snail", "pe-teacher", "ball-launcher"];
+    const large = bossIds.includes(enemyId);
+    context.save();
+    context.translate(Math.round(x), Math.round(y));
+    context.scale(large ? 1.05 : 0.9, large ? 1.05 : 0.9);
+    context.strokeStyle = "#24231d";
+    context.lineWidth = 3;
+    if (["gnome", "king-gnomulus"].includes(enemyId)) {
+      context.fillStyle = "#e6c39d"; context.fillRect(-11, -5, 22, 18);
+      context.fillStyle = "#bd4139"; context.beginPath(); context.moveTo(-15, -5); context.lineTo(0, -29); context.lineTo(15, -5); context.fill();
+      context.fillStyle = "#50744d"; context.fillRect(-13, 13, 26, 17);
+      if (large) { context.fillStyle = "#e7c84f"; context.fillRect(-15, -32, 30, 7); context.fillRect(-13, -39, 6, 8); context.fillRect(-3, -42, 6, 11); context.fillRect(7, -39, 6, 8); }
+    } else if (enemyId === "gopher") {
+      portraitCircle(context, 0, 2, 20, "#8a633f"); portraitCircle(context, -11, -15, 7, "#725037"); portraitCircle(context, 11, -15, 7, "#725037"); context.fillStyle = "#e8d7b1"; context.fillRect(-4, 10, 8, 12);
+    } else if (["common-weed", "strongweed"].includes(enemyId)) {
+      context.fillStyle = enemyId === "strongweed" ? "#38a86a" : "#76b849"; context.fillRect(-4, -24, 8, 49); context.fillRect(-22, -10, 20, 9); context.fillRect(2, 2, 22, 9); context.fillRect(-17, 15, 15, 8);
+    } else if (["squirrel", "acorn-squirrel"].includes(enemyId)) {
+      portraitCircle(context, 0, 3, 15, enemyId === "acorn-squirrel" ? "#9a6537" : "#b87842"); portraitCircle(context, -17, -5, 13, "#ca8a4e"); context.fillStyle = "#ead0a2"; context.fillRect(8, -15, 8, 8);
+    } else if (["dandelion", "lily-queen"].includes(enemyId)) {
+      context.fillStyle = "#4f8f46"; context.fillRect(-4, -2, 8, 31); const petal = enemyId === "lily-queen" ? "#ef8fc0" : "#f0d34f";
+      for (let index = 0; index < 8; index += 1) { const angle = index * Math.PI / 4; portraitCircle(context, Math.cos(angle) * 16, -10 + Math.sin(angle) * 16, 8, petal); } portraitCircle(context, 0, -10, 9, "#8d642e");
+    } else if (enemyId === "groundskeeper") {
+      context.fillStyle = "#d6513f"; context.fillRect(-27, -5, 54, 25); portraitCircle(context, -18, 21, 9, "#2f3430"); portraitCircle(context, 19, 21, 9, "#2f3430"); context.fillStyle = "#e3c09a"; context.fillRect(-7, -24, 16, 19);
+    } else if (["goose", "pondfather"].includes(enemyId)) {
+      portraitCircle(context, -2, 8, large ? 24 : 18, "#e8e2cf"); context.fillStyle = "#e8e2cf"; context.fillRect(5, -24, 10, 30); portraitCircle(context, 10, -26, 10, "#e8e2cf"); context.fillStyle = "#e69435"; context.fillRect(17, -28, 16, 6);
+    } else if (["golfer", "pro-golfer"].includes(enemyId)) {
+      context.fillStyle = large ? "#d8b54c" : "#7ea26b"; context.fillRect(-15, -8, 30, 33); context.fillStyle = "#dfb98f"; context.fillRect(-10, -28, 20, 20); context.strokeStyle = "#c7c9c8"; context.beginPath(); context.moveTo(13, -3); context.lineTo(25, 27); context.lineTo(36, 27); context.stroke();
+    } else if (["snail", "ancient-snail"].includes(enemyId)) {
+      portraitCircle(context, -8, 4, large ? 25 : 19, "#92704c"); context.strokeStyle = "#d4b47a"; context.beginPath(); context.arc(-8, 4, large ? 14 : 10, 0, Math.PI * 2); context.stroke(); context.fillStyle = "#799253"; context.fillRect(-22, 18, 50, 12); context.fillRect(16, -3, 10, 24);
+    } else if (enemyId === "mosquito") {
+      context.fillStyle = "#554d45"; context.fillRect(-3, -18, 6, 38); context.strokeStyle = "#b9d9d5"; context.beginPath(); context.ellipse(-13, -7, 13, 7, -0.5, 0, Math.PI * 2); context.ellipse(13, -7, 13, 7, 0.5, 0, Math.PI * 2); context.stroke(); context.fillStyle = "#d05245"; context.fillRect(-2, 18, 4, 12);
+    } else if (enemyId === "deer") {
+      context.fillStyle = "#9b6a40"; context.fillRect(-17, -8, 34, 27); context.fillRect(8, -27, 15, 24); context.strokeStyle = "#d5b47e"; context.beginPath(); context.moveTo(15, -25); context.lineTo(7, -40); context.moveTo(19, -25); context.lineTo(28, -40); context.stroke();
+    } else if (["rogue-soccer-ball", "basketball"].includes(enemyId)) {
+      portraitCircle(context, 0, 0, 22, enemyId === "basketball" ? "#d77d2e" : "#eee9dc"); context.strokeStyle = "#423a31"; context.beginPath(); context.arc(0, 0, 14, 0, Math.PI * 2); context.moveTo(-20, 0); context.lineTo(20, 0); context.stroke();
+    } else if (enemyId === "sprinter") {
+      portraitCircle(context, 0, -23, 9, "#d8ac83"); context.strokeStyle = "#68a4d0"; context.lineWidth = 7; context.beginPath(); context.moveTo(0, -14); context.lineTo(-7, 8); context.lineTo(-23, 25); context.moveTo(-5, 3); context.lineTo(18, 12); context.lineTo(29, 25); context.stroke();
+    } else if (enemyId === "backpack") {
+      context.fillStyle = "#6a7e9e"; context.fillRect(-20, -25, 40, 50); context.fillStyle = "#a8bad1"; context.fillRect(-13, -17, 26, 15); context.strokeStyle = "#31363e"; context.strokeRect(-20, -25, 40, 50);
+    } else if (enemyId === "pe-teacher") {
+      portraitCircle(context, 0, -22, 11, "#d4a67d"); context.fillStyle = "#d9d6c7"; context.fillRect(-19, -10, 38, 38); context.fillStyle = "#b53d36"; context.fillRect(-3, -10, 6, 35); context.fillStyle = "#404b65"; context.fillRect(-18, 26, 36, 9);
+    } else if (enemyId === "ball-launcher") {
+      context.fillStyle = "#69757b"; context.fillRect(-27, -20, 54, 43); portraitCircle(context, -19, 24, 9, "#373d40"); portraitCircle(context, 19, 24, 9, "#373d40"); context.fillStyle = "#d4bd58"; context.fillRect(-8, -29, 16, 18); context.fillStyle = "#252a2c"; context.fillRect(24, -10, 18, 12);
+    }
+    context.restore();
+  }
+
+  const BESTIARY_PREVIEWS = new Map();
+  const PREVIEW_WORLD = Object.freeze({ width: 1280, height: 720 });
+
+  function bestiaryEnemyPreview(enemyId) {
+    if (BESTIARY_PREVIEWS.has(enemyId)) return BESTIARY_PREVIEWS.get(enemyId);
+    const common = { x: 0, y: 0 };
+    const bossConfig = { name: "Preview", health: 1000, damage: 20, speed: 80 };
+    let enemy = null;
+    if (enemyId === "gnome") enemy = new Gnome({ ...common, health: GNOME_HEALTH, speed: 90, damage: 6, coinValue: 1, xpValue: 10 });
+    else if (enemyId === "gopher") enemy = new Gopher(common);
+    else if (enemyId === "common-weed") enemy = new CommonWeed({ ...common, bossMode: false });
+    else if (enemyId === "strongweed") enemy = new CommonWeed({ ...common, bossMode: true });
+    else if (enemyId === "squirrel") enemy = new Squirrel(common);
+    else if (enemyId === "acorn-squirrel") enemy = new AcornSquirrel(common);
+    else if (enemyId === "goose") enemy = new Goose(common);
+    else if (enemyId === "golfer") enemy = new Golfer(common);
+    else if (enemyId === "snail") enemy = new Snail(common);
+    else if (enemyId === "mosquito") enemy = new Mosquito({ ...common, random: () => 0.5 });
+    else if (enemyId === "deer") enemy = new Deer(common);
+    else if (enemyId === "rogue-soccer-ball") enemy = new RogueSoccerBall(common);
+    else if (enemyId === "sprinter") enemy = new Sprinter({ ...common, world: PREVIEW_WORLD, random: () => 0.75 });
+    else if (enemyId === "backpack") enemy = new Backpack(common);
+    else if (enemyId === "basketball") enemy = new SchoolBasketball({ ...common, random: () => 0.5 });
+    else if (enemyId === "king-gnomulus") enemy = new Boss({ ...common, config: { ...bossConfig, thrownGnomeCooldown: 4, thrownGnomeSpeed: 500, throwWindupDuration: 0.5, summonCooldown: 4 } });
+    else if (enemyId === "dandelion") enemy = new DandelionBoss({ ...common, config: { ...bossConfig, sporeCooldown: 0.5, aimedSporeCooldown: 2, sporeSpeed: 300, sporeDamage: 20, sporeLifetime: 3, shieldThreshold: 100, shieldStrength: 200, shieldCooldown: 10, maxShieldActivations: 5, healthRegeneration: 15 } });
+    else if (enemyId === "lily-queen") enemy = new LilyQueenBoss({ ...common, config: { ...bossConfig, shieldStrength: 200, shieldRegeneration: 5, strongweedCooldown: 0.3, strongweedLaunchChance: 0.5, strongweedLaunchSpeed: 900, riverbankWeedCooldown: 1 } });
+    else if (enemyId === "groundskeeper") enemy = new GroundskeeperBoss({ ...common, config: { ...bossConfig, mowCooldown: 5, clippingCooldown: 1, shieldStrength: 200, shieldRegeneration: 10 }, world: PREVIEW_WORLD });
+    else if (enemyId === "pondfather") enemy = new PondfatherBoss({ ...common, config: { ...bossConfig, healthRegeneration: 15, shieldRegeneration: 50, shieldStrength: 200 }, world: PREVIEW_WORLD });
+    else if (enemyId === "pro-golfer") enemy = new ProGolferBoss({ ...common, config: { ...bossConfig, attackCooldown: 3 }, world: PREVIEW_WORLD });
+    else if (enemyId === "ancient-snail") enemy = new AncientSnailBoss({ ...common, config: { ...bossConfig, shieldStrength: 2000, shieldRegeneration: 40, spitCooldown: 2, shellSlamCooldown: 5, snailArmyCooldown: 4, shellSlamRadius: 180 } });
+    else if (enemyId === "pe-teacher") enemy = new PeTeacherBoss({ ...common, config: { ...bossConfig, dodgeballCooldown: 2, whistleCooldown: 6, lapCooldown: 8, lapExitDistance: 220 }, world: PREVIEW_WORLD });
+    else if (enemyId === "ball-launcher") enemy = new BallLauncherBoss({ ...common, config: { ...bossConfig, ballCooldown: 1, dumpCooldown: 8 } });
+    if (!enemy) return null;
+    enemy.x = 0;
+    enemy.y = 0;
+    enemy.hitFlash = 0;
+    if ("shield" in enemy) enemy.shield = 0;
+    if (enemyId === "pondfather") { enemy.form = "land"; enemy.phase = "land"; }
+    BESTIARY_PREVIEWS.set(enemyId, enemy);
+    return enemy;
+  }
+
+  function renderEnemyArtwork(context, enemy, camera, { portrait = false } = {}) {
+    const smoothing = context.imageSmoothingEnabled;
+    context.imageSmoothingEnabled = false;
+    enemy.render(context, camera);
+    renderEnemyPixelDetails(context, enemy, camera, portrait);
+    context.imageSmoothingEnabled = smoothing;
+  }
+
+  function renderEnemyPixelDetails(context, enemy, camera, portrait) {
+    if (!enemy?.active) return;
+    const x = Math.round(enemy.x - camera.x);
+    const y = Math.round(enemy.y - camera.y);
+    const radius = Math.max(14, enemy.radius ?? 20);
+    context.save();
+    context.globalAlpha = portrait ? 0.95 : 0.72;
+    if (enemy.isBoss) {
+      context.fillStyle = "#f4da78";
+      const edge = Math.min(58, radius * 0.72);
+      context.fillRect(x - edge, y - radius - 8, 7, 3);
+      context.fillRect(x + edge - 7, y - radius - 8, 7, 3);
+      context.fillRect(x - radius - 6, y - 2, 3, 7);
+      context.fillRect(x + radius + 3, y - 2, 3, 7);
+    }
+    if (["common-weed", "strongweed", "dandelion", "lily-queen"].includes(enemy.enemyType)) {
+      context.fillStyle = enemy.enemyType === "strongweed" ? "#87efbd" : "#d6f59a";
+      context.fillRect(x - 2, y - radius + 2, 4, 4);
+    } else if (["snail", "ancient-snail"].includes(enemy.enemyType)) {
+      context.fillStyle = "rgba(190, 238, 148, 0.8)";
+      context.fillRect(x - radius * 0.55, y + radius * 0.48, 7, 3);
+      context.fillRect(x + radius * 0.15, y + radius * 0.52, 5, 3);
+    } else if (enemy.flying) {
+      context.fillStyle = "rgba(221, 248, 244, 0.8)";
+      context.fillRect(x - radius - 6, y - 3, 5, 2);
+      context.fillRect(x + radius + 1, y + 2, 5, 2);
+    }
+    context.restore();
+  }
+
+  function portraitCircle(context, x, y, radius, color) {
+    context.fillStyle = color;
+    context.beginPath();
+    context.arc(x, y, radius, 0, Math.PI * 2);
+    context.fill();
   }
 
   function ownedOrPrice(progress, weaponId) {
-    if (progress.ownedWeapons.includes(weaponId)) return "OWNED";
-    const weapon = PERMANENT_WEAPONS.find((entry) => entry.id === weaponId);
-    return `${weapon.price} coins`;
+    const price = `${shopWeaponPrice(weaponId)} coins`;
+    return progress.ownedWeapons.includes(weaponId) ? `OWNED · ${price}` : price;
   }
 
   function formatKeyCode(code) {
@@ -5707,7 +9343,8 @@
   function weaponUpgradeLabel(progress, weapon) {
     const level = progress.weaponLevels[weapon.id];
     const maxLevel = weaponMaxLevelForMaps(progress.unlockedMaps);
-    return `${weapon.name} LV ${level} → ${level >= maxLevel ? "MAX" : `${weaponUpgradeCost(level)} coins`}`;
+    const cost = weaponUpgradeCost(level) * (progress.shieldUnlocked ? 2 : 1);
+    return `${weapon.name} LV ${level} → ${level >= maxLevel ? "MAX" : `${cost} coins`}`;
   }
 
   function renderMeleePattern(context, centerX, centerY, facing, weapon, radius) {

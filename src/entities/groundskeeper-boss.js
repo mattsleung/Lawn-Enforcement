@@ -84,6 +84,15 @@ export class GroundskeeperBoss {
     }
     context.save(); context.translate(x, y);
     if (this.shield > 0) { context.strokeStyle = "rgba(137, 224, 255, 0.82)"; context.lineWidth = 7; context.beginPath(); context.arc(0, -8, 58, 0, Math.PI * 2); context.stroke(); }
-    context.fillStyle = "#27302a"; context.fillRect(-42, -18, 84, 42); context.fillStyle = this.hitFlash > 0 ? "#fff3cd" : "#4c8b53"; context.fillRect(-32, -34, 64, 24); context.fillStyle = "#171b17"; context.fillRect(-36, 20, 22, 18); context.fillRect(14, 20, 22, 18); context.fillStyle = "#c88f52"; context.fillRect(-16, -54, 32, 20); context.fillStyle = "#211d19"; context.fillRect(-9, -47, 5, 5); context.fillRect(5, -47, 5, 5); context.restore();
+    context.fillStyle = "#27302a"; context.fillRect(-42, -18, 84, 42);
+    context.fillStyle = "#1b211c"; context.fillRect(-49, 4, 18, 11); context.fillRect(31, 4, 18, 11);
+    context.fillStyle = this.hitFlash > 0 ? "#fff3cd" : "#4c8b53"; context.fillRect(-32, -34, 64, 24); context.fillRect(29, -11, 30, 14);
+    context.fillStyle = "#86ae67"; context.fillRect(-27, -29, 48, 5); context.fillRect(35, -7, 17, 4);
+    context.fillStyle = "#171b17"; context.fillRect(-36, 20, 22, 18); context.fillRect(14, 20, 22, 18);
+    context.fillStyle = "#58605a"; context.fillRect(-31, 24, 12, 7); context.fillRect(19, 24, 12, 7);
+    context.fillStyle = "#c88f52"; context.fillRect(-16, -54, 32, 20);
+    context.fillStyle = "#211d19"; context.fillRect(-9, -47, 5, 5); context.fillRect(5, -47, 5, 5); context.fillRect(-5, -37, 10, 4);
+    context.fillStyle = "#aeb6a8"; context.fillRect(-28, -48, 5, 20); context.fillRect(-30, -51, 9, 5);
+    context.restore();
   }
 }

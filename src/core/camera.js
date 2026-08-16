@@ -6,6 +6,7 @@ export class Camera {
     this.viewHeight = viewHeight;
     this.worldWidth = worldWidth;
     this.worldHeight = worldHeight;
+    this.followSpeed = 10;
   }
 
   resize(width, height) {
@@ -18,11 +19,19 @@ export class Camera {
     this.worldHeight = height;
   }
 
-  follow(target) {
+  follow(target, deltaTime = null) {
     const maxX = Math.max(0, this.worldWidth - this.viewWidth);
     const maxY = Math.max(0, this.worldHeight - this.viewHeight);
-    this.x = clamp(target.x - this.viewWidth / 2, 0, maxX);
-    this.y = clamp(target.y - this.viewHeight / 2, 0, maxY);
+    const desiredX = clamp(target.x - this.viewWidth / 2, 0, maxX);
+    const desiredY = clamp(target.y - this.viewHeight / 2, 0, maxY);
+    if (!Number.isFinite(deltaTime) || deltaTime <= 0) {
+      this.x = desiredX;
+      this.y = desiredY;
+      return;
+    }
+    const followFactor = 1 - Math.exp(-this.followSpeed * deltaTime);
+    this.x += (desiredX - this.x) * followFactor;
+    this.y += (desiredY - this.y) * followFactor;
   }
 
   screenToWorld(point) {

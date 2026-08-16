@@ -154,7 +154,7 @@ export const GOLF_COURSE_MAP = Object.freeze({
   bossSpawnTime: 90,
   victoryCoinBonus: 3000,
   bossThrownEnemy: null,
-  unlocks: null,
+  unlocks: "aquatic-garden",
   obstacles: Object.freeze([
     Object.freeze({ x: 220, y: 210, width: 250, height: 120, kind: "sand-bunker", solid: false }),
     Object.freeze({ x: 1050, y: 180, width: 230, height: 105, kind: "sand-bunker", solid: false }),
@@ -173,7 +173,128 @@ export const GOLF_COURSE_MAP = Object.freeze({
   boss: Object.freeze({ type: "groundskeeper", name: "The Groundskeeper", health: 2000, damage: 50, speed: 440, mowCooldown: 5, clippingCooldown: 1, shieldStrength: 200, shieldRegeneration: 10, canCrushObstacles: false, summonSquirrels: false }),
 });
 
-export const MAP_SLOTS = Object.freeze([FIRST_MAP, FRONTYARD_MAP, GARDEN_MAP, PUBLIC_PARK_MAP, LAKE_ELIZABETH_MAP, GOLF_COURSE_MAP]);
+export const AQUATIC_GARDEN_MAP = Object.freeze({
+  id: "aquatic-garden",
+  name: "Aquatic Garden",
+  world: GARDEN_MAP.world,
+  lawnColors: Object.freeze({ primary: "#64743b", secondary: "#5b6d35" }),
+  houseSide: null,
+  normalEnemyType: "aquatic-garden",
+  gopherSpawnChance: 0,
+  gopherSpawnTime: Number.POSITIVE_INFINITY,
+  bossSpawnTime: 60,
+  nextBossSpawnDelay: 90,
+  victoryCoinBonus: 3500,
+  bossThrownEnemy: null,
+  unlocks: "redwood-trail",
+  obstacles: Object.freeze([
+    Object.freeze({ x: 0, y: GARDEN_MAP.world.height / 2 - 140, width: GARDEN_MAP.world.width, height: 280, kind: "river", solid: false }),
+  ]),
+  lilypadCount: 3,
+  bosses: Object.freeze([
+    Object.freeze({
+      type: "dandelion", name: "Dandelion", health: 800, damage: 0, speed: 34,
+      sporeCooldown: 0.5, aimedSporeCooldown: 0.5, sporeSpeed: 280, sporeDamage: 20, sporeLifetime: 1.6,
+      shieldThreshold: 100, shieldStrength: 200, shieldCooldown: 5, maxShieldActivations: 5, healthRegeneration: 15,
+    }),
+    Object.freeze({
+      type: "lily-queen", name: "Lily Queen", health: 5000, damage: 0, speed: 0,
+      shieldStrength: 200, shieldRegeneration: 5, strongweedCooldown: 0.3, strongweedLaunchChance: 0.5, strongweedLaunchSpeed: 900, riverbankWeedCooldown: 1,
+    }),
+  ]),
+  boss: Object.freeze({
+    type: "dandelion", name: "Dandelion", health: 800, damage: 0, speed: 34,
+    sporeCooldown: 0.5, aimedSporeCooldown: 0.5, sporeSpeed: 280, sporeDamage: 20, sporeLifetime: 1.6,
+    shieldThreshold: 100, shieldStrength: 200, shieldCooldown: 5, maxShieldActivations: 5, healthRegeneration: 15,
+  }),
+});
+
+export const REDWOOD_TRAIL_MAP = Object.freeze({
+  id: "redwood-trail",
+  name: "Redwood Trail",
+  world: Object.freeze({
+    width: VIEWPORT.designWidth * 1.8,
+    height: VIEWPORT.designHeight * 1.8,
+    gridSize: 96,
+  }),
+  lawnColors: Object.freeze({ primary: "#46683b", secondary: "#3d5d35" }),
+  houseSide: null,
+  normalEnemyType: "redwood-trail",
+  gopherSpawnChance: 0,
+  gopherSpawnTime: Number.POSITIVE_INFINITY,
+  bossSpawnTime: 120,
+  victoryCoinBonus: 4000,
+  bossThrownEnemy: null,
+  unlocks: "school-field",
+  obstacles: Object.freeze([
+    Object.freeze({ x: 300, y: 260, width: 150, height: 220, kind: "redwood-trunk", solid: true }),
+    Object.freeze({ x: 840, y: 180, width: 170, height: 220, kind: "redwood-trunk", solid: true }),
+    Object.freeze({ x: 1510, y: 290, width: 145, height: 230, kind: "redwood-trunk", solid: true }),
+    Object.freeze({ x: 520, y: 760, width: 180, height: 220, kind: "redwood-trunk", solid: true }),
+    Object.freeze({ x: 1180, y: 700, width: 160, height: 250, kind: "redwood-trunk", solid: true }),
+    Object.freeze({ x: 1830, y: 1000, width: 150, height: 220, kind: "redwood-trunk", solid: true }),
+    Object.freeze({ x: 980, y: 1110, width: 180, height: 180, kind: "redwood-trunk", solid: true }),
+  ]),
+  redwoodSpawnWeights: Object.freeze({ snail: 0.5, mosquito: 0.34, deer: 0.16 }),
+  boss: Object.freeze({
+    type: "ancient-snail",
+    name: "The Ancient Snail",
+    health: 5000,
+    shieldStrength: 2000,
+    shieldRegeneration: 40,
+    speed: 30,
+    spitCooldown: 2,
+    spitDamage: 35,
+    spitSpeed: 360,
+    spitLifetime: 4,
+    spitSplashRadius: 42,
+    shellSlamCooldown: 5,
+    shellSlamDamage: 50,
+    shellSlamRadius: 260,
+    shellSlamPushback: 150,
+    snailArmyCooldown: 3,
+  }),
+});
+
+export const SCHOOL_FIELD_MAP = Object.freeze({
+  id: "school-field",
+  name: "School Field",
+  world: Object.freeze({
+    width: VIEWPORT.designWidth * 1.8,
+    height: VIEWPORT.designHeight * 1.5,
+    gridSize: 96,
+  }),
+  lawnColors: Object.freeze({ primary: "#6b9149", secondary: "#638643" }),
+  houseSide: null,
+  normalEnemyType: "school-field",
+  // Sprinters and backpacks only enter the pool after the PE Teacher is
+  // defeated. Their post-boss chances are one quarter of their old shares;
+  // the remaining weight goes to the other School Field enemies.
+  schoolFieldPreBossSpawnWeights: Object.freeze({ rogueSoccerBall: 0.2035, sprinter: 0, backpack: 0, basketball: 0.7965 }),
+  schoolFieldSpawnWeights: Object.freeze({ rogueSoccerBall: 0.2035, sprinter: 0.045575, backpack: 0.03855, basketball: 0.712375 }),
+  bossSpawnTime: 120,
+  nextBossSpawnDelay: 60,
+  victoryCoinBonus: 5000,
+  bossThrownEnemy: null,
+  unlocks: null,
+  obstacles: Object.freeze([
+    Object.freeze({ x: 0, y: 0, width: VIEWPORT.designWidth * 1.8, height: 110, kind: "running-track", solid: false, speedMultiplier: 1.2 }),
+    Object.freeze({ x: 0, y: VIEWPORT.designHeight * 1.5 - 110, width: VIEWPORT.designWidth * 1.8, height: 110, kind: "running-track", solid: false, speedMultiplier: 1.2 }),
+    Object.freeze({ x: 0, y: 0, width: 110, height: VIEWPORT.designHeight * 1.5, kind: "running-track", solid: false, speedMultiplier: 1.2 }),
+    Object.freeze({ x: VIEWPORT.designWidth * 1.8 - 110, y: 0, width: 110, height: VIEWPORT.designHeight * 1.5, kind: "running-track", solid: false, speedMultiplier: 1.2 }),
+    Object.freeze({ x: 260, y: 270, width: 170, height: 30, kind: "soccer-goal", solid: false }),
+    Object.freeze({ x: 1500, y: 760, width: 170, height: 30, kind: "soccer-goal", solid: false }),
+    Object.freeze({ x: 530, y: 560, width: 170, height: 28, kind: "bench", solid: true }),
+    Object.freeze({ x: 1180, y: 450, width: 170, height: 28, kind: "bench", solid: true }),
+  ]),
+  bosses: Object.freeze([
+    Object.freeze({ type: "pe-teacher", name: "The PE Teacher", health: 8000, speed: 340, dodgeballCooldown: 2, dodgeballSpeed: 520, dodgeballDamage: 28, dodgeballKnockback: 55, whistleCooldown: 3, whistleDamage: 35, whistleRadius: 240, whistleKnockback: 130, lapCooldown: 8 }),
+    Object.freeze({ type: "ball-launcher", name: "The Ball Launcher", health: 10000, speed: 0, ballCooldown: 0.5, dumpCooldown: 5, ballDamage: 18, ballSpeed: 440, dumpDamage: 22, dumpSpeed: 360 }),
+  ]),
+  boss: Object.freeze({ type: "pe-teacher", name: "The PE Teacher", health: 8000, speed: 340, dodgeballCooldown: 2, dodgeballSpeed: 520, dodgeballDamage: 28, dodgeballKnockback: 55, whistleCooldown: 3, whistleDamage: 35, whistleRadius: 240, whistleKnockback: 130, lapCooldown: 8 }),
+});
+
+export const MAP_SLOTS = Object.freeze([FIRST_MAP, FRONTYARD_MAP, GARDEN_MAP, PUBLIC_PARK_MAP, LAKE_ELIZABETH_MAP, GOLF_COURSE_MAP, AQUATIC_GARDEN_MAP, REDWOOD_TRAIL_MAP, SCHOOL_FIELD_MAP]);
 export const MAPS_BY_ID = Object.freeze(Object.fromEntries(MAP_SLOTS.map((map) => [map.id, map])));
 
 export function mapById(id) {

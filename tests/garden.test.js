@@ -5,15 +5,50 @@ import { GARDEN_MAP } from "../src/config/map-config.js";
 import { Game } from "../src/core/game.js";
 import { CommonWeed } from "../src/entities/common-weed.js";
 import { DandelionBoss } from "../src/entities/dandelion-boss.js";
+import { LilyPad } from "../src/entities/lily-pad.js";
 import { SporeProjectile } from "../src/entities/spore-projectile.js";
+import { Deer } from "../src/entities/deer.js";
+import { Snail } from "../src/entities/snail.js";
+import { SnailSpitProjectile } from "../src/entities/snail-spit-projectile.js";
 
-test("Common Weed grows once early, once near the end of life, and expires after five seconds", () => {
+test("Redwood snails move slightly faster and leave timed slime trails", () => {
+  const snail = new Snail({ x: 0, y: 0 });
+  assert.equal(snail.speed, 45);
+  const event = snail.update(0.1, { x: 100, y: 0 });
+  assert.deepEqual(event.slimeTrail, { x: 4.5, y: 0, radius: 30, lifetime: 5 });
+
+  const game = Object.create(Game.prototype);
+  game.slimeTerrain = [];
+  game.addSlimePuddle(event.slimeTrail.x, event.slimeTrail.y, 30, 5, false, false);
+  game.addSlimePuddle(event.slimeTrail.x + 6, event.slimeTrail.y, 30, 5, false, false);
+  assert.equal(game.slimeTerrain.length, 2);
+});
+
+test("Redwood deer warning uses the same snapshotted vector as its charge", () => {
+  const deer = new Deer({ x: 0, y: 0 });
+  const originalTarget = { x: 100, y: 0 };
+  deer.update(0.01, originalTarget);
+  assert.equal(deer.state, "prepare");
+  assert.deepEqual({ x: deer.chargeX, y: deer.chargeY }, { x: 1, y: 0 });
+  deer.update(0.8, { x: 0, y: 100 });
+  assert.equal(deer.state, "charge");
+  assert.deepEqual({ x: deer.chargeX, y: deer.chargeY }, { x: 1, y: 0 });
+});
+
+test("Ancient Snail spit safely deactivates when it hits the player", () => {
+  const spit = new SnailSpitProjectile({ x: 0, y: 0, velocityX: 1, velocityY: 0 });
+  spit.hitPlayer();
+  assert.equal(spit.active, false);
+});
+
+test("Common Weed grows once early, once near the end of life, and expires after four seconds", () => {
   const weed = new CommonWeed({ x: 0, y: 0 });
   assert.equal(weed.maxHealth, 10);
+  assert.equal(weed.lifetime, 4);
   assert.equal(weed.update(0.39, { x: 100, y: 0 }).copyWeed, undefined);
   assert.deepEqual(weed.update(0.02, { x: 100, y: 0 }).copyWeed, { x: 48, y: 0 });
   assert.equal(weed.update(1, { x: 100, y: 0 }).copyWeed, undefined);
-  assert.deepEqual(weed.update(3.2, { x: 100, y: 0 }).copyWeed, { x: 48, y: 0 });
+  assert.deepEqual(weed.update(2.2, { x: 100, y: 0 }).copyWeed, { x: 48, y: 0 });
   weed.update(0.4, { x: 100, y: 0 });
   assert.equal(weed.active, false);
 });
@@ -38,12 +73,28 @@ test("Garden normal spawns create Common Weeds", () => {
   game.spawnNormalEnemy(0);
   assert.equal(game.enemies.length, 1);
   assert.equal(game.enemies[0] instanceof CommonWeed, true);
+  assert.equal(game.enemies[0].enemyType, "common-weed");
 });
 
-test("Dandelion boss weeds have 200 health, no expiry, and never reproduce", () => {
+test("Common Weeds stop at 100 while Strongweeds stop at 300", () => {
+  const game = Object.create(Game.prototype);
+  game.currentMap = GARDEN_MAP;
+  game.world = GARDEN_MAP.world;
+  game.enemies = Array.from({ length: 100 }, (_, index) => new CommonWeed({ x: index, y: 100 }));
+  game.spawnCommonWeedAt(200, 200);
+  assert.equal(game.enemies.length, 100);
+
+  game.enemies.push(...Array.from({ length: 300 }, (_, index) => new CommonWeed({ x: index, y: 200, bossMode: true })));
+  game.spawnStrongweedAt(300, 300);
+  assert.equal(game.enemies.length, 400);
+});
+
+test("Strongweeds have 150 health, no expiry, and never reproduce", () => {
   const weed = new CommonWeed({ x: 0, y: 0, bossMode: true });
-  assert.equal(weed.maxHealth, 200);
-  assert.equal(weed.health, 200);
+  assert.equal(weed.enemyType, "strongweed");
+  assert.equal(weed.radius, 15);
+  assert.equal(weed.maxHealth, 150);
+  assert.equal(weed.health, 150);
   assert.equal(weed.lifetime, Number.POSITIVE_INFINITY);
   assert.deepEqual(weed.update(20, { x: 100, y: 0 }), {});
   assert.equal(weed.active, true);
@@ -63,11 +114,14 @@ test("Dandelion boss mode converts existing and spawned weeds", () => {
   game.camera = { viewWidth: 1280, viewHeight: 720 };
   game.enemies = [existing];
   game.spawnBoss();
-  assert.equal(existing.maxHealth, 200);
+  assert.equal(existing.maxHealth, 150);
+  assert.equal(existing.radius, 15);
+  assert.equal(existing.enemyType, "strongweed");
   game.spawnCommonWeedAt(200, 200);
   const spawned = game.enemies.at(-1);
-  assert.equal(spawned.maxHealth, 200);
+  assert.equal(spawned.maxHealth, 150);
   assert.equal(spawned.bossMode, true);
+  assert.equal(spawned.enemyType, "strongweed");
 });
 
 test("Dandelion boss weeds separate until they no longer touch", () => {
@@ -80,6 +134,52 @@ test("Dandelion boss weeds separate until they no longer touch", () => {
   game.enemies = [first, second];
   game.separateDandelionWeeds();
   assert.ok(Math.hypot(first.x - second.x, first.y - second.y) >= first.radius + second.radius);
+});
+
+test("Strongweeds separate even when no Dandelion boss is active", () => {
+  const first = new CommonWeed({ x: 200, y: 200, bossMode: true });
+  const second = new CommonWeed({ x: 200, y: 200, bossMode: true });
+  const game = Object.create(Game.prototype);
+  game.world = { width: 1000, height: 800 };
+  game.bossSpawned = false;
+  game.boss = null;
+  game.enemies = [first, second];
+  game.separateStrongweeds();
+  assert.ok(Math.hypot(first.x - second.x, first.y - second.y) >= first.radius + second.radius);
+});
+
+test("Common Weeds and Strongweeds push away from each other", () => {
+  const common = new CommonWeed({ x: 200, y: 200 });
+  const strong = new CommonWeed({ x: 200, y: 200, bossMode: true });
+  const game = Object.create(Game.prototype);
+  game.world = { width: 1000, height: 800 };
+  game.enemies = [common, strong];
+  game.separateWeeds();
+  assert.ok(Math.hypot(common.x - strong.x, common.y - strong.y) >= common.radius + strong.radius);
+  assert.equal(common.radius, strong.radius);
+});
+
+test("Strongweed separation adds a small vertical variation", () => {
+  const first = new CommonWeed({ x: 200, y: 200, bossMode: true });
+  const second = new CommonWeed({ x: 200, y: 200, bossMode: true });
+  const game = Object.create(Game.prototype);
+  game.world = { width: 1000, height: 800 };
+  game.random = () => 1;
+  game.enemies = [first, second];
+  game.separateStrongweeds();
+  assert.notEqual(first.y, 200);
+  assert.notEqual(second.y, 200);
+  assert.ok(Math.hypot(first.x - second.x, first.y - second.y) >= first.radius + second.radius);
+});
+
+test("Aquatic Garden lilypads have 500 health and stop spawning after defeat", () => {
+  const pad = new LilyPad({ x: 100, y: 100 });
+  assert.equal(pad.maxHealth, 500);
+  assert.equal(pad.health, 500);
+  assert.equal(pad.takeDamage(499), false);
+  assert.equal(pad.health, 1);
+  assert.equal(pad.takeDamage(1), true);
+  assert.deepEqual(pad.update(1, { x: 0, width: 1000 }), { spawnStrongweed: false });
 });
 
 test("defeated Common Weeds drop one XP orb fifty percent of the time", () => {
@@ -110,6 +210,17 @@ test("Common Weeds drop one coin fifty percent of the time", () => {
   game.random = () => 0.5;
   game.damageEnemy(new CommonWeed({ x: 100, y: 100 }), 10);
   assert.equal(game.pickups.filter((pickup) => pickup.type === "coin").length, 0);
+});
+
+test("defeated Common Weeds do not spawn Strongweeds", () => {
+  const game = Object.create(Game.prototype);
+  game.pickups = [];
+  game.enemies = [];
+  game.world = GARDEN_MAP.world;
+  game.progress = { defeatedEnemies: { "common-weed": 0, strongweed: 0 } };
+  game.random = () => 0;
+  game.damageEnemy(new CommonWeed({ x: 100, y: 100 }), 10);
+  assert.equal(game.enemies.length, 0);
 });
 
 test("Dandelion fires four spores every half second", () => {

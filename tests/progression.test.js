@@ -14,6 +14,7 @@ import {
   RUN_UPGRADES,
   saveBankCoins,
   saveProgress,
+  unlockAllMaps,
   unlockAllWeapons,
   xpRequiredForLevel,
 } from "../src/systems/progression.js";
@@ -22,6 +23,10 @@ test("run XP requirements rise each level", () => {
   assert.equal(xpRequiredForLevel(1), 30);
   assert.equal(xpRequiredForLevel(2), 50);
   assert.equal(xpRequiredForLevel(3), 70);
+  assert.equal(xpRequiredForLevel(4), 95);
+  assert.equal(xpRequiredForLevel(5), 120);
+  assert.equal(xpRequiredForLevel(6), 150);
+  assert.equal(xpRequiredForLevel(7), 180);
 });
 
 test("run upgrades improve the intended player stats", () => {
@@ -64,6 +69,16 @@ test("the five Bronze upgrades are stats and the five Silver upgrades are abilit
     starterPool.filter((upgrade) => upgrade.rarity === "Silver").map((upgrade) => upgrade.id),
     ["pancake-syrup", "autonomous-mower", "battery-pack", "freeze-pulse", "scarecrow-pulse"],
   );
+});
+
+test("Flamingo Tube becomes available starting in Lake Elizabeth", () => {
+  const backyard = eligibleRunUpgrades(["weedwacker-9000", "apples"], "backyard");
+  const lake = eligibleRunUpgrades(["weedwacker-9000", "apples"], "lake-elizabeth");
+  const golf = eligibleRunUpgrades(["weedwacker-9000", "apples"], "golf-course");
+  assert.equal(backyard.some((upgrade) => upgrade.id === "flamingo-tube"), false);
+  assert.equal(lake.some((upgrade) => upgrade.id === "flamingo-tube"), true);
+  assert.equal(golf.some((upgrade) => upgrade.id === "flamingo-tube"), true);
+  assert.equal(lake.filter((upgrade) => upgrade.rarity === "Gold").length, 6);
 });
 
 test("run upgrades cannot raise maximum health above twice its round-start value", () => {
@@ -122,12 +137,28 @@ test("Plastic Ghost Extended Haunting is only offered when equipped", () => {
   assert.equal(unequippedPool.some((upgrade) => upgrade.id === "plastic-ghost-haunting"), false);
 });
 
-test("unlockAllWeapons grants every current weapon at level one without changing rarity", () => {
+test("unlockAllWeapons grants every non-Limited weapon at level one without changing rarity", () => {
   const progress = defaultProgress();
   unlockAllWeapons(progress);
-  assert.deepEqual(new Set(progress.ownedWeapons), new Set(WEAPON_DEFINITIONS.map((weapon) => weapon.id)));
+  assert.deepEqual(new Set(progress.ownedWeapons), new Set(WEAPON_DEFINITIONS.filter((weapon) => !weapon.limited).map((weapon) => weapon.id)));
   assert.equal(progress.weaponLevels["plastic-ghost"], 1);
-  assert.equal(weaponById("plastic-ghost").rarity, "Legendary");
+  assert.equal(weaponById("plastic-ghost").rarity, "Secret");
+});
+
+test("unlockAllMaps grants every current map", () => {
+  const progress = defaultProgress();
+  unlockAllMaps(progress);
+  assert.deepEqual(progress.unlockedMaps, [
+    "backyard",
+    "frontyard",
+    "garden",
+    "public-park",
+    "lake-elizabeth",
+    "golf-course",
+    "aquatic-garden",
+    "redwood-trail",
+    "school-field",
+  ]);
 });
 
 test("chosen one-use Gold upgrades can be excluded while Second Wind remains repeatable", () => {
@@ -151,6 +182,13 @@ test("Gold weapon upgrades affect only their intended weapon behavior", () => {
   assert.equal(player.weaponBonuses["weedwacker-9000"].rangeMultiplier, 1.4);
   applyRunUpgrade(player, "explosive-projectiles");
   assert.equal(player.rangedExplosion, true);
+});
+
+test("Vampire Fang Gold upgrade can be selected and increases its range", () => {
+  const player = new Player();
+  assert.equal(applyRunUpgrade(player, "vampire-fang-reach"), true);
+  assert.equal(player.weaponBonuses["vampire-fang"].rangeMultiplier, 1.35);
+  assert.equal(applyRunWeaponBonuses(weaponById("vampire-fang"), player).range, 110 * 1.35);
 });
 
 test("all weapon-specific Gold upgrades modify final weapon stats", () => {
@@ -191,8 +229,8 @@ test("all weapon-specific Gold upgrades modify final weapon stats", () => {
 
 test("the full upgrade catalog has one weapon-specific Gold upgrade per weapon", () => {
   const weaponUpgrades = RUN_UPGRADES.filter((upgrade) => upgrade.weaponId);
-  assert.equal(weaponUpgrades.length, 27);
-  assert.equal(new Set(weaponUpgrades.map((upgrade) => upgrade.weaponId)).size, 27);
+  assert.equal(weaponUpgrades.length, 44);
+  assert.equal(new Set(weaponUpgrades.map((upgrade) => upgrade.weaponId)).size, 44);
 });
 
 test("banked coins save, load, and reject malformed data", () => {
@@ -237,14 +275,26 @@ test("glossary enemy defeat counts persist and reject malformed values", () => {
     gopher: 3,
     "king-gnomulus": 0,
     "common-weed": 0,
+    strongweed: 0,
     squirrel: 0,
     "acorn-squirrel": 0,
     dandelion: 0,
+    "lily-queen": 0,
     groundskeeper: 0,
     goose: 0,
     pondfather: 0,
     golfer: 0,
     "pro-golfer": 0,
+    snail: 0,
+    mosquito: 0,
+    deer: 0,
+    "ancient-snail": 0,
+    "rogue-soccer-ball": 0,
+    sprinter: 0,
+    backpack: 0,
+    basketball: 0,
+    "pe-teacher": 0,
+    "ball-launcher": 0,
   });
   values.set("lawn-enforcement-save-v1", JSON.stringify({
     defeatedEnemies: { gnome: -5, gopher: "many", "king-gnomulus": 2.9 },
@@ -254,14 +304,26 @@ test("glossary enemy defeat counts persist and reject malformed values", () => {
     gopher: 0,
     "king-gnomulus": 2,
     "common-weed": 0,
+    strongweed: 0,
     squirrel: 0,
     "acorn-squirrel": 0,
     dandelion: 0,
+    "lily-queen": 0,
     groundskeeper: 0,
     goose: 0,
     pondfather: 0,
     golfer: 0,
     "pro-golfer": 0,
+    snail: 0,
+    mosquito: 0,
+    deer: 0,
+    "ancient-snail": 0,
+    "rogue-soccer-ball": 0,
+    sprinter: 0,
+    backpack: 0,
+    basketball: 0,
+    "pe-teacher": 0,
+    "ball-launcher": 0,
   });
 });
 

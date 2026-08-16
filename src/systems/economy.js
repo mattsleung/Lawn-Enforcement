@@ -1,4 +1,4 @@
-import { CHARACTER_STAT_COSTS, CHEST_COST, CHEST_ODDS, PERMANENT_WEAPONS, weaponMaxLevelForMaps, weaponUpgradeCost } from "../config/economy-config.js";
+import { CHARACTER_STAT_COSTS, CHEST_COST, CHEST_COST_INCREASE, CHEST_ODDS, MAX_CHEST_COST, PERMANENT_WEAPONS, SHOP_RARITY_PRICES, weaponMaxLevelForMaps, weaponUpgradeCost } from "../config/economy-config.js";
 
 export function rollChestRarity(random = Math.random) {
   const roll = random() * 1000;
@@ -17,10 +17,22 @@ export function dailyDealForDate(dateKey) {
     : PERMANENT_WEAPONS.find((weapon) => weapon.id === "leaf-blower");
 }
 
-export function buyWeapon(progress, weaponId, priceOverride = null) {
+export function shopWeaponPrice(weaponOrId) {
+  const weapon = typeof weaponOrId === "string"
+    ? PERMANENT_WEAPONS.find((entry) => entry.id === weaponOrId)
+    : weaponOrId;
+  return SHOP_RARITY_PRICES[weapon?.rarity] ?? null;
+}
+
+export function chestCost(progress) {
+  return Math.min(MAX_CHEST_COST, CHEST_COST + Math.max(0, progress.chestPurchases ?? 0) * CHEST_COST_INCREASE);
+}
+
+export function buyWeapon(progress, weaponId, priceOverride = null, applyGlobalMultiplier = true) {
   const weapon = PERMANENT_WEAPONS.find((entry) => entry.id === weaponId);
-  const price = priceOverride ?? weapon?.price;
-  if (!weapon || price == null || progress.coins < price || progress.ownedWeapons.includes(weaponId)) return false;
+  const multiplier = applyGlobalMultiplier && progress.shieldUnlocked ? 2 : 1;
+  const price = (priceOverride ?? weapon?.price) * multiplier;
+  if (!weapon || weapon.developerOnly || price == null || progress.coins < price || progress.ownedWeapons.includes(weaponId)) return false;
   progress.coins -= price;
   progress.ownedWeapons.push(weaponId);
   progress.weaponLevels[weaponId] = 1;
@@ -30,7 +42,7 @@ export function buyWeapon(progress, weaponId, priceOverride = null) {
 export function upgradeWeapon(progress, weaponId, maxLevel = weaponMaxLevelForMaps(progress.unlockedMaps)) {
   const level = progress.weaponLevels[weaponId] ?? 0;
   if (!progress.ownedWeapons.includes(weaponId) || level < 1 || level >= maxLevel) return false;
-  const cost = weaponUpgradeCost(level);
+  const cost = weaponUpgradeCost(level) * (progress.shieldUnlocked ? 2 : 1);
   if (progress.coins < cost) return false;
   progress.coins -= cost;
   progress.weaponLevels[weaponId] = level + 1;
@@ -39,8 +51,11 @@ export function upgradeWeapon(progress, weaponId, maxLevel = weaponMaxLevelForMa
 
 export function upgradeCharacterStat(progress, stat, maxLevel = 5) {
   const level = progress.characterStats[stat] ?? 0;
-  if (!(stat in progress.characterStats) || level >= maxLevel || level >= CHARACTER_STAT_COSTS.length) return false;
-  const cost = CHARACTER_STAT_COSTS[level];
+  const statMaxLevel = stat === "regeneration" ? 1 : maxLevel;
+  if (!(stat in progress.characterStats) || level >= statMaxLevel || level >= CHARACTER_STAT_COSTS.length) return false;
+  if (stat === "shield" && !progress.shieldUnlocked) return false;
+  if (stat === "regeneration" && !(progress.unlockedMaps ?? []).includes("aquatic-garden")) return false;
+  const cost = CHARACTER_STAT_COSTS[level] * (progress.shieldUnlocked ? 2 : 1);
   if (progress.coins < cost) return false;
   progress.coins -= cost;
   progress.characterStats[stat] = level + 1;
@@ -48,10 +63,12 @@ export function upgradeCharacterStat(progress, stat, maxLevel = 5) {
 }
 
 export function openChest(progress, random = Math.random) {
-  if (progress.coins < CHEST_COST) return null;
-  progress.coins -= CHEST_COST;
+  const cost = chestCost(progress);
+  if (progress.coins < cost) return null;
+  progress.coins -= cost;
+  progress.chestPurchases = Math.max(0, progress.chestPurchases ?? 0) + 1;
   const rarity = rollChestRarity(random);
-  const candidates = PERMANENT_WEAPONS.filter((weapon) => weapon.rarity === rarity);
+  const candidates = PERMANENT_WEAPONS.filter((weapon) => weapon.rarity === rarity && !weapon.developerOnly && !weapon.limited);
   const weapon = candidates[Math.floor(random() * candidates.length)];
   if (progress.ownedWeapons.includes(weapon.id)) {
     progress.coins += weapon.duplicateValue;

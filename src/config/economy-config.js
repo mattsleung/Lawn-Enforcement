@@ -1,6 +1,16 @@
 import { WEAPON_DEFINITIONS } from "./weapons.js";
 
-export const CHEST_COST = 1000;
+export const CHEST_COST = 2000;
+export const CHEST_COST_INCREASE = 200;
+export const MAX_CHEST_COST = 10000;
+
+export const SHOP_RARITY_PRICES = Object.freeze({
+  Common: 1000,
+  Uncommon: 3000,
+  Rare: 10000,
+  Epic: 20000,
+  Legendary: 60000,
+});
 
 export const CHEST_ODDS = Object.freeze([
   Object.freeze({ rarity: "Common", chance: 0.25 }),
