@@ -308,7 +308,7 @@
     nextBossSpawnDelay: 60,
     victoryCoinBonus: 5000,
     bossThrownEnemy: null,
-    unlocks: null,
+    unlocks: "construction-site",
     obstacles: Object.freeze([
       Object.freeze({ x: 0, y: 0, width: VIEWPORT.designWidth * 1.8, height: 110, kind: "running-track", solid: false, speedMultiplier: 1.2 }),
       Object.freeze({ x: 0, y: VIEWPORT.designHeight * 1.5 - 110, width: VIEWPORT.designWidth * 1.8, height: 110, kind: "running-track", solid: false, speedMultiplier: 1.2 }),
@@ -326,7 +326,58 @@
     boss: Object.freeze({ type: "pe-teacher", name: "The PE Teacher", health: 8000, speed: 340, dodgeballCooldown: 2, dodgeballSpeed: 520, dodgeballDamage: 28, dodgeballKnockback: 55, whistleCooldown: 3, whistleDamage: 35, whistleRadius: 240, whistleKnockback: 130, lapCooldown: 8 }),
   });
 
-  const MAP_SLOTS = Object.freeze([FIRST_MAP, FRONTYARD_MAP, GARDEN_MAP, PUBLIC_PARK_MAP, LAKE_ELIZABETH_MAP, GOLF_COURSE_MAP, AQUATIC_GARDEN_MAP, REDWOOD_TRAIL_MAP, SCHOOL_FIELD_MAP]);
+  const CONSTRUCTION_SITE_MAP = Object.freeze({
+    id: "construction-site",
+    name: "Construction Site",
+    world: Object.freeze({ width: VIEWPORT.designWidth * 1.8, height: VIEWPORT.designHeight * 1.6, gridSize: 96 }),
+    lawnColors: Object.freeze({ primary: "#896d47", secondary: "#7d6240" }),
+    houseSide: null,
+    normalEnemyType: "construction-site",
+    enemyCap: 100,
+    bossSpawnTime: 120,
+    victoryCoinBonus: 5500,
+    bossThrownEnemy: null,
+    unlocks: "chicken-farm",
+    debrisMinCooldown: 6,
+    debrisMaxCooldown: 10,
+    // Requested relative weights total 110 (20/30/15/15/30), so store their
+    // normalized probabilities while preserving that exact ratio.
+    constructionSpawnWeights: Object.freeze({ worker: 1.5 / 11, cone: 3 / 11, tire: 1.5 / 11, brickCarrier: 1 / 11, safetyVest: 4 / 11 }),
+    obstacles: Object.freeze([
+      Object.freeze({ x: 180, y: 190, width: 120, height: 60, kind: "dirt-pile", solid: false }),
+      Object.freeze({ x: 710, y: 270, width: 150, height: 55, kind: "pipes", solid: false }),
+      Object.freeze({ x: 1330, y: 210, width: 130, height: 65, kind: "pallets", solid: false }),
+      Object.freeze({ x: 390, y: 760, width: 180, height: 35, kind: "barrier", solid: false }),
+      Object.freeze({ x: 1120, y: 820, width: 190, height: 35, kind: "barrier", solid: false }),
+    ]),
+    boss: Object.freeze({ type: "excavator", name: "The Excavator", health: 12000, speed: 52, damage: 35 }),
+  });
+
+  const CHICKEN_FARM_MAP = Object.freeze({
+    id: "chicken-farm",
+    name: "Chicken Farm",
+    world: Object.freeze({ width: VIEWPORT.designWidth * 1.7, height: VIEWPORT.designHeight * 1.6, gridSize: 96 }),
+    lawnColors: Object.freeze({ primary: "#7e9d4a", secondary: "#967544" }),
+    houseSide: null,
+    normalEnemyType: "chicken-farm",
+    enemyCap: 150,
+    chickenEggDeathChance: 0.5,
+    bossSpawnTime: 120,
+    victoryCoinBonus: 6000,
+    bossThrownEnemy: null,
+    unlocks: null,
+    obstacles: Object.freeze([
+      Object.freeze({ x: 80, y: 90, width: 260, height: 150, kind: "barn", solid: true }),
+      Object.freeze({ x: 1640, y: 120, width: 190, height: 115, kind: "chicken-coop", solid: true }),
+      Object.freeze({ x: 180, y: 850, width: 130, height: 80, kind: "hay-bales", solid: true }),
+      Object.freeze({ x: 1500, y: 800, width: 150, height: 90, kind: "hay-bales", solid: true }),
+      Object.freeze({ x: 850, y: 130, width: 150, height: 55, kind: "feeding-area", solid: false }),
+      Object.freeze({ x: 850, y: 930, width: 150, height: 55, kind: "feeding-area", solid: false }),
+    ]),
+    boss: Object.freeze({ type: "mother-hen", name: "Mother Hen", health: 15000, speed: 88, damage: 35 }),
+  });
+
+  const MAP_SLOTS = Object.freeze([FIRST_MAP, FRONTYARD_MAP, GARDEN_MAP, PUBLIC_PARK_MAP, LAKE_ELIZABETH_MAP, GOLF_COURSE_MAP, AQUATIC_GARDEN_MAP, REDWOOD_TRAIL_MAP, SCHOOL_FIELD_MAP, CONSTRUCTION_SITE_MAP, CHICKEN_FARM_MAP]);
   const MAPS_BY_ID = Object.freeze(Object.fromEntries(MAP_SLOTS.map((map) => [map.id, map])));
 
   function mapById(id) {
@@ -359,6 +410,17 @@
     Object.freeze({ id: "basketball", name: "Basketball", description: "A 100-health bouncing ball whose contact damage is most dangerous when it is near the ground." }),
     Object.freeze({ id: "pe-teacher", name: "The PE Teacher", description: "An 8,000-health School Field boss with dodgeballs, whistle shockwaves, and rapid track laps." }),
     Object.freeze({ id: "ball-launcher", name: "The Ball Launcher", description: "A stationary 10,000-health machine that fires mixed sports balls and radial ball dumps." }),
+    Object.freeze({ id: "construction-worker", name: "Construction Worker", description: "A durable 500-health hammer carrier that steadily pursues the player." }),
+    Object.freeze({ id: "traffic-cone", name: "Traffic Cone", description: "A hopping support unit that plants itself and speeds nearby enemies up by 25%." }),
+    Object.freeze({ id: "runaway-tire", name: "Runaway Tire", description: "A fast rolling enemy that ricochets from the arena boundary up to three times." }),
+    Object.freeze({ id: "brick-carrier", name: "Brick Carrier", description: "An 800-health carrier whose thrown and dropped bricks cause damaging explosions." }),
+    Object.freeze({ id: "safety-vest", name: "Safety Vest", description: "A support enemy that attaches to allies and grants a temporary 100-HP shield." }),
+    Object.freeze({ id: "excavator", name: "The Excavator", description: "The Construction Site boss; its bucket, dirt, debris, and summoned crew reshape the fight." }),
+    Object.freeze({ id: "chicken", name: "Chicken", description: "A 150-health zigzagging farm enemy that periodically sprints and has a 50% chance to leave an Egg." }),
+    Object.freeze({ id: "chicken-egg", name: "Egg", description: "A rolling 100-health Egg that hatches into three Chicks after ten seconds if it survives." }),
+    Object.freeze({ id: "chick", name: "Chick", description: "A small fast enemy that grows into a Chicken after surviving for twenty seconds." }),
+    Object.freeze({ id: "rooster", name: "Rooster", description: "A durable farm support enemy whose crow speeds nearby Chickens and Chicks for three seconds." }),
+    Object.freeze({ id: "mother-hen", name: "Mother Hen", description: "The oversized Chicken Farm boss with Egg Toss, Chicken Rush, Wing Blast, and an enraged phase." }),
   ]);
 
 
@@ -446,7 +508,7 @@
     }),
     rangedWeapon({
       id: "beach-ball", name: "Beach Ball", rarity: "Epic", price: 5000,
-      duplicateValue: 170, damage: 38, cooldown: 2, projectileSpeed: 650, projectileLifetime: 3.8,
+      duplicateValue: 170, damage: 34, cooldown: 2, projectileSpeed: 650, projectileLifetime: 3.8,
       projectileKind: "beach-ball", color: "#f2a84b", projectileRadius: 18, bounces: 5,
       spread: 0.08, recoil: 0.08, explosive: true, splashRadius: 92, splashDamageMultiplier: 0.7,
       boundaryBounces: true, allowRepeatBounces: true, levelTenFeature: "Bigger Splash: +50% final explosion damage and radius",
@@ -455,7 +517,7 @@
     }),
     rangedWeapon({
       id: "shurikens", name: "Shurikens", rarity: "Secret", price: null,
-      duplicateValue: 2000, damage: 14, cooldown: 0.42, projectileSpeed: 1280, projectileLifetime: 1.4,
+      duplicateValue: 2000, damage: 14, cooldown: 0.24, projectileSpeed: 1280, projectileLifetime: 1.4,
       projectileKind: "shuriken", color: "#d9e5ed", projectileRadius: 5, pierces: 3,
       perfectAccuracy: true, spread: 0, recoil: 0,
       description: "Perfectly accurate, rapid blades that pierce three enemies in line.",
@@ -469,19 +531,37 @@
       recoil: 0.045, levelTenModifiers: { explosive: true, splashRadius: 72, slowDuration: 2 },
     }),
     rangedWeapon({
-      id: "rainbow-apples", name: "Rainbow Apple", rarity: "Common", limited: true, seasonOnly: true,
+      id: "rainbow-apples", name: "Rainbow Apple", rarity: "Common", limited: true, seasonOnly: true, season: "Lawn Enforcement",
       price: null, duplicateValue: 40, damage: 35.2, cooldown: 1, projectileSpeed: 680, projectileLifetime: 1.5,
       projectileKind: "rainbow-apple", color: "#ff5f74", description: "A color-changing seasonal apple with the same reliable throw.",
       levelTenFeature: "Overripe core: explodes and slows enemies", recoil: 0.045,
       levelTenModifiers: { explosive: true, splashRadius: 72, slowDuration: 2 },
     }),
     rangedWeapon({
-      id: "party-hat", name: "Party Hat", rarity: "Mythical", limited: true, seasonOnly: true,
+      id: "party-hat", name: "Party Hat", rarity: "Mythical", limited: true, seasonOnly: true, season: "Lawn Enforcement",
       price: null, duplicateValue: 440, damage: 21, cooldown: 0.8, projectileSpeed: 760, projectileLifetime: 0.72,
       projectileKind: "confetti", color: "#ff5f74", projectileCount: 7, fanSpacing: 0.12, spread: 0.04,
       projectileRadius: 5, recoil: 0.07, description: "Blasts a wide cone of brightly colored confetti.",
       levelTenFeature: "Grand Finale: fires three additional confetti pieces",
       levelTenModifiers: { projectileCount: 10 },
+    }),
+    rangedWeapon({
+      id: "rainbow-horseshoe", name: "Rainbow Horseshoe", rarity: "Epic", limited: true, seasonOnly: true, season: "Lawn Enforcement",
+      price: null, duplicateValue: 260, damage: 32, cooldown: 1.3, projectileSpeed: 620, projectileLifetime: 8.4,
+      projectileKind: "horseshoe", color: "#ff5f74", projectileRadius: 14, pierces: 3,
+      horseshoeRange: 360, horseshoeArc: 1.7, horseshoeOrbitCount: 3, rainbowProjectile: true,
+      description: "A long-range color-changing horseshoe that circles you three times before returning.",
+      levelTenFeature: "Endless Rainbow: +30% flight arc", levelTenModifiers: { horseshoeArc: 2.2 },
+    }),
+    rangedWeapon({
+      id: "pinata", name: "Piñata", rarity: "Legendary", limited: true, seasonOnly: true, season: "Lawn Enforcement",
+      price: null, duplicateValue: 440, damage: 90, cooldown: 3.8, projectileSpeed: 0, projectileLifetime: 0,
+      projectileKind: "garden-gnome", color: "#ef6cae", projectileRadius: 18,
+      decoyHealth: 50, decoyDuration: 7, decoyExplosionDamage: 90, decoyExplosionRadius: 96, decoyCount: 1,
+      pinataConfettiCount: 8, pinataConfettiDamage: 21, pinataConfettiSpeed: 520, pinataConfettiLifetime: 0.35,
+      pinata: true, description: "Places a rainbow Piñata decoy that bursts when destroyed or expired.",
+      levelTenFeature: "Candy Burst: +50% final explosion damage and +20% radius",
+      levelTenModifiers: { decoyExplosionDamage: 135, decoyExplosionRadius: 115 },
     }),
     rangedWeapon({
       id: "pebble-shooter", name: "Pebble Shooter", rarity: "Common", price: 240, duplicateValue: 40,
@@ -513,7 +593,7 @@
     rangedWeapon({
       id: "trash-can-lid", name: "Trash Can Lid", rarity: "Legendary", price: 1000, duplicateValue: 440,
       damage: 30, cooldown: 1.3, projectileSpeed: 760, projectileLifetime: 3.2,
-      projectileKind: "trash-can-lid", color: "#9ca6a7", projectileRadius: 14, pierces: 99,
+      projectileKind: "trash-can-lid", color: "#9ca6a7", projectileRadius: 14, pierces: Number.MAX_SAFE_INTEGER,
       boomerangRange: 280, returnSpeed: 680, returnDamageMultiplier: 1,
       description: "A spinning lid that passes through enemies outward, then returns to you.",
       levelTenFeature: "Reinforced Lid: returning hits deal +50% damage",
@@ -521,12 +601,12 @@
     }),
     rangedWeapon({
       id: "garden-gnome", name: "Garden Gnome", rarity: "Rare", price: 2200, duplicateValue: 170,
-      damage: 70, cooldown: 3.5, projectileSpeed: 0, projectileLifetime: 0,
+      damage: 1, cooldown: 3.5, projectileSpeed: 0, projectileLifetime: 0,
       projectileKind: "garden-gnome", color: "#d46a49", projectileRadius: 18,
-      decoyHealth: 140, decoyDuration: 8, decoyExplosionDamage: 70, decoyExplosionRadius: 90, decoyCount: 1,
-      description: "Places a decoy gnome that attracts minions before exploding.",
-      levelTenFeature: "Last Laugh: +50% final explosion damage and +20% radius",
-      levelTenModifiers: { decoyExplosionDamage: 105, decoyExplosionRadius: 108 },
+      decoyHealth: 140, decoyDuration: 8, decoyExplosionDamage: 0, decoyExplosionRadius: 0, decoyCount: 1,
+      description: "Places a sturdy decoy gnome that attracts minions without exploding.",
+      levelTenFeature: "Reinforced Ornament: +50% health and duration",
+      levelTenModifiers: { decoyHealth: 210, decoyDuration: 12 },
     }),
     rangedWeapon({
       id: "fertilizer-bag", name: "Fertilizer Bag", rarity: "Epic", price: 1700, duplicateValue: 260,
@@ -698,7 +778,9 @@
       developerOnly: true, duplicateValue: 2000, damage: 8.88832, cooldown: 0.5859375, projectileSpeed: 1040,
       projectileLifetime: 1.1, projectileKind: "undefined", color: "#e05cff", projectileCount: 2, bounces: 2,
       burstRounds: 2, burstInterval: 0.045,
-      pierces: 1, explosive: true, splashRadius: 44, knockback: 10, spread: 0.08, recoil: 0.035, description: "Fires two illegal rapid bursts of bouncing, piercing, explosive yard energy.",
+      pierces: 1, explosive: true, splashRadius: 44, knockback: 10, spread: 0.08, recoil: 0.035,
+      fireDamagePerSecond: 15, fireDuration: 5, freezeDuration: 2,
+      description: "Fires two illegal rapid bursts of burning, freezing, bouncing, piercing yard energy.",
       levelTenFeature: "Code violation: +2 projectiles", levelTenModifiers: { projectileCount: 3 },
     }),
   ]);
@@ -798,6 +880,7 @@
       maxMines: (weapon.maxMines ?? 0) + (bonus.maxMinesAdd ?? 0),
       chainCount: (weapon.chainCount ?? 0) + (bonus.chainCountAdd ?? 0),
       decoyCount: (weapon.decoyCount ?? 0) + (bonus.decoyCountAdd ?? 0),
+      decoyExplosionRadius: (weapon.decoyExplosionRadius ?? 0) * (bonus.decoyExplosionRadiusMultiplier ?? 1),
       returnDamageMultiplier: (weapon.returnDamageMultiplier ?? 1) * (bonus.returnDamageMultiplier ?? 1),
       fertilizerCloudRadius: (weapon.fertilizerCloudRadius ?? 0) * (bonus.fertilizerCloudRadiusMultiplier ?? 1),
       tornadoPullRadius: (weapon.tornadoPullRadius ?? 0) * (bonus.tornadoPullRadiusMultiplier ?? 1),
@@ -915,6 +998,14 @@
   const CHARACTER_STAT_COSTS = Object.freeze([40, 80, 140, 220, 320, 450, 600, 780, 980, 1200]);
   const WEAPON_LEVEL_COSTS = Object.freeze([100, 250, 500, 900]);
   const BASE_WEAPON_MAX_LEVEL = 5;
+  const CHARACTER_STAT_LEVELS_PER_MAP = 2;
+
+  function characterStatMaxLevelForMaps(unlockedMaps = ["backyard"]) {
+    const mapCount = unlockedMaps instanceof Set
+      ? unlockedMaps.size
+      : Array.isArray(unlockedMaps) ? new Set(unlockedMaps).size : 1;
+    return Math.min(CHARACTER_STAT_COSTS.length, Math.max(1, mapCount) * CHARACTER_STAT_LEVELS_PER_MAP);
+  }
 
   function weaponMaxLevelForMaps(unlockedMaps = ["backyard"]) {
     const mapCount = unlockedMaps instanceof Set
@@ -1033,6 +1124,8 @@
     weaponUpgrade("apple-projectile", "Double Trouble", "Apples: +1 projectile", "apples"),
     weaponUpgrade("rainbow-apple-projectile", "Double Rainbow", "Rainbow Apple: +1 projectile", "rainbow-apples"),
     weaponUpgrade("party-hat-confetti", "Party Popper", "Party Hat: +3 confetti projectiles", "party-hat"),
+    weaponUpgrade("rainbow-double-luck", "Double Rainbow Luck", "Rainbow Horseshoe: throw one extra horseshoe", "rainbow-horseshoe"),
+    weaponUpgrade("pinata-candy", "More Candy", "Piñata: +40% explosion radius", "pinata"),
     weaponUpgrade("sprayer-nozzle", "Wider Nozzle", "Garden Sprayer: +3 projectiles", "garden-sprayer"),
     weaponUpgrade("tennis-bounce", "Championship Felt", "Tennis Balls: +1 bounce", "tennis-balls"),
     weaponUpgrade("acorn-pierce", "Squirrel Special", "Acorn Slingshot: +1 pierce", "acorn-slingshot"),
@@ -1128,6 +1221,8 @@
       "apple-projectile": () => addWeaponBonus(player, "apples", { projectileCountAdd: 1 }),
       "rainbow-apple-projectile": () => addWeaponBonus(player, "rainbow-apples", { projectileCountAdd: 1 }),
       "party-hat-confetti": () => addWeaponBonus(player, "party-hat", { projectileCountAdd: 3 }),
+      "rainbow-double-luck": () => addWeaponBonus(player, "rainbow-horseshoe", { projectileCountAdd: 1 }),
+      "pinata-candy": () => addWeaponBonus(player, "pinata", { decoyExplosionRadiusMultiplier: 1.4 }),
       "sprayer-nozzle": () => addWeaponBonus(player, "garden-sprayer", { projectileCountAdd: 3 }),
       "steel-toes": () => { player.damageTakenMultiplier *= 0.75; },
       "weedwacker-range": () => addWeaponBonus(player, "weedwacker-9000", { rangeMultiplier: 1.4 }),
@@ -1456,10 +1551,17 @@
   const SEASON_DAILY_CLAIM_LIMIT = 6;
   const RAINBOW_APPLE_COST = 5;
   const PARTY_HAT_COST = 25;
+  const RAINBOW_HORSESHOE_COST = 15;
+  const PINATA_COST = 20;
   const SEASON_COIN_EXCHANGE_VALUE = 800;
   const SEASON_END_AT = new Date(2026, 9, 1).getTime();
   const SEASON_ACTIVE = Date.now() < SEASON_END_AT;
-  const SEASON_WEAPONS = Object.freeze({ "rainbow-apples": RAINBOW_APPLE_COST, "party-hat": PARTY_HAT_COST });
+  const SEASON_WEAPONS = Object.freeze({
+    "rainbow-apples": RAINBOW_APPLE_COST,
+    "rainbow-horseshoe": RAINBOW_HORSESHOE_COST,
+    pinata: PINATA_COST,
+    "party-hat": PARTY_HAT_COST,
+  });
 
   const QUESTS = Object.freeze([
     { id: "season-gnomes", type: "enemy-kills", targetId: "gnome", goal: 40, reward: 1, label: "Defeat 40 Lawn Gnomes", maps: ["backyard"] },
@@ -1947,6 +2049,8 @@
     apples: { kind: "apple", primary: "#b83b32", secondary: "#5f8d3e" },
     "rainbow-apples": { kind: "apple", primary: "#ff5f74", secondary: "#7ff06c", rainbow: true },
     "party-hat": { kind: "party-hat", primary: "#ff5f74", secondary: "#65d9ff", rainbow: true },
+    "rainbow-horseshoe": { kind: "horseshoe", primary: "#ff5f74", secondary: "#65d9ff", rainbow: true },
+    pinata: { kind: "pinata", primary: "#ee5f76", secondary: "#63d6e8" },
     "pebble-shooter": { kind: "small-gun", primary: "#b6a98d", secondary: "#5d5141" },
     "sprinkler-mine": { kind: "sprinkler", primary: "#62c7d2", secondary: "#456b72" },
     "bug-zapper": { kind: "zapper", primary: "#f4df63", secondary: "#6259a7" },
@@ -2040,6 +2144,13 @@
         circle(context, 10, 0, 11, primary); context.strokeStyle = secondary; context.beginPath(); context.arc(10, 0, 7, 0, Math.PI * 2); context.stroke(); break;
       case "gnome":
         context.fillStyle = secondary; context.fillRect(2, -1, 12, 12); context.fillStyle = primary; context.beginPath(); context.moveTo(1, -1); context.lineTo(8, -17); context.lineTo(15, -1); context.closePath(); context.fill(); circle(context, 8, -2, 5, "#e8b995"); break;
+      case "pinata":
+        context.fillStyle = "#ffcf4b"; context.fillRect(1, -9, 18, 18);
+        context.fillStyle = "#ee5f76"; context.fillRect(1, -9, 18, 4);
+        context.fillStyle = "#62d4e8"; context.fillRect(1, -1, 18, 4);
+        context.fillStyle = "#8fd65a"; context.fillRect(1, 7, 18, 3);
+        context.fillStyle = "#7c58b8"; context.fillRect(4, 10, 4, 6); context.fillRect(13, 10, 4, 6);
+        context.fillStyle = "#f2a04a"; context.fillRect(18, -5, 5, 5); break;
       case "bag":
         context.fillStyle = primary; context.fillRect(0, -8, 19, 17); context.fillStyle = secondary; context.fillRect(4, -11, 11, 4); context.fillRect(5, -2, 9, 4); break;
       case "leaf-fan":
@@ -2142,7 +2253,9 @@
         && this.y >= obstacle.y && this.y <= obstacle.y + obstacle.height);
       const inSlime = obstacles.some((obstacle) => obstacle.kind === "slime"
         && Math.hypot(this.x - obstacle.x, this.y - obstacle.y) <= obstacle.radius);
-      const movementSpeed = inSlime ? this.speed * 0.4 : (inSandBunker || inWater) ? this.speed * 0.5 : onRunningTrack ? this.speed * 1.2 : this.speed;
+      const inDirtPile = obstacles.some((obstacle) => obstacle.kind === "temporary-dirt"
+        && Math.hypot(this.x - obstacle.x, this.y - obstacle.y) <= obstacle.radius);
+      const movementSpeed = inSlime ? this.speed * 0.4 : inDirtPile ? this.speed * 0.7 : (inSandBunker || inWater) ? this.speed * 0.5 : onRunningTrack ? this.speed * 1.2 : this.speed;
       if (this.maxShield > 0) this.shield = Math.min(this.maxShield, this.shield + this.shieldRegen * deltaTime);
       if (this.healthRegenAmount > 0 && this.healthRegenInterval > 0) {
         this.healthRegenTimer += deltaTime;
@@ -2193,7 +2306,6 @@
     render(context, camera, heldWeapon = null) {
       const x = Math.round(this.x - camera.x);
       const y = Math.round(this.y - camera.y);
-      const direction = Math.cos(this.facing) >= 0 ? 1 : -1;
       const walkPhase = this.isMoving
         ? Math.floor(this.walkTime * WALK_FRAMES_PER_SECOND) % 4
         : 0;
@@ -2201,82 +2313,37 @@
 
       context.save();
       context.translate(x, y + bobOffset);
+      context.globalAlpha = this.hitFlash > 0 ? 0.5 : 1;
 
-      const walkFrame = this.isMoving ? walkPhase % 2 : 0;
-      const sprite = this.walkSprites[walkFrame];
-      if (sprite?.complete && sprite.naturalWidth > 0) {
-        const previousSmoothing = context.imageSmoothingEnabled;
-        context.imageSmoothingEnabled = true;
-        context.globalAlpha = this.hitFlash > 0 ? 0.45 : 1;
-        context.drawImage(sprite, -24, -36, 48, 48);
-        context.globalAlpha = 1;
-        context.imageSmoothingEnabled = previousSmoothing;
-        context.fillStyle = "#241d18";
-        context.fillRect(-15, -45, 32, 6);
-        context.fillStyle = "#9e342b";
-        context.fillRect(-13, -43, 28, 2);
-        this.renderHeldWeapon(context, heldWeapon);
-        context.restore();
-        return;
-      }
-
-      // Coded fallback shown only while the bitmap sprite loads.
-      context.scale(direction, 1);
-      context.fillStyle = "#28251d";
-      context.fillRect(-15, -25, 32, 32);
-      context.fillRect(-13, -45, 27, 24);
-      context.fillRect(-14, 1, 30, 25);
-
-      // Back leg and shoe.
-      context.fillStyle = "#26364d";
-      context.fillRect(-12, 4, 10, 19);
-      context.fillStyle = "#24231f";
-      context.fillRect(-15, 19, 15, 7);
-
-      // Front leg and shoe.
-      context.fillStyle = COLORS.playerPants;
-      context.fillRect(1, 3, 11, 20);
-      context.fillStyle = "#34312a";
-      context.fillRect(0, 19, 17, 7);
-      context.fillRect(11, 16, 8, 7);
-
-      // Shirt, belt, and suburban belly.
-      context.fillStyle = "#5e794c";
-      context.fillRect(-13, -22, 22, 27);
-      context.fillRect(5, -17, 10, 20);
-      context.fillStyle = COLORS.playerShirt;
-      context.fillRect(-9, -25, 19, 25);
-      context.fillRect(7, -17, 8, 16);
-      context.fillStyle = "#3b3024";
-      context.fillRect(-12, -1, 27, 5);
-      context.fillStyle = "#d9b64c";
-      context.fillRect(2, -1, 5, 5);
-
-      // Head in side profile, including nose, hair, and moustache.
+      // Keep the same simple, front-facing block character used in the test range.
       context.fillStyle = COLORS.playerSkin;
-      context.fillRect(-7, -42, 18, 19);
-      context.fillRect(8, -36, 8, 9);
-      context.fillRect(13, -33, 6, 5);
+      context.fillRect(-12, -20, 24, 25);
       context.fillStyle = "#554235";
-      context.fillRect(-9, -45, 17, 6);
-      context.fillRect(-11, -42, 6, 12);
-      context.fillStyle = "#f3e8c8";
-      context.fillRect(7, -37, 4, 4);
+      context.fillRect(-12, -20, 24, 5);
       context.fillStyle = "#25231f";
-      context.fillRect(9, -36, 3, 3);
-      context.fillRect(11, -28, 8, 3);
+      context.fillRect(-7, -10, 3, 3);
+      context.fillRect(4, -10, 3, 3);
+      context.fillRect(-4, -3, 8, 2);
+      context.fillStyle = COLORS.playerShirt;
+      context.fillRect(-13, 5, 26, 20);
+
+      const step = this.isMoving && !this.reducedMotion ? (walkPhase % 2 === 0 ? 3 : -3) : 0;
+      context.fillStyle = COLORS.playerPants;
+      context.fillRect(-12, 25, 10, 15 + step);
+      context.fillRect(2, 25, 10, 15 - step);
+      context.fillStyle = "#25231f";
+      context.fillRect(-14, 36 + step, 12, 5);
+      context.fillRect(2, 36 - step, 12, 5);
+      context.globalAlpha = 1;
 
       // Compact health bar keeps the character readable during busy combat.
       context.fillStyle = "#241d18";
       context.fillRect(-18, -55, 38, 7);
       context.fillStyle = "#9e342b";
-      context.fillRect(-16, -53, 34, 3);
+      const healthRatio = Math.max(0, Math.min(1, this.health / Math.max(1, this.maxHealth)));
+      context.fillRect(-16, -53, 34 * healthRatio, 3);
 
-      // Undo the fallback body's mirror before drawing the cursor-facing arm.
-      context.save();
-      context.scale(direction, 1);
       this.renderHeldWeapon(context, heldWeapon);
-      context.restore();
 
       context.restore();
     }
@@ -2753,6 +2820,7 @@
       this.shuffleTimer = 0;
       this.shuffleVelocityX = 0;
       this.shuffleVelocityY = 0;
+      this.playerDriftSpeed = bossMode ? 15 : 0;
       this.enemyType = bossMode ? "strongweed" : "common-weed";
     }
 
@@ -2769,6 +2837,7 @@
       this.copyTimer = this.copyInterval;
       this.hasCloned = true;
       this.hasLateCloned = true;
+      this.playerDriftSpeed = 15;
     }
 
     update(deltaTime, target) {
@@ -2785,8 +2854,12 @@
           this.shuffleVelocityY = Math.sin(angle) * speed;
           this.shuffleTimer = 0.2 + Math.random() * 0.35;
         }
-        this.x += this.shuffleVelocityX * deltaTime;
-        this.y += this.shuffleVelocityY * deltaTime;
+        const targetX = target.x - this.x;
+        const targetY = target.y - this.y;
+        const targetDistance = Math.hypot(targetX, targetY) || 1;
+        const slowMultiplier = this.slowTime > 0 ? 0.5 : 1;
+        this.x += (this.shuffleVelocityX + targetX / targetDistance * this.playerDriftSpeed) * slowMultiplier * deltaTime;
+        this.y += (this.shuffleVelocityY + targetY / targetDistance * this.playerDriftSpeed) * slowMultiplier * deltaTime;
         return {};
       }
       if (this.freezeTime > 0) return {};
@@ -3724,6 +3797,11 @@
         context.restore();
         return;
       }
+      if (this.enemyType === "chicken-egg") {
+        context.fillStyle = "#f4ead2"; context.fillRect(-10, -14, 20, 28);
+        context.fillStyle = "#d4c59f"; context.fillRect(-6, -10, 5, 4);
+        context.restore(); return;
+      }
       context.fillStyle = "#b23832";
       context.fillRect(-8, -14, 16, 8);
       context.fillStyle = "#d8a074";
@@ -4399,7 +4477,6 @@
   }
 
 
-
   class PeTeacherBoss {
     constructor({ x, y, config, world }) {
       this.x = x; this.y = y; this.radius = 42; this.world = world; this.config = config; this.name = config.name;
@@ -4496,6 +4573,154 @@
   }
 
 
+  class ConstructionEnemy {
+    constructor({ x, y, health, speed, damage, radius, enemyType, coinValue = 5, xpValue = 40 }) {
+      Object.assign(this, { x, y, speed, damage, radius, enemyType, coinValue, xpValue });
+      this.maxHealth = health; this.health = health; this.shield = 0; this.maxShield = 0;
+      this.hitFlash = 0; this.slowTime = 0; this.bossMinion = false;
+    }
+    get active() { return this.health > 0; }
+    takeDamage(amount) {
+      if (!this.active) return false;
+      let damage = Math.max(0, Number(amount) || 0);
+      const shieldDamage = Math.min(this.shield, damage); this.shield -= shieldDamage; damage -= shieldDamage;
+      this.health = Math.max(0, this.health - damage); this.hitFlash = 0.12;
+      return this.health === 0;
+    }
+    move(target, deltaTime, multiplier = 1) {
+      const dx = target.x - this.x; const dy = target.y - this.y; const distance = Math.hypot(dx, dy) || 1;
+      this.x += dx / distance * this.speed * multiplier * deltaTime; this.y += dy / distance * this.speed * multiplier * deltaTime;
+    }
+    status(deltaTime) { this.hitFlash = Math.max(0, this.hitFlash - deltaTime); this.slowTime = Math.max(0, this.slowTime - deltaTime); }
+    bar(context, x, y) {
+      context.fillStyle = "#261d18"; context.fillRect(x - this.radius, y - this.radius - 12, this.radius * 2, 5);
+      context.fillStyle = "#db5948"; context.fillRect(x - this.radius, y - this.radius - 12, this.radius * 2 * this.health / this.maxHealth, 5);
+      if (this.shield > 0) { context.fillStyle = "#56c6ec"; context.fillRect(x - this.radius, y - this.radius - 18, this.radius * 2 * Math.min(1, this.shield / Math.max(1, this.maxShield)), 4); }
+    }
+  }
+
+  class ConstructionWorker extends ConstructionEnemy {
+    constructor({ x, y } = {}) { super({ x, y, health: 500, speed: 72, damage: 12, radius: 24, enemyType: "construction-worker" }); }
+    update(dt, target) { this.status(dt); this.move(target, dt, this.speedBuff ? 1.25 : 1); return {}; }
+    render(c, camera) { const x = Math.round(this.x-camera.x), y=Math.round(this.y-camera.y); c.fillStyle=this.hitFlash>0?"#fff4c8":"#e4a63b"; c.fillRect(x-18,y-27,36,45); c.fillStyle="#f3cf9b"; c.fillRect(x-13,y-43,26,18); c.fillStyle="#d8be3e"; c.fillRect(x-17,y-47,34,7); c.fillStyle="#5d4936"; c.fillRect(x+17,y-23,6,38); c.fillRect(x+12,y-25,18,7); this.bar(c,x,y); }
+  }
+
+  class TrafficConeEnemy extends ConstructionEnemy {
+    constructor({ x, y } = {}) { super({ x, y, health: 250, speed: 105, damage: 7, radius: 19, enemyType: "traffic-cone" }); this.plantTimer=3; this.plantedTime=0; this.hop=0; }
+    update(dt,target) { this.status(dt); if(this.plantedTime>0){this.plantedTime-=dt;return{};} this.plantTimer-=dt; if(this.plantTimer<=0){this.plantedTime=3;this.plantTimer=6;return{};} this.hop+=dt*8; this.move(target,dt,this.speedBuff?1.25:1); return{}; }
+    render(c,camera){const x=Math.round(this.x-camera.x),y=Math.round(this.y-camera.y-(this.plantedTime>0?0:Math.abs(Math.sin(this.hop))*8));c.fillStyle=this.hitFlash>0?"#fff4c8":"#f06b25";c.fillRect(x-20,y+12,40,8);c.fillRect(x-13,y-15,26,29);c.fillStyle="#f5eee0";c.fillRect(x-12,y-2,24,6);if(this.plantedTime>0){c.strokeStyle="rgba(245,170,55,.65)";c.lineWidth=3;c.beginPath();c.arc(x,y,105,0,Math.PI*2);c.stroke();}this.bar(c,x,y);}
+  }
+
+  class RunawayTire extends ConstructionEnemy {
+    constructor({ x,y,world }={}){super({x,y,health:300,speed:430,damage:18,radius:22,enemyType:"runaway-tire"});this.world=world;this.heading=0;this.bounces=0;this.rotation=0;}
+    update(dt,target){this.status(dt);if(this.bounces>=3){this.heading=Math.atan2(target.y-this.y,target.x-this.x);this.bounces=0;}if(this.heading===0)this.heading=Math.atan2(target.y-this.y,target.x-this.x);this.x+=Math.cos(this.heading)*this.speed*dt;this.y+=Math.sin(this.heading)*this.speed*dt;let bounced=false;if(this.x<this.radius||this.x>this.world.width-this.radius){this.heading=Math.PI-this.heading;bounced=true;}if(this.y<this.radius||this.y>this.world.height-this.radius){this.heading=-this.heading;bounced=true;}if(bounced)this.bounces++;this.x=Math.max(this.radius,Math.min(this.world.width-this.radius,this.x));this.y=Math.max(this.radius,Math.min(this.world.height-this.radius,this.y));this.rotation+=this.speed*dt/this.radius;return{};}
+    render(c,camera){const x=Math.round(this.x-camera.x),y=Math.round(this.y-camera.y);c.save();c.translate(x,y);c.rotate(this.rotation);c.fillStyle="#252525";c.fillRect(-22,-22,44,44);c.fillStyle="#777";c.fillRect(-10,-10,20,20);c.fillStyle="#222";c.fillRect(-5,-5,10,10);c.restore();this.bar(c,x,y);}
+  }
+
+  class BrickCarrier extends ConstructionEnemy {
+    constructor({x,y}={}){super({x,y,health:800,speed:48,damage:15,radius:31,enemyType:"brick-carrier",coinValue:8,xpValue:60});this.throwTimer=4;this.deathBrickBurst={count:10,range:150,speed:380,enemyDamage:50,playerDamage:10};}
+    update(dt,target){this.status(dt);this.move(target,dt,this.speedBuff?1.25:1);this.throwTimer-=dt;if(this.throwTimer<=0){this.throwTimer=4;return{throwBrick:{x:this.x,y:this.y,targetX:target.x,targetY:target.y,speed:320,damage:10}};}return{};}
+    render(c,camera){const x=Math.round(this.x-camera.x),y=Math.round(this.y-camera.y);c.fillStyle=this.hitFlash>0?"#fff4c8":"#b98b55";c.fillRect(x-25,y-30,50,52);c.fillStyle="#a84432";for(let r=0;r<3;r++)for(let i=0;i<3;i++)c.fillRect(x-25+i*17+(r%2)*5,y-47+r*10,15,8);this.bar(c,x,y);}
+  }
+
+  class SafetyVestEnemy extends ConstructionEnemy {
+    constructor({x,y}={}){super({x,y,health:150,speed:180,damage:0,radius:17,enemyType:"safety-vest",coinValue:3,xpValue:30});this.attachedTo=null;}
+    update(dt,target,obstacles,enemies=[]){this.status(dt);if(this.attachedTo?.active&&this.attachedTo.shield>0){this.x=this.attachedTo.x;this.y=this.attachedTo.y-8;return{};}if(this.attachedTo){this.health=0;return{};}const candidates=enemies.filter(e=>e!==this&&e.active&&!e.isBoss&&!(e instanceof SafetyVestEnemy)&&(e.vestCount??0)<3);const recipient=candidates.sort((a,b)=>Math.hypot(a.x-this.x,a.y-this.y)-Math.hypot(b.x-this.x,b.y-this.y))[0];if(!recipient){this.move(target,dt);return{};}this.move(recipient,dt);if(Math.hypot(recipient.x-this.x,recipient.y-this.y)<=recipient.radius+this.radius){this.attachedTo=recipient;recipient.vestCount=(recipient.vestCount??0)+1;recipient.maxShield=(recipient.maxShield??0)+100;recipient.shield=(recipient.shield??0)+100;}return{};}
+    render(c,camera){if(this.attachedTo&&!this.attachedTo.active)return;const x=Math.round(this.x-camera.x),y=Math.round(this.y-camera.y);c.fillStyle="#f6a51f";c.fillRect(x-16,y-20,32,36);c.fillStyle="#fff2a8";c.fillRect(x-14,y-5,28,6);c.fillStyle="#4d3327";c.fillRect(x-7,y-20,14,25);this.bar(c,x,y);}
+  }
+
+
+  class ExcavatorBoss {
+    constructor({x,y,config,world}){Object.assign(this,{x,y,config,world});this.name=config.name;this.radius=70;this.maxHealth=config.health;this.health=config.health;this.speed=config.speed;this.damage=35;this.isBoss=true;this.enemyType="excavator";this.hitFlash=0;this.slowTime=0;this.slamTimer=4;this.dirtTimer=6;this.supportTimer=2;this.crewTimer=10;}
+    get active(){return this.health>0;}
+    takeDamage(amount){if(!this.active)return false;this.health=Math.max(0,this.health-Math.max(0,Number(amount)||0));this.hitFlash=.12;return this.health===0;}
+    update(dt,target){this.hitFlash=Math.max(0,this.hitFlash-dt);const broken=this.health<3000;const dx=target.x-this.x,dy=target.y-this.y,d=Math.hypot(dx,dy)||1;this.x+=dx/d*this.speed*dt;this.y+=dy/d*this.speed*dt;this.slamTimer-=dt;this.dirtTimer-=dt;this.supportTimer-=dt;this.crewTimer-=dt;const events={};if(this.slamTimer<=0){const jitter=broken?90:0;events.bucketSlam={x:target.x+(Math.random()-.5)*jitter,y:target.y+(Math.random()-.5)*jitter,radius:190,damage:60,knockback:170};this.slamTimer=broken?3:4;}if(this.dirtTimer<=0){events.dirtThrow={x:this.x,y:this.y,targetX:target.x,targetY:target.y,damage:40,speed:430};this.dirtTimer=broken?4:6;}if(this.supportTimer<=0){const supportTypes=["safety-vest","cone","tire"];events.spawnSupport=supportTypes[Math.floor(Math.random()*supportTypes.length)];this.supportTimer=2;}if(this.crewTimer<=0){events.spawnCrew=true;this.crewTimer=10;}events.broken=broken;return events;}
+    render(c,camera){const x=Math.round(this.x-camera.x),y=Math.round(this.y-camera.y),broken=this.health<3000;c.fillStyle=this.hitFlash>0?"#fff3bd":"#e2a62b";c.fillRect(x-66,y-42,112,70);c.fillStyle="#34332d";c.fillRect(x-72,y+20,125,25);c.fillStyle="#81a4ad";c.fillRect(x-28,y-65,48,30);c.fillStyle="#c78b20";c.fillRect(x+35,y-30,70,13);c.fillRect(x+93,y-27,18,55);if(broken){c.fillStyle="rgba(70,70,70,.55)";c.fillRect(x-12,y-92,20,20);c.fillRect(x-2,y-111,16,16);}c.fillStyle="#271f19";c.fillRect(x-70,y-83,140,7);c.fillStyle="#d94739";c.fillRect(x-68,y-81,136*this.health/this.maxHealth,3);}
+  }
+
+
+  class FarmEnemy {
+    constructor({ x, y, health, speed, damage, radius, enemyType, coinValue = 2, xpValue = 15 }) {
+      Object.assign(this, { x, y, speed, damage, radius, enemyType, coinValue, xpValue });
+      this.maxHealth = health; this.health = health; this.shield = 0; this.maxShield = 0;
+      this.hitFlash = 0; this.slowTime = 0; this.speedBuffTime = 0; this.crowShieldActive = false; this.bossMinion = false;
+    }
+    get active() { return this.health > 0; }
+    takeDamage(amount) { if (!this.active) return false; let damage=Math.max(0,Number(amount)||0);const blocked=Math.min(this.shield,damage);this.shield-=blocked;damage-=blocked;this.health=Math.max(0,this.health-damage);this.hitFlash=0.12;return this.health===0; }
+    chase(target, dt, multiplier = 1) { const dx = target.x - this.x; const dy = target.y - this.y; const d = Math.hypot(dx, dy) || 1; this.x += dx / d * this.speed * multiplier * dt; this.y += dy / d * this.speed * multiplier * dt; }
+    tick(dt) { this.hitFlash = Math.max(0, this.hitFlash - dt); this.speedBuffTime = Math.max(0, this.speedBuffTime - dt);if(this.crowShieldActive&&this.speedBuffTime<=0){this.shield=0;this.maxShield=0;this.crowShieldActive=false;} }
+    bar(c, x, y) { c.fillStyle="#38271e";c.fillRect(x-this.radius,y-this.radius-10,this.radius*2,4);c.fillStyle="#d95b49";c.fillRect(x-this.radius,y-this.radius-10,this.radius*2*this.health/this.maxHealth,4);if(this.shield>0){c.fillStyle="#65d7f2";c.fillRect(x-this.radius,y-this.radius-16,this.radius*2*Math.min(1,this.shield/Math.max(1,this.maxShield)),4);} }
+  }
+
+  class Chicken extends FarmEnemy {
+    constructor({ x, y } = {}) {
+      super({ x, y, health: 150, speed: 140, damage: 8, radius: 19, enemyType: "chicken", coinValue: 3, xpValue: 20 });
+      this.sprintTimer = 1.8 + Math.random() * 2.4;
+      this.sprintTime = 0;
+      this.turnTimer = 0;
+      this.strafe = Math.random() < 0.5 ? -1 : 1;
+      this.wanderAngle = (Math.random() - 0.5) * 1.4;
+    }
+    update(dt,target){
+      this.tick(dt);this.sprintTimer-=dt;this.sprintTime=Math.max(0,this.sprintTime-dt);this.turnTimer-=dt;
+      if(this.sprintTimer<=0){this.sprintTime=.45+Math.random()*.65;this.sprintTimer=1.8+Math.random()*3;this.turnTimer=0;}
+      if(this.turnTimer<=0){
+        this.strafe=Math.random()<.5?-1:1;
+        this.wanderAngle=(Math.random()-.5)*(this.sprintTime>0?3.3:2.5);
+        this.turnTimer=.09+Math.random()*.34;
+      }
+      const dx=target.x-this.x,dy=target.y-this.y,d=Math.hypot(dx,dy)||1;
+      const targetAngle=Math.atan2(dy,dx), zigAngle=targetAngle+this.wanderAngle+this.strafe*.42;
+      const pursuit=this.sprintTime>0?.58:.42;
+      let moveX=Math.cos(zigAngle)*(1-pursuit)+dx/d*pursuit;
+      let moveY=Math.sin(zigAngle)*(1-pursuit)+dy/d*pursuit;
+      const moveLength=Math.hypot(moveX,moveY)||1;moveX/=moveLength;moveY/=moveLength;
+      const buff=this.speedBuffTime>0?1.5:1;const sprint=this.sprintTime>0?2.05:1;
+      this.x+=moveX*this.speed*buff*sprint*dt;this.y+=moveY*this.speed*buff*sprint*dt;return{};
+    }
+    render(c,camera){const x=Math.round(this.x-camera.x),y=Math.round(this.y-camera.y);if(this.speedBuffTime>0){c.fillStyle="rgba(255,198,55,.32)";c.fillRect(x-22,y-31,48,55);c.fillStyle="#ffdf55";c.fillRect(x-20,y-18,4,4);c.fillRect(x+23,y-8,4,4);}c.fillStyle=this.hitFlash>0?"#fff":this.speedBuffTime>0?"#fff0a8":"#f4f0dc";c.fillRect(x-16,y-14,29,27);c.fillRect(x+6,y-23,16,17);c.fillStyle=this.speedBuffTime>0?"#ff7b32":"#d94a38";c.fillRect(x+8,y-28,8,6);c.fillStyle="#e7a939";c.fillRect(x+20,y-18,8,5);c.fillStyle="#2b241f";c.fillRect(x+14,y-20,3,3);c.fillRect(x-10,y+13,4,8);c.fillRect(x+6,y+13,4,8);this.bar(c,x,y);}
+  }
+
+  class Chick extends FarmEnemy {
+    constructor({ x, y } = {}) { super({ x, y, health: 75, speed: 220, damage: 4, radius: 12, enemyType: "chick", coinValue: 1, xpValue: 10 }); this.age=0;this.transformTime=0; }
+    update(dt,target){this.tick(dt);this.age+=dt;if(this.age>=20&&this.transformTime<=0)this.transformTime=1;if(this.transformTime>0){this.transformTime-=dt;if(this.transformTime<=0)return{grow:true};return{};}this.chase(target,dt,this.speedBuffTime>0?1.5:1);return{};}
+    render(c,camera){const x=Math.round(this.x-camera.x),y=Math.round(this.y-camera.y);const scale=this.transformTime>0?1+(1-this.transformTime)*.5:1;if(this.speedBuffTime>0){c.fillStyle="rgba(255,190,35,.4)";c.fillRect(x-15,y-16,33,34);c.fillStyle="#fff07a";c.fillRect(x-17,y-4,4,4);c.fillRect(x+16,y-12,4,4);}c.fillStyle=this.hitFlash>0?"#fff":this.speedBuffTime>0?"#ffea62":"#f5cf45";c.fillRect(x-10*scale,y-10*scale,20*scale,20*scale);c.fillStyle="#e69a2d";c.fillRect(x+8,y-3,7,4);c.fillStyle="#2a241e";c.fillRect(x+3,y-5,3,3);this.bar(c,x,y);}
+  }
+
+  class ChickenEgg extends FarmEnemy {
+    constructor({ x, y } = {}) { super({ x, y, health: 100, speed: 62, damage: 5, radius: 14, enemyType: "chicken-egg", coinValue: 1, xpValue: 8 }); this.hatchTimer=10;this.rotation=0; }
+    update(dt,target){this.tick(dt);this.hatchTimer-=dt;this.rotation+=dt*5;this.chase(target,dt);return this.hatchTimer<=0?{hatch:true}:{};}
+    render(c,camera){const x=Math.round(this.x-camera.x),y=Math.round(this.y-camera.y);c.save();c.translate(x,y);c.rotate(Math.sin(this.rotation)*.25);c.fillStyle=this.hitFlash>0?"#fff":"#f4ead2";c.fillRect(-11,-15,22,29);c.fillStyle="#d4c59f";c.fillRect(-7,-12,5,4);c.restore();this.bar(c,x,y);}
+  }
+
+  class Rooster extends FarmEnemy {
+    constructor({ x, y } = {}) { super({ x, y, health: 500, speed: 100, damage: 12, radius: 25, enemyType: "rooster", coinValue: 6, xpValue: 45 }); this.crowTimer=5;this.crowFlash=0; }
+    update(dt,target){this.tick(dt);this.crowTimer-=dt;this.crowFlash=Math.max(0,this.crowFlash-dt);if(this.crowTimer<=0){this.crowTimer=5;this.crowFlash=.6;return{crow:{radius:260,duration:3}};}this.chase(target,dt);return{};}
+    render(c,camera){const x=Math.round(this.x-camera.x),y=Math.round(this.y-camera.y);c.fillStyle=this.hitFlash>0?"#fff":"#9f4f35";c.fillRect(x-21,y-20,38,38);c.fillStyle="#e8d7b0";c.fillRect(x+4,y-31,21,22);c.fillStyle="#d83737";c.fillRect(x+7,y-38,15,8);c.fillStyle="#e9ae39";c.fillRect(x+23,y-24,9,6);if(this.crowFlash>0){c.strokeStyle=`rgba(255,220,90,${this.crowFlash})`;c.lineWidth=4;c.beginPath();c.arc(x,y,260*(1-this.crowFlash/.6),0,Math.PI*2);c.stroke();}this.bar(c,x,y);}
+  }
+
+
+
+  class MotherHenBoss extends Chicken {
+    constructor({x,y,config,world}){super({x,y});this.config=config;this.world=world;this.name=config.name;this.radius=62;this.maxHealth=config.health;this.health=config.health;this.speed=config.speed;this.damage=35;this.isBoss=true;this.enemyType="mother-hen";this.eggTimer=3;this.rushTimer=6;this.wingTimer=5;this.eggWindup=0;this.eggTargets=[];this.wingWindup=0;this.wingTarget=null;}
+    update(dt,target){
+      this.tick(dt);const enraged=this.health<4000;const events={enraged};
+      if(this.eggWindup>0){this.eggWindup-=dt;if(this.eggWindup<=0){events.tossEggs=this.eggTargets;this.eggTargets=[];this.eggTimer=3;}}
+      else {this.eggTimer-=dt;if(this.eggTimer<=0){const count=enraged?4:3;this.eggTargets=Array.from({length:count},(_,index)=>{const angle=index/count*Math.PI*2;const distance=75+index%2*45;return{x:target.x+Math.cos(angle)*distance,y:target.y+Math.sin(angle)*distance};});this.eggWindup=.7;}}
+      if(this.wingWindup>0){this.wingWindup-=dt;if(this.wingWindup<=0){events.wingBlast={...this.wingTarget,radius:290,arc:1.35,damage:35,pushback:220};this.wingTarget=null;this.wingTimer=enraged?3:5;}}
+      else {this.wingTimer-=dt;if(this.wingTimer<=0){this.wingTarget={targetX:target.x,targetY:target.y};this.wingWindup=.8;}}
+      this.rushTimer-=dt;if(this.rushTimer<=0){events.chickenRush=enraged?6:4;this.rushTimer=6;}
+      const dx=target.x-this.x,dy=target.y-this.y,d=Math.hypot(dx,dy)||1;if(this.eggWindup<=0&&this.wingWindup<=0){this.x+=dx/d*this.speed*(enraged?1.3:1)*dt;this.y+=dy/d*this.speed*(enraged?1.3:1)*dt;}return events;
+    }
+    render(c,camera){
+      const x=Math.round(this.x-camera.x),y=Math.round(this.y-camera.y),enraged=this.health<4000;
+      if(this.eggWindup>0){c.strokeStyle="rgba(238,197,75,.9)";c.fillStyle="rgba(238,197,75,.9)";c.lineWidth=3;c.setLineDash([8,7]);for(const target of this.eggTargets){const tx=Math.round(target.x-camera.x),ty=Math.round(target.y-camera.y);c.beginPath();c.moveTo(x,y);c.lineTo(tx,ty);c.stroke();c.strokeRect(tx-16,ty-16,32,32);c.fillRect(tx-3,ty-24,6,14);c.fillRect(tx-3,ty+10,6,14);c.fillRect(tx-24,ty-3,14,6);c.fillRect(tx+10,ty-3,14,6);}c.setLineDash([]);}
+      if(this.wingWindup>0&&this.wingTarget){const aim=Math.atan2(this.wingTarget.targetY-this.y,this.wingTarget.targetX-this.x);c.fillStyle="rgba(255,238,180,.2)";c.strokeStyle="rgba(255,224,130,.95)";c.lineWidth=5;c.beginPath();c.moveTo(x,y);c.arc(x,y,290,aim-1.35/2,aim+1.35/2);c.closePath();c.fill();c.stroke();}
+      c.save();if(enraged)c.translate((Math.random()-.5)*4,(Math.random()-.5)*4);if(this.wingWindup>0){const flap=Math.sin(this.wingWindup*36)*16;c.fillStyle="#ead9ba";c.fillRect(x-75,y-25-flap,32,54);c.fillRect(x+42,y-25+flap,32,54);}c.fillStyle=this.hitFlash>0?"#fff":enraged?"#f0b174":"#f3ead1";c.fillRect(x-55,y-43,100,83);c.fillRect(x+22,y-68,52,50);c.fillStyle="#d83d35";c.fillRect(x+30,y-82,32,16);c.fillStyle="#efa938";c.fillRect(x+68,y-49,24,12);c.fillStyle="#2a211d";c.fillRect(x+50,y-57,7,7);c.fillStyle="#6c4731";c.fillRect(x-35,y+38,12,22);c.fillRect(x+17,y+38,12,22);c.restore();c.fillStyle="#271f19";c.fillRect(x-70,y-91,140,7);c.fillStyle="#d94739";c.fillRect(x-68,y-89,136*this.health/this.maxHealth,3);
+    }
+  }
+
+
   class Projectile {
     constructor({
       x, y, velocityX, velocityY, damage, lifetime, kind = "apple", color = "#b83b32",
@@ -4508,7 +4733,7 @@
       boomerang = false, boomerangRange = 0, returnSpeed = 0, returnDamageMultiplier = 1,
       fertilizerCloudRadius = 0, fertilizerCloudDuration = 0, fertilizerTickInterval = 0.5,
       polarity = "pull", polarityRadius = 0, polarityForce = 0, bossDamageMultiplier = 1,
-      horseshoe = false, horseshoeRange = 0, horseshoeArc = 0, weaponId = null,
+      horseshoe = false, horseshoeRange = 0, horseshoeArc = 0, horseshoeOrbitCount = 1, weaponId = null,
     }) {
       this.x = x;
       this.y = y;
@@ -4528,6 +4753,7 @@
       this.boomerang = boomerang; this.boomerangRange = boomerangRange; this.returnSpeed = returnSpeed;
       this.returnDamageMultiplier = returnDamageMultiplier; this.returning = false;
       this.horseshoe = horseshoe; this.horseshoeRange = horseshoeRange; this.horseshoeArc = horseshoeArc;
+      this.horseshoeOrbitCount = horseshoeOrbitCount;
       this.weaponId = weaponId;
       this.polarity = polarity; this.polarityRadius = polarityRadius; this.polarityForce = polarityForce;
       this.bossDamageMultiplier = bossDamageMultiplier;
@@ -4656,7 +4882,9 @@
       context.fillStyle = "#241d32"; context.fillRect(-3, -3, 6, 6); return;
     }
     if (projectile.kind === "horseshoe") {
-      context.strokeStyle = projectile.color; context.lineWidth = 6; context.beginPath();
+      const hue = typeof performance === "undefined" ? 0 : performance.now() / 12 % 360;
+      context.strokeStyle = projectile.weaponId === "rainbow-horseshoe" ? `hsl(${hue} 90% 62%)` : projectile.color;
+      context.lineWidth = 6; context.beginPath();
       context.arc(0, 0, 10, Math.PI * 0.18, Math.PI * 1.82); context.stroke(); return;
     }
     if (projectile.kind === "orbital-water") {
@@ -4844,14 +5072,15 @@
   ]);
 
   class Game {
-    constructor(canvas, debugOutput) {
+    constructor(canvas, debugOutput, options = {}) {
       this.canvas = canvas;
       this.context = canvas.getContext("2d");
       this.debugOutput = debugOutput;
-      this.input = new Input(canvas);
+      this.previewInstance = options.previewInstance === true;
+      this.input = options.input ?? new Input(canvas);
       this.random = Math.random;
       this.player = new Player();
-      this.camera = new Camera(window.innerWidth, window.innerHeight, FIRST_MAP.world.width, FIRST_MAP.world.height);
+      this.camera = new Camera(this.previewInstance ? canvas.width : window.innerWidth, this.previewInstance ? canvas.height : window.innerHeight, FIRST_MAP.world.width, FIRST_MAP.world.height);
       this.debugVisible = false;
       this.accumulator = 0;
       this.previousTime = 0;
@@ -4882,12 +5111,16 @@
       this.weaponSelectionScroll = { melee: 0, ranged: 0 };
       this.weaponSearch = { melee: "", ranged: "" };
       this.arsenalScroll = { melee: 0, ranged: 0 };
+      this.weaponPreview = null;
+      this.weaponPreviewReturnState = null;
       this.uiHitTargets = [];
 
       this.resize = this.resize.bind(this);
       this.frame = this.frame.bind(this);
-      window.addEventListener("resize", this.resize);
-      this.resize();
+      if (!this.previewInstance) {
+        window.addEventListener("resize", this.resize);
+        this.resize();
+      }
       this.resetRun();
       this.screenState = savedProgress.settings.tutorialSeen ? "menu" : "tutorial";
     }
@@ -4930,6 +5163,9 @@
       this.polarityNext = "pull";
       this.activeObstacles = (this.currentMap.obstacles ?? []).map((obstacle) => ({ ...obstacle }));
       this.slimeTerrain = [];
+      this.constructionHazards = [];
+      this.constructionProjectiles = [];
+      this.constructionDebrisTimer = 6 + Math.random() * 4;
       this.lilypads = this.currentMap.id === "aquatic-garden" ? this.createLilyPads() : [];
       this.weaponSlot = 1;
       this.attackCooldown = 0;
@@ -5145,6 +5381,28 @@
         return;
       }
 
+      if (this.screenState === "weapon-preview") {
+        const uiAction = this.consumeUiAction();
+        if (this.input.consumePauseRequest() || uiAction === "preview-close") {
+          this.screenState = this.weaponPreviewReturnState ?? "menu";
+          this.weaponPreview = null;
+          this.input.pointer.down = false;
+          return;
+        }
+        if (uiAction === "preview-buy" && this.weaponPreviewReturnState === "shop") {
+          const weapon = weaponById(this.weaponPreview?.weaponId);
+          const success = weapon && buyWeapon(this.progress, weapon.id, shopWeaponPrice(weapon.id), false);
+          this.bankCoins = this.progress.coins;
+          this.menuMessage = success ? `${weapon.name} purchased` : "Cannot purchase weapon";
+          if (success) this.savePermanentProgress();
+        }
+        this.updateWeaponPreview(deltaTime, uiAction == null);
+        this.input.consumeMenuAction();
+        this.input.consumeUpgradeChoice();
+        this.input.consumeWeaponSlot();
+        return;
+      }
+
       if (this.screenState === "shop") {
         if (this.input.consumePauseRequest()) {
           this.screenState = "menu";
@@ -5156,6 +5414,10 @@
         }
         const shopScroll = uiAction?.type === "shop-scroll" ? uiAction.value : this.input.consumeScrollRequest();
         if (shopScroll) this.shopScroll = clamp(this.shopScroll + shopScroll * 3, 0, Math.max(0, this.shopItems().length - 6));
+        if (uiAction?.type === "weapon-preview") {
+          this.openWeaponPreview(uiAction.value, "shop");
+          return;
+        }
         const choice = uiAction?.type === "choice" ? uiAction.value : this.input.consumeUpgradeChoice();
         this.input.consumeWeaponSlot();
         if (choice !== null) this.handleShopChoice(choice);
@@ -5261,6 +5523,9 @@
           this.glossaryScroll = 0;
         } else if (uiAction?.type === "glossary-scroll") {
           this.glossaryScroll = clamp(this.glossaryScroll + uiAction.value * 48, 0, this.glossaryMaxScroll(this.camera.viewWidth, this.camera.viewHeight));
+        } else if (uiAction?.type === "weapon-preview") {
+          this.openWeaponPreview(uiAction.value, "glossary");
+          return;
         }
         if (!uiAction || (uiAction?.type !== "glossary-scroll" && uiAction !== "back")) {
           const scrollDirection = this.input.consumeScrollRequest();
@@ -5322,6 +5587,7 @@
 
       deltaTime = this.applyBossIntroSlowdown(deltaTime);
       this.updateTemporaryObstacles(deltaTime);
+      this.updateConstructionSite(deltaTime);
       const river = this.currentMap.obstacles?.find((obstacle) => obstacle.kind === "river");
       if (river) {
         for (const lilyPad of this.lilypads) {
@@ -5361,7 +5627,15 @@
         effect.enemy.y = effect.originY + Math.sin(effect.angle) * distance + effect.fallY * fall;
       }
       this.deathEffects = (this.deathEffects ?? []).filter((effect) => effect.lifetime > 0);
-      for (const effect of this.hitEffects ?? []) effect.lifetime -= deltaTime;
+      for (const effect of this.hitEffects ?? []) {
+        effect.lifetime -= deltaTime;
+        for (const particle of effect.particles ?? []) {
+          particle.velocityY += 360 * deltaTime;
+          particle.x += particle.velocityX * deltaTime;
+          particle.y += particle.velocityY * deltaTime;
+          particle.velocityX *= Math.exp(-deltaTime * 2.5);
+        }
+      }
       this.hitEffects = (this.hitEffects ?? []).filter((effect) => effect.lifetime > 0);
       this.screenShakeTime = Math.max(0, (this.screenShakeTime ?? 0) - deltaTime);
       this.screenShakeStrength = Math.max(0, (this.screenShakeStrength ?? 0) - deltaTime * 0.7);
@@ -5404,9 +5678,9 @@
         ? this.enemies.filter((enemy) => enemy instanceof CommonWeed && !enemy.bossMode && enemy.active).length
         : 0;
       const population = isWeedMap ? commonWeedCount : this.enemies.length;
-      const populationLimit = isWeedMap ? MAX_COMMON_WEEDS : MAX_ENEMIES;
+      const populationLimit = isWeedMap ? MAX_COMMON_WEEDS : (this.currentMap.enemyCap ?? MAX_ENEMIES);
       if (!this.bossSpawned && this.spawnTimer <= 0 && population < populationLimit) {
-        const burstSize = 1 + Math.floor(this.runTime / 45);
+        const burstSize = this.currentMap.normalEnemyType === "chicken-farm" ? 1 : 1 + Math.floor(this.runTime / 45);
         const availableSlots = populationLimit - population;
         for (let index = 0; index < Math.min(burstSize, availableSlots); index += 1) {
           this.spawnNormalEnemy();
@@ -5452,7 +5726,8 @@
             const orbitY = this.player.y + Math.sin(projectile.horseshoeOrbitAngle) * projectile.horseshoeOrbitRadius;
             projectile.velocityX = (orbitX - projectile.x) / Math.max(deltaTime, 0.001);
             projectile.velocityY = (orbitY - projectile.y) / Math.max(deltaTime, 0.001);
-            if (projectile.horseshoeOrbitTime >= 1.25) projectile.horseshoeOrbiting = false;
+            const orbitDuration = projectile.horseshoeOrbitCount * Math.PI * 2 / 4.8;
+            if (projectile.horseshoeOrbitTime >= orbitDuration) projectile.horseshoeOrbiting = false;
           } else if (projectile.returning) {
             const speed = Math.hypot(projectile.velocityX, projectile.velocityY) || 1;
             const dx = this.player.x - projectile.x; const dy = this.player.y - projectile.y;
@@ -5682,7 +5957,7 @@
         thrownGnome.update(deltaTime);
         if (thrownGnome.arrived) {
           if (thrownGnome.damage > 0 && Math.hypot(thrownGnome.x - this.player.x, thrownGnome.y - this.player.y) <= this.player.radius + thrownGnome.radius) {
-            this.player.takeDamage(thrownGnome.damage);
+            this.damagePlayer(thrownGnome.damage);
           }
           this.spawnLandedEnemy(thrownGnome.enemyType, thrownGnome.x, thrownGnome.y, true);
         }
@@ -5706,7 +5981,7 @@
         }
         if (spore.impacted && !(spore instanceof SnailSpitProjectile)) this.handleGolfBombImpact(spore);
         if (spore instanceof SnailSpitProjectile && spore.impacted) {
-          if (Math.hypot(spore.x - this.player.x, spore.y - this.player.y) <= this.player.radius + spore.radius) this.player.takeDamage(spore.damage);
+          if (Math.hypot(spore.x - this.player.x, spore.y - this.player.y) <= this.player.radius + spore.radius) this.damagePlayer(spore.damage);
           this.addSlimePuddle(spore.x, spore.y, spore.splashRadius, 5);
           spore.impacted = false;
         }
@@ -5719,7 +5994,7 @@
           }
         }
         if (spore.active && !spore.isBomb && circlesOverlap(spore, this.player)) {
-          this.player.takeDamage(spore.damage);
+          this.damagePlayer(spore.damage);
           if (spore.knockback) {
             const distance = Math.hypot(spore.velocityX, spore.velocityY) || 1;
             this.player.x = clamp(this.player.x + spore.velocityX / distance * spore.knockback, this.player.radius, this.world.width - this.player.radius);
@@ -5743,7 +6018,7 @@
           && enemy.x >= obstacle.x && enemy.x <= obstacle.x + obstacle.width
           && enemy.y >= obstacle.y && enemy.y <= obstacle.y + obstacle.height);
         const enemyDeltaTime = onRunningTrack ? deltaTime * 1.2 : deltaTime;
-        const bossEvents = status.frozen || !enemy.active ? {} : enemy.update(enemyDeltaTime, enemyTarget, this.activeObstacles) ?? {};
+        const bossEvents = status.frozen || !enemy.active ? {} : enemy.update(enemyDeltaTime, enemyTarget, this.activeObstacles, this.enemies) ?? {};
         if (enemy.isBoss && bossEvents.summonGnomes) {
           this.summonBossGnomes(enemy);
         }
@@ -5798,7 +6073,7 @@
           const slam = bossEvents.shellSlam;
           const dx = this.player.x - enemy.x; const dy = this.player.y - enemy.y; const distance = Math.hypot(dx, dy) || 1;
           if (distance <= slam.radius) {
-            this.player.takeDamage(slam.damage);
+            this.damagePlayer(slam.damage);
             this.player.x = clamp(this.player.x + dx / distance * slam.pushback, this.player.radius, this.world.width - this.player.radius);
             this.player.y = clamp(this.player.y + dy / distance * slam.pushback, this.player.radius, this.world.height - this.player.radius);
           }
@@ -5806,8 +6081,72 @@
         }
         if (enemy.isBoss && bossEvents.spawnSnail) this.spawnRedwoodEnemy(Math.random() * Math.PI * 2, true, "snail");
         if (enemy.isBoss && bossEvents.spawnRiverbankWeed) this.spawnRiverbankWeed();
+        if (bossEvents.throwBrick) this.spawnConstructionProjectile({ ...bossEvents.throwBrick, source: enemy }, "brick");
+        if (enemy.isBoss && bossEvents.bucketSlam) this.constructionHazards.push({ type: "bucket-slam", ...bossEvents.bucketSlam, warning: 1, lifetime: 1, source: enemy });
+        if (enemy.isBoss && bossEvents.dirtThrow) this.spawnConstructionProjectile(bossEvents.dirtThrow, "dirt");
+        if (enemy.isBoss && bossEvents.spawnSupport) {
+          const angle = Math.random() * Math.PI * 2;
+          this.spawnConstructionEnemyAt(enemy.x + Math.cos(angle) * 90, enemy.y + Math.sin(angle) * 90, true, bossEvents.spawnSupport);
+        }
+        if (enemy.isBoss && bossEvents.spawnCrew) {
+          this.spawnConstructionEnemyAt(enemy.x - 70, enemy.y + 75, true, "worker");
+          this.spawnConstructionEnemyAt(enemy.x + 70, enemy.y + 75, true, "worker");
+          this.spawnConstructionEnemyAt(enemy.x, enemy.y - 90, true, "brick-carrier");
+        }
+        if (bossEvents.grow && enemy instanceof Chick) {
+          const index = this.enemies.indexOf(enemy);
+          const chicken = new Chicken({ x: enemy.x, y: enemy.y }); chicken.bossMinion = enemy.bossMinion;
+          if (index >= 0) this.enemies[index] = chicken;
+          continue;
+        }
+        if (bossEvents.hatch && enemy instanceof ChickenEgg) {
+          enemy.health = 0;
+          for (let chick = 0; chick < 3; chick += 1) {
+            const angle = chick / 3 * Math.PI * 2;
+            this.spawnChickenFarmEnemyAt(enemy.x + Math.cos(angle) * 22, enemy.y + Math.sin(angle) * 22, "chick", enemy.bossMinion);
+          }
+          this.explosions.push({ x: enemy.x, y: enemy.y, radius: 32, lifetime: .3, maxLifetime: .3, color: "#f4ead2" });
+          continue;
+        }
+        if (bossEvents.crow && enemy instanceof Rooster) {
+          for (const farmEnemy of this.enemies) {
+            if ((farmEnemy instanceof Chicken || farmEnemy instanceof Chick) && !farmEnemy.isBoss
+              && Math.hypot(farmEnemy.x - enemy.x, farmEnemy.y - enemy.y) <= bossEvents.crow.radius) {
+              farmEnemy.speedBuffTime = Math.max(farmEnemy.speedBuffTime ?? 0, bossEvents.crow.duration);
+              farmEnemy.maxShield = Math.max(farmEnemy.maxShield ?? 0, 100);
+              farmEnemy.shield = Math.max(farmEnemy.shield ?? 0, 100);
+              farmEnemy.crowShieldActive = true;
+            }
+          }
+        }
+        if (enemy.isBoss && bossEvents.tossEggs) {
+          for (const target of bossEvents.tossEggs) {
+            const x = clamp(target.x, 20, this.world.width - 20);
+            const y = clamp(target.y, 20, this.world.height - 20);
+            this.thrownGnomes.push(new ThrownGnome({ x: enemy.x, y: enemy.y, targetX: x, targetY: y, speed: 560, enemyType: "chicken-egg" }));
+          }
+        }
+        if (enemy.isBoss && bossEvents.chickenRush) {
+          for (let chickenIndex = 0; chickenIndex < bossEvents.chickenRush; chickenIndex += 1) {
+            const angle = chickenIndex / bossEvents.chickenRush * Math.PI * 2;
+            const chicken = this.spawnChickenFarmEnemyAt(enemy.x + Math.cos(angle) * 82, enemy.y + Math.sin(angle) * 82, "chicken", true);
+            if (chicken) chicken.sprintTime = 1;
+          }
+        }
+        if (enemy.isBoss && bossEvents.wingBlast) {
+          const blast = bossEvents.wingBlast;
+          const aim = Math.atan2(blast.targetY - enemy.y, blast.targetX - enemy.x);
+          const dx = this.player.x - enemy.x; const dy = this.player.y - enemy.y; const distance = Math.hypot(dx, dy) || 1;
+          const angleDifference = Math.abs(Math.atan2(Math.sin(Math.atan2(dy, dx) - aim), Math.cos(Math.atan2(dy, dx) - aim)));
+          if (distance <= blast.radius && angleDifference <= blast.arc / 2) {
+            this.damagePlayer(blast.damage);
+            this.player.x = clamp(this.player.x + dx / distance * blast.pushback, this.player.radius, this.world.width - this.player.radius);
+            this.player.y = clamp(this.player.y + dy / distance * blast.pushback, this.player.radius, this.world.height - this.player.radius);
+          }
+          this.explosions.push({ x: enemy.x + Math.cos(aim) * blast.radius * .45, y: enemy.y + Math.sin(aim) * blast.radius * .45, radius: blast.radius * .55, lifetime: .45, maxLifetime: .45, color: "#f5ead1" });
+        }
         if (enemy.isBoss && bossEvents.divebomb) {
-          this.player.takeDamage(50);
+          this.damagePlayer(50);
           const dx = this.player.x - enemy.waterX;
           const dy = this.player.y - enemy.waterY;
           const distance = Math.hypot(dx, dy) || 1;
@@ -5826,7 +6165,7 @@
           const whistleKnockback = enemy.config?.whistleKnockback ?? 130;
           const dx = this.player.x - enemy.x; const dy = this.player.y - enemy.y; const distance = Math.hypot(dx, dy) || 1;
           if (distance <= whistleRadius) {
-            this.player.takeDamage(whistleDamage);
+            this.damagePlayer(whistleDamage);
             this.player.x = clamp(this.player.x + dx / distance * whistleKnockback, this.player.radius, this.world.width - this.player.radius);
             this.player.y = clamp(this.player.y + dy / distance * whistleKnockback, this.player.radius, this.world.height - this.player.radius);
           }
@@ -5876,7 +6215,7 @@
         this.separateWeeds();
       }
       if (touchingEnemies.length > 0) {
-        this.player.takeDamage(totalContactDamage(touchingEnemies));
+        this.damagePlayer(totalContactDamage(touchingEnemies));
       }
       this.enemies = this.enemies.filter((enemy) => enemy.active);
 
@@ -5898,6 +6237,87 @@
       }
       this.slimeTerrain.push({ x, y, radius, lifetime, permanent });
       if (this.slimeTerrain.length > 1800) this.slimeTerrain.splice(0, this.slimeTerrain.length - 1800);
+    }
+
+    spawnConstructionProjectile(event, type) {
+      const dx = event.targetX - event.x; const dy = event.targetY - event.y; const distance = Math.hypot(dx, dy) || 1;
+      this.constructionProjectiles.push({
+        type, x: event.x, y: event.y, targetX: event.targetX, targetY: event.targetY,
+        velocityX: dx / distance * event.speed, velocityY: dy / distance * event.speed,
+        damage: event.damage, enemyDamage: event.enemyDamage ?? (type === "brick" ? 50 : 0),
+        radius: type === "brick" ? 58 : 75, collisionRadius: type === "brick" ? 15 : 12,
+        source: event.source ?? null, active: true,
+      });
+    }
+
+    updateConstructionSite(deltaTime) {
+      if (this.currentMap.id !== "construction-site") return;
+      const random = this.random ?? Math.random;
+      for (const enemy of this.enemies) enemy.speedBuff = false;
+      for (const cone of this.enemies.filter((enemy) => enemy instanceof TrafficConeEnemy && enemy.active && enemy.plantedTime > 0)) {
+        for (const enemy of this.enemies) {
+          if (enemy !== cone && enemy.active && Math.hypot(enemy.x - cone.x, enemy.y - cone.y) <= 105) enemy.speedBuff = true;
+        }
+      }
+      this.constructionDebrisTimer -= deltaTime;
+      if (this.constructionDebrisTimer <= 0) {
+        this.constructionHazards.push({ type: "debris", x: 90 + random() * (this.world.width - 180), y: 90 + random() * (this.world.height - 180), radius: 92, damage: 40, knockback: 140, warning: 1.5, lifetime: 1.5 });
+        this.constructionDebrisTimer = (this.currentMap.debrisMinCooldown ?? 6) + random() * ((this.currentMap.debrisMaxCooldown ?? 10) - (this.currentMap.debrisMinCooldown ?? 6));
+      }
+      for (const projectile of [...this.constructionProjectiles]) {
+        if (!projectile.active) continue;
+        projectile.x += projectile.velocityX * deltaTime; projectile.y += projectile.velocityY * deltaTime;
+        if (projectile.type === "brick") {
+          const struckEnemy = this.enemies.find((enemy) => enemy.active && enemy !== projectile.source
+            && Math.hypot(projectile.x - enemy.x, projectile.y - enemy.y) <= projectile.collisionRadius + enemy.radius);
+          if (struckEnemy) {
+            this.damageEnemy(struckEnemy, projectile.enemyDamage, 0, "environment");
+            projectile.active = false;
+            this.explosions.push({ x: projectile.x, y: projectile.y, radius: 28, lifetime: 0.22, maxLifetime: 0.22, color: "#bd553d" });
+            continue;
+          }
+        }
+        if (Math.hypot(projectile.x - projectile.targetX, projectile.y - projectile.targetY) <= Math.hypot(projectile.velocityX, projectile.velocityY) * deltaTime + 8) {
+          projectile.active = false;
+          // Thrown bricks and dirt target the player. Environmental debris,
+          // bucket slams, and a Brick Carrier's death blast provide friendly fire.
+          this.applyConstructionPlayerDamage(projectile.x, projectile.y, projectile.radius, projectile.damage, 75);
+          if (projectile.type === "dirt") this.activeObstacles.push({ kind: "temporary-dirt", x: projectile.x, y: projectile.y, radius: 95, width: 190, height: 190, solid: false, lifetime: 8 });
+          this.explosions.push({ x: projectile.x, y: projectile.y, radius: projectile.radius, lifetime: 0.35, maxLifetime: 0.35, color: projectile.type === "dirt" ? "#8f683d" : "#bd553d" });
+        }
+      }
+      this.constructionProjectiles = this.constructionProjectiles.filter((projectile) => projectile.active);
+      for (const hazard of this.constructionHazards) {
+        hazard.warning -= deltaTime; hazard.lifetime -= deltaTime;
+        if (hazard.warning <= 0 && !hazard.impacted) {
+          hazard.impacted = true;
+          this.applyConstructionAreaDamage(hazard.x, hazard.y, hazard.radius, hazard.damage, hazard.knockback, hazard.source);
+          this.explosions.push({ x: hazard.x, y: hazard.y, radius: hazard.radius, lifetime: 0.45, maxLifetime: 0.45, color: hazard.type === "debris" ? "#d1b07a" : "#d8973f" });
+          this.addScreenShake(0.14, 0.25);
+        }
+      }
+      this.constructionHazards = this.constructionHazards.filter((hazard) => !hazard.impacted || hazard.lifetime > -0.35);
+    }
+
+    applyConstructionAreaDamage(x, y, radius, damage, knockback = 0, excludedEnemy = null) {
+      this.applyConstructionPlayerDamage(x, y, radius, damage, knockback);
+      for (const enemy of [...this.enemies]) {
+        if (!enemy.active || enemy === excludedEnemy || enemy.isBoss || Math.hypot(enemy.x - x, enemy.y - y) > radius + enemy.radius) continue;
+        this.damageEnemy(enemy, damage, 0, "environment");
+        const dx = enemy.x - x; const dy = enemy.y - y; const distance = Math.hypot(dx, dy) || 1;
+        enemy.x = clamp(enemy.x + dx / distance * knockback, enemy.radius, this.world.width - enemy.radius);
+        enemy.y = clamp(enemy.y + dy / distance * knockback, enemy.radius, this.world.height - enemy.radius);
+      }
+    }
+
+    applyConstructionPlayerDamage(x, y, radius, damage, knockback = 0) {
+      const playerDistance = Math.hypot(this.player.x - x, this.player.y - y);
+      if (playerDistance <= radius + this.player.radius) {
+        this.damagePlayer(damage);
+        const distance = playerDistance || 1;
+        this.player.x = clamp(this.player.x + (this.player.x - x) / distance * knockback, this.player.radius, this.world.width - this.player.radius);
+        this.player.y = clamp(this.player.y + (this.player.y - y) / distance * knockback, this.player.radius, this.world.height - this.player.radius);
+      }
     }
 
     getEnemyTarget(enemy) {
@@ -6001,7 +6421,7 @@
         return;
       } else if (choice >= 3 && choice <= 9) {
         const stat = ["health", "damage", "speed", "attackSpeed", "accuracy", "shield", "regeneration"][choice - 3];
-        success = upgradeCharacterStat(this.progress, stat, this.unlockedMaps.size * 5);
+        success = upgradeCharacterStat(this.progress, stat, characterStatMaxLevelForMaps(this.unlockedMaps));
         label = success ? `${stat} upgraded` : "Cannot upgrade stat";
       }
       this.bankCoins = this.progress.coins;
@@ -6089,7 +6509,61 @@
         this.spawnSchoolFieldEnemy(forcedAngle);
         return;
       }
+      if (this.currentMap.normalEnemyType === "construction-site") {
+        this.spawnConstructionEnemy(forcedAngle);
+        return;
+      }
+      if (this.currentMap.normalEnemyType === "chicken-farm") {
+        this.spawnChickenFarmGroup(forcedAngle);
+        return;
+      }
       this.spawnEnemy(forcedAngle);
+    }
+
+    spawnConstructionEnemy(forcedAngle = Math.random() * Math.PI * 2) {
+      if (this.enemies.length >= (this.currentMap.enemyCap ?? 100)) return null;
+      const distance = Math.max(this.camera.viewWidth, this.camera.viewHeight) * 0.52 + 90;
+      return this.spawnConstructionEnemyAt(
+        clamp(this.player.x + Math.cos(forcedAngle) * distance, 40, this.world.width - 40),
+        clamp(this.player.y + Math.sin(forcedAngle) * distance, 40, this.world.height - 40),
+      );
+    }
+
+    spawnConstructionEnemyAt(x, y, bossMinion = false, forcedType = null) {
+      if (this.enemies.length >= (this.currentMap.enemyCap ?? 100)) return null;
+      const weights = this.currentMap.constructionSpawnWeights;
+      const roll = (this.random ?? Math.random)();
+      const type = forcedType ?? (roll < weights.worker ? "worker" : roll < weights.worker + weights.cone ? "cone"
+        : roll < weights.worker + weights.cone + weights.tire ? "tire"
+          : roll < weights.worker + weights.cone + weights.tire + weights.brickCarrier ? "brick-carrier" : "safety-vest");
+      const options = { x, y, world: this.world };
+      const enemy = type === "worker" ? new ConstructionWorker(options) : type === "cone" ? new TrafficConeEnemy(options)
+        : type === "tire" ? new RunawayTire(options) : type === "brick-carrier" ? new BrickCarrier(options) : new SafetyVestEnemy(options);
+      enemy.bossMinion = bossMinion; this.enemies.push(enemy); return enemy;
+    }
+
+    spawnChickenFarmGroup(forcedAngle = Math.random() * Math.PI * 2) {
+      const cap = this.currentMap.enemyCap ?? 150;
+      if (this.enemies.length >= cap) return;
+      const distance = Math.max(this.camera.viewWidth, this.camera.viewHeight) * 0.52 + 90;
+      const centerX = clamp(this.player.x + Math.cos(forcedAngle) * distance, 50, this.world.width - 50);
+      const centerY = clamp(this.player.y + Math.sin(forcedAngle) * distance, 50, this.world.height - 50);
+      const roll = (this.random ?? Math.random)();
+      if (roll < 0.1) { this.spawnChickenFarmEnemyAt(centerX, centerY, "rooster"); return; }
+      const type = roll < 0.55 ? "chick" : "chicken";
+      const count = 3 + Math.floor((this.random ?? Math.random)() * 3);
+      for (let index = 0; index < count && this.enemies.length < cap; index += 1) {
+        const angle = index / count * Math.PI * 2;
+        this.spawnChickenFarmEnemyAt(centerX + Math.cos(angle) * 35, centerY + Math.sin(angle) * 35, type);
+      }
+    }
+
+    spawnChickenFarmEnemyAt(x, y, type, bossMinion = false) {
+      if (this.enemies.filter((enemy) => enemy.active).length >= (this.currentMap.enemyCap ?? 150)) return null;
+      const options = { x: clamp(x, 20, this.world.width - 20), y: clamp(y, 20, this.world.height - 20) };
+      const enemy = type === "chick" ? new Chick(options) : type === "egg" ? new ChickenEgg(options)
+        : type === "rooster" ? new Rooster(options) : new Chicken(options);
+      enemy.bossMinion = bossMinion; this.enemies.push(enemy); return enemy;
     }
 
     spawnSchoolFieldEnemy(forcedAngle = Math.random() * Math.PI * 2, bossMinion = false, forcedType = null) {
@@ -6383,9 +6857,11 @@
               : bossConfig.type === "lily-queen" ? LilyQueenBoss
                 : bossConfig.type === "ancient-snail" ? AncientSnailBoss
                   : bossConfig.type === "pe-teacher" ? PeTeacherBoss
-                    : bossConfig.type === "ball-launcher" ? BallLauncherBoss : Boss;
+                    : bossConfig.type === "ball-launcher" ? BallLauncherBoss
+                      : bossConfig.type === "excavator" ? ExcavatorBoss : Boss;
+      const ResolvedBossType = bossConfig.type === "mother-hen" ? MotherHenBoss : BossType;
       const pond = this.currentMap.obstacles?.find((obstacle) => obstacle.kind === "lake");
-      this.boss = new BossType({
+      this.boss = new ResolvedBossType({
         x: bossConfig.type === "pondfather" && pond ? pond.x + pond.width / 2
           : bossConfig.type === "lily-queen" ? this.world.width / 2
             : bossConfig.type === "ball-launcher" ? this.world.width / 2
@@ -6532,7 +7008,7 @@
         y: clamp(bomb.targetY - radius, 0, this.world.height - radius * 2),
         width: radius * 2, height: radius * 2, kind: "sand-bunker", solid: false, lifetime: 20,
       });
-      this.player.takeDamage(bomb.damage);
+      this.damagePlayer(bomb.damage);
       bomb.impacted = false;
     }
 
@@ -6560,6 +7036,11 @@
     }
 
     spawnLandedEnemy(enemyType, x, y, bossMinion = false) {
+      if (enemyType === "chicken-egg") {
+        this.spawnChickenFarmEnemyAt(x, y, "egg", bossMinion);
+        this.explosions.push({ x, y, radius: 26, lifetime: .35, maxLifetime: .35, ring: true, color: "#f4ead2" });
+        return;
+      }
       if (enemyType === "strongweed") {
         this.spawnStrongweedAt(x, y);
         return;
@@ -6610,14 +7091,24 @@
           (random() - 0.5) * impactKick,
         );
         const radius = Math.max(10, Math.min(24, (enemy.radius ?? 16) * 0.8));
+        const particleSide = random() < 0.5 ? -1 : 1;
         (this.hitEffects ??= []).push({
           x: enemy.x,
           y: enemy.y,
           radius,
           angle: random() * Math.PI * 2,
           color: enemy.isBoss ? "#ffe07a" : "#fff1bf",
-          lifetime: 0.2,
-          maxLifetime: 0.2,
+          particles: Array.from({ length: 8 }, (_, index) => {
+            return {
+              x: (random() - 0.5) * radius * 0.75,
+              y: (random() - 0.5) * radius * 0.45,
+              velocityX: particleSide * (70 + random() * 90) + (index - 3.5) * 7,
+              velocityY: -(105 + random() * 105),
+              size: 5 + Math.floor(random() * 5),
+            };
+          }),
+          lifetime: 0.65,
+          maxLifetime: 0.65,
         });
         (this.floatingDamageNumbers ??= []).push({
           x: enemy.x + (random() - 0.5) * 14,
@@ -6632,6 +7123,27 @@
       }
       if (lifestealRatio > 0 && healthDamage > 0) this.addLifesteal(healthDamage * lifestealRatio);
       if (defeated) {
+        if (enemy instanceof Chicken && !enemy.isBoss && this.currentMap.id === "chicken-farm"
+          && (this.random ?? Math.random)() < (this.currentMap.chickenEggDeathChance ?? 0.5)) {
+          this.spawnChickenFarmEnemyAt(enemy.x, enemy.y, "egg", enemy.bossMinion);
+        }
+        if (enemy.deathBrickBurst && this.currentMap.id === "construction-site") {
+          for (let index = 0; index < enemy.deathBrickBurst.count; index += 1) {
+            const angle = index / enemy.deathBrickBurst.count * Math.PI * 2;
+            this.spawnConstructionProjectile({
+              x: enemy.x, y: enemy.y,
+              targetX: enemy.x + Math.cos(angle) * enemy.deathBrickBurst.range,
+              targetY: enemy.y + Math.sin(angle) * enemy.deathBrickBurst.range,
+              speed: enemy.deathBrickBurst.speed,
+              damage: enemy.deathBrickBurst.playerDamage,
+              enemyDamage: enemy.deathBrickBurst.enemyDamage,
+              source: enemy,
+            }, "brick");
+          }
+        }
+        if (enemy.deathAoe && this.currentMap.id === "construction-site") {
+          this.applyConstructionAreaDamage(enemy.x, enemy.y, enemy.deathAoe.radius, enemy.deathAoe.damage, 85, enemy);
+        }
         this.addScreenShake(enemy.isBoss ? 0.16 : 0.1, enemy.isBoss ? 0.24 : 0.14);
         // A compact pixel burst marks the exact frame an enemy is removed. Use
         // the shared explosion renderer so it remains cheap even in large waves.
@@ -6705,6 +7217,30 @@
         }
       }
       return healthDamage;
+    }
+
+    damagePlayer(amount) {
+      const healthBefore = Number.isFinite(this.player.health) ? this.player.health : 0;
+      const shieldBefore = Number.isFinite(this.player.shield) ? this.player.shield : 0;
+      const accepted = this.player.takeDamage(amount);
+      if (!accepted) return false;
+      const healthDamage = Math.max(0, healthBefore - this.player.health);
+      const shieldDamage = Math.max(0, shieldBefore - (Number.isFinite(this.player.shield) ? this.player.shield : 0));
+      const damageTaken = healthDamage + shieldDamage;
+      if (damageTaken > 0) {
+        const random = this.random ?? Math.random;
+        (this.floatingDamageNumbers ??= []).push({
+          x: this.player.x + (random() - 0.5) * 10,
+          y: this.player.y - this.player.radius - 10,
+          text: `-${Math.max(1, Math.round(damageTaken))}`,
+          color: "#ff4b45",
+          lifetime: 0.85,
+          maxLifetime: 0.85,
+          riseSpeed: 38,
+          drift: (random() - 0.5) * 12,
+        });
+      }
+      return true;
     }
 
     detonateProjectile(projectile) {
@@ -6926,7 +7462,7 @@
         const count = weapon.decoyCount ?? 1;
         for (let index = 0; index < count; index += 1) {
           const angle = count === 1 ? 0 : index / count * Math.PI * 2;
-          this.gardenDecoys.push({ x: this.player.x + Math.cos(angle) * 28, y: this.player.y + Math.sin(angle) * 28, radius: weapon.projectileRadius, health: weapon.decoyHealth, lifetime: weapon.decoyDuration, explosionDamage: weapon.decoyExplosionDamage * this.player.damageMultiplier, explosionRadius: weapon.decoyExplosionRadius, color: weapon.color, active: true });
+          this.gardenDecoys.push({ x: this.player.x + Math.cos(angle) * 28, y: this.player.y + Math.sin(angle) * 28, radius: weapon.projectileRadius, health: weapon.decoyHealth, maxHealth: weapon.decoyHealth, lifetime: weapon.decoyDuration, explosionDamage: weapon.decoyExplosionDamage * this.player.damageMultiplier, explosionRadius: weapon.decoyExplosionRadius, color: weapon.color, pinata: weapon.pinata === true, confettiCount: weapon.pinataConfettiCount ?? 0, confettiDamage: (weapon.pinataConfettiDamage ?? 0) * this.player.damageMultiplier, confettiSpeed: weapon.pinataConfettiSpeed ?? 0, confettiLifetime: weapon.pinataConfettiLifetime ?? 0, active: true });
         }
         return;
       }
@@ -6958,6 +7494,10 @@
                 explosive: true, splashRadius: weapon.splashRadius,
                 bounces: weapon.bounces, pierces: weapon.pierces,
                 knockback: weapon.knockback, weaponId: weapon.id,
+                fireDamagePerSecond: weapon.fireDamagePerSecond,
+                fireDuration: weapon.fireDuration,
+                fireMaxStacks: weapon.fireMaxStacks,
+                freezeDuration: weapon.freezeDuration,
               },
             });
           }
@@ -7007,6 +7547,8 @@
             kind: weapon.projectileKind, color: weapon.color, radius: weapon.projectileRadius,
             pierces: weapon.pierces,
             horseshoe: true, horseshoeRange: weapon.horseshoeRange, horseshoeArc: weapon.horseshoeArc,
+            horseshoeOrbitCount: weapon.horseshoeOrbitCount ?? 1,
+            weaponId,
           });
           horseshoe.horseshoeDirection = index % 2 === 0 ? 1 : -1;
           this.projectiles.push(horseshoe);
@@ -7246,8 +7788,21 @@
           }
         }
         if (decoy.lifetime <= 0 || decoy.health <= 0) {
-          this.explosions.push({ x: decoy.x, y: decoy.y, lifetime: 0.3, radius: decoy.explosionRadius, color: decoy.color });
-          for (const enemy of this.enemies) if (enemy.active && Math.hypot(enemy.x - decoy.x, enemy.y - decoy.y) <= decoy.explosionRadius) this.damageEnemy(enemy, decoy.explosionDamage);
+          if (decoy.explosionDamage > 0 && decoy.explosionRadius > 0) {
+            this.explosions.push({ x: decoy.x, y: decoy.y, lifetime: 0.3, radius: decoy.explosionRadius, color: decoy.color });
+            for (const enemy of this.enemies) if (enemy.active && Math.hypot(enemy.x - decoy.x, enemy.y - decoy.y) <= decoy.explosionRadius) this.damageEnemy(enemy, decoy.explosionDamage);
+          }
+          for (let confetti = 0; confetti < (decoy.confettiCount ?? 0); confetti += 1) {
+            const angle = confetti / decoy.confettiCount * Math.PI * 2;
+            this.projectiles.push(new Projectile({
+              x: decoy.x, y: decoy.y,
+              velocityX: Math.cos(angle) * decoy.confettiSpeed,
+              velocityY: Math.sin(angle) * decoy.confettiSpeed,
+              damage: decoy.confettiDamage, lifetime: decoy.confettiLifetime,
+              kind: "confetti", color: `hsl(${confetti * 45} 90% 60%)`, radius: 5,
+              weaponId: "pinata",
+            }));
+          }
           decoy.active = false;
         }
       }
@@ -7396,6 +7951,149 @@
       }
     }
 
+    openWeaponPreview(weaponId, returnState) {
+      const weapon = weaponById(weaponId);
+      if (!weapon) return;
+      let simulation = null;
+      if (typeof document !== "undefined") {
+        const previewCanvas = document.createElement("canvas");
+        previewCanvas.width = 360;
+        previewCanvas.height = 250;
+        const previewInput = createPreviewInput();
+        simulation = new Game(previewCanvas, null, { previewInstance: true, input: previewInput });
+        simulation.progress = structuredClone(this.progress);
+        const slotName = weapon.slot === "melee" ? "melee" : "ranged";
+        simulation.progress.equippedWeapons[slotName] = weapon.id;
+        simulation.resetRun();
+        simulation.currentMap = { ...FIRST_MAP, id: "weapon-preview", world: { width: 360, height: 250 }, obstacles: [], bossSpawnTime: Number.POSITIVE_INFINITY, enemyCap: 0 };
+        simulation.world = simulation.currentMap.world;
+        simulation.camera.resize(360, 250);
+        simulation.camera.setWorldSize(360, 250);
+        simulation.player.x = 74;
+        simulation.player.y = 132;
+        simulation.enemies = [new PreviewDummy(238, 76), new PreviewDummy(292, 128), new PreviewDummy(238, 180)];
+        simulation.activeObstacles = [];
+        simulation.projectiles = [];
+        simulation.pickups = [];
+        simulation.weaponSlot = weapon.slot === "melee" ? 1 : 2;
+        simulation.attackCooldowns = { 1: 0, 2: 0 };
+        simulation.bossSpawned = true;
+        simulation.boss = null;
+        simulation.spawnTimer = Number.POSITIVE_INFINITY;
+        simulation.screenState = "running";
+      }
+      this.weaponPreviewReturnState = returnState;
+      this.weaponPreview = {
+        weaponId, cooldown: 0, projectiles: [], effects: [],
+        player: { x: 74, y: 132, radius: 15, speed: 120, facing: 0, isMoving: false, walkTime: 0 },
+        dummies: [
+          { x: 238, y: 76, health: 500, maxHealth: 500 },
+          { x: 292, y: 128, health: 500, maxHealth: 500 },
+          { x: 238, y: 180, health: 500, maxHealth: 500 },
+        ],
+        simulation,
+      };
+      this.screenState = "weapon-preview";
+      this.input.pointer.down = false;
+    }
+
+    updateWeaponPreview(deltaTime, allowFiring = true) {
+      const preview = this.weaponPreview;
+      if (!preview) return;
+      if (preview.simulation) {
+        const simulation = preview.simulation;
+        simulation.input.keys = this.input.keys;
+        simulation.input.pointer.x = clamp(this.input.pointer.x - 18, 0, 360);
+        simulation.input.pointer.y = clamp(this.input.pointer.y - 18, 0, 250);
+        simulation.input.pointer.inside = this.input.pointer.x >= 18 && this.input.pointer.x <= 378
+          && this.input.pointer.y >= 18 && this.input.pointer.y <= 268;
+        simulation.input.pointer.down = allowFiring && simulation.input.pointer.inside && this.input.pointer.down;
+        simulation.update(deltaTime);
+        simulation.render();
+        preview.player = simulation.player;
+        preview.dummies = simulation.enemies;
+        return;
+      }
+      const baseWeapon = weaponById(preview.weaponId);
+      if (!baseWeapon) return;
+      const weapon = weaponStatsAtLevel(baseWeapon, this.progress.weaponLevels[baseWeapon.id] ?? 1);
+      const movement = this.input.movementVector?.() ?? { x: 0, y: 0 };
+      const previewPlayer = preview.player;
+      previewPlayer.isMoving = Math.hypot(movement.x, movement.y) > 0;
+      if (previewPlayer.isMoving) previewPlayer.walkTime += deltaTime;
+      previewPlayer.x = clamp(previewPlayer.x + movement.x * previewPlayer.speed * deltaTime, 24, 336);
+      previewPlayer.y = clamp(previewPlayer.y + movement.y * previewPlayer.speed * deltaTime, 48, 220);
+      preview.cooldown = Math.max(0, preview.cooldown - deltaTime);
+      for (const effect of preview.effects) effect.lifetime -= deltaTime;
+      preview.effects = preview.effects.filter((effect) => effect.lifetime > 0);
+      for (const dummy of preview.dummies) {
+        if (dummy.health <= 0) dummy.resetTimer = (dummy.resetTimer ?? 0.65) - deltaTime;
+        if ((dummy.resetTimer ?? 1) <= 0) { dummy.health = dummy.maxHealth; dummy.resetTimer = null; }
+      }
+
+      const arenaX = 18; const arenaY = 18;
+      const playerX = arenaX + previewPlayer.x; const playerY = arenaY + previewPlayer.y;
+      const aimX = clamp(this.input.pointer.x, arenaX + 34, arenaX + 342);
+      const aimY = clamp(this.input.pointer.y, arenaY + 34, arenaY + 232);
+      previewPlayer.facing = Math.atan2(aimY - playerY, aimX - playerX);
+      if (allowFiring && this.input.pointer.down && preview.cooldown <= 0
+        && this.input.pointer.x >= arenaX && this.input.pointer.x <= arenaX + 360
+        && this.input.pointer.y >= arenaY && this.input.pointer.y <= arenaY + 250) {
+        preview.cooldown = Math.max(0.06, weapon.cooldown);
+        const baseAngle = Math.atan2(aimY - playerY, aimX - playerX);
+        preview.effects.push({ x: playerX, y: playerY, angle: baseAngle, lifetime: 0.16, maxLifetime: 0.16, melee: weapon.slot === "melee" });
+        if (weapon.slot === "melee") {
+          const range = Math.min(145, Math.max(42, (weapon.range ?? 55) * 1.25));
+          for (const dummy of preview.dummies) {
+            if (dummy.health <= 0) continue;
+            const dx = arenaX + dummy.x - playerX; const dy = arenaY + dummy.y - playerY;
+            const difference = Math.abs(normalizeAngle(Math.atan2(dy, dx) - baseAngle));
+            if (Math.hypot(dx, dy) <= range + 18 && difference <= (weapon.arc ?? Math.PI / 2) / 2) dummy.health -= weapon.damage;
+          }
+        } else {
+          const count = Math.min(20, weapon.projectileCount ?? weapon.pellets ?? 1);
+          const spacing = weapon.fanSpacing ?? (count > 1 ? 0.1 : 0);
+          for (let index = 0; index < count; index += 1) {
+            const angle = baseAngle + (index - (count - 1) / 2) * spacing + (Math.random() - 0.5) * (weapon.spread ?? 0);
+            const speed = clamp((weapon.projectileSpeed ?? 650) * 0.42, 150, 560);
+            preview.projectiles.push({
+              x: playerX + Math.cos(angle) * 24, y: playerY + Math.sin(angle) * 24,
+              velocityX: Math.cos(angle) * speed, velocityY: Math.sin(angle) * speed,
+              damage: weapon.damage, radius: Math.max(3, Math.min(12, weapon.projectileRadius ?? 5)), color: weapon.color,
+              pierces: weapon.pierces ?? 0, bounces: weapon.bounces ?? 0, explosive: weapon.explosive,
+              splashRadius: Math.min(70, weapon.splashRadius ?? 0), active: true,
+            });
+          }
+        }
+      }
+
+      for (const projectile of preview.projectiles) {
+        if (!projectile.active) continue;
+        projectile.x += projectile.velocityX * deltaTime; projectile.y += projectile.velocityY * deltaTime;
+        for (const dummy of preview.dummies) {
+          if (dummy.health <= 0 || projectile.hit === dummy) continue;
+          const dummyX = arenaX + dummy.x; const dummyY = arenaY + dummy.y;
+          if (Math.hypot(projectile.x - dummyX, projectile.y - dummyY) > projectile.radius + 18) continue;
+          dummy.health -= projectile.damage; projectile.hit = dummy;
+          preview.effects.push({ x: dummyX, y: dummyY, lifetime: 0.2, maxLifetime: 0.2, hit: true });
+          if (projectile.explosive) for (const nearby of preview.dummies) {
+            if (nearby !== dummy && nearby.health > 0 && Math.hypot(arenaX + nearby.x - dummyX, arenaY + nearby.y - dummyY) <= projectile.splashRadius) nearby.health -= projectile.damage * 0.7;
+          }
+          if (projectile.pierces > 0) projectile.pierces -= 1;
+          else if (projectile.bounces > 0) {
+            projectile.bounces -= 1;
+            const target = preview.dummies.filter((entry) => entry !== dummy && entry.health > 0)
+              .sort((a, b) => Math.hypot(arenaX+a.x-projectile.x,arenaY+a.y-projectile.y)-Math.hypot(arenaX+b.x-projectile.x,arenaY+b.y-projectile.y))[0];
+            if (target) { const angle=Math.atan2(arenaY+target.y-projectile.y,arenaX+target.x-projectile.x);const speed=Math.hypot(projectile.velocityX,projectile.velocityY);projectile.velocityX=Math.cos(angle)*speed;projectile.velocityY=Math.sin(angle)*speed;projectile.hit=null; }
+            else projectile.active = false;
+          } else projectile.active = false;
+          break;
+        }
+        if (projectile.x < arenaX || projectile.x > arenaX + 360 || projectile.y < arenaY || projectile.y > arenaY + 250) projectile.active = false;
+      }
+      preview.projectiles = preview.projectiles.filter((projectile) => projectile.active);
+    }
+
     consumeUiAction() {
       const point = this.input.consumeClickRequest();
       if (!point) return null;
@@ -7482,6 +8180,16 @@
       }
       for (const decoy of this.gardenDecoys) {
         const x = Math.round(decoy.x - this.camera.x); const y = Math.round(decoy.y - this.camera.y);
+        if (decoy.pinata) {
+          context.fillStyle = "#30231d"; context.fillRect(x - 14, y - 22, 28, 48);
+          ["#ee5f76", "#ffcf4b", "#63d6e8", "#8fd65a", "#8c62ca"].forEach((color, index) => {
+            context.fillStyle = color; context.fillRect(x - 12, y - 20 + index * 8, 24, 7);
+          });
+          context.fillStyle = "#f2a04a"; context.fillRect(x + 11, y - 15, 7, 8);
+          context.fillStyle = "#2b2521"; context.fillRect(x - 9, y + 20, 6, 9); context.fillRect(x + 3, y + 20, 6, 9);
+          context.fillStyle = "#d7ef62"; context.fillRect(x - 13, y - 28, 26 * Math.max(0, decoy.health / decoy.maxHealth), 2);
+          continue;
+        }
         // Blocky gnome silhouette: tall red cap, face, beard, tunic, and boots.
         context.fillStyle = "#30231d"; context.fillRect(x - 14, y - 3, 28, 27);
         context.fillStyle = "#d64235";
@@ -7492,7 +8200,7 @@
         context.fillStyle = decoy.color; context.fillRect(x - 11, y + 11, 22, 13);
         context.fillStyle = "#3b5065"; context.fillRect(x - 11, y + 22, 8, 8); context.fillRect(x + 3, y + 22, 8, 8);
         context.fillStyle = "#211c18"; context.fillRect(x - 15, y - 39, 30, 5);
-        context.fillStyle = "#d7ef62"; context.fillRect(x - 13, y - 37, 26 * Math.max(0, decoy.health / 140), 2);
+        context.fillStyle = "#d7ef62"; context.fillRect(x - 13, y - 37, 26 * Math.max(0, decoy.health / decoy.maxHealth), 2);
       }
       for (const cloud of this.fertilizerClouds) {
         const x = Math.round(cloud.x - this.camera.x); const y = Math.round(cloud.y - this.camera.y);
@@ -7526,6 +8234,7 @@
       this.renderGardenBeds(context);
       this.renderFence(context);
       this.renderLandmarks(context);
+      this.renderConstructionEffects(context);
       this.renderSlimeTerrain(context);
       this.renderIcePuddles(context);
       for (const lilyPad of this.lilypads) lilyPad.render(context, this.camera);
@@ -7587,7 +8296,7 @@
       this.renderBossLighting(context, width, height);
       this.renderWeaponFlashes(context);
       this.renderPixelFrame(context, width, height);
-      if (["running", "paused", "upgrade", "defeat", "victory"].includes(this.screenState)) {
+      if (!this.previewInstance && ["running", "paused", "upgrade", "defeat", "victory"].includes(this.screenState)) {
         this.renderCombatHud(context, width, height);
       }
       if (this.screenState === "menu") {
@@ -7610,6 +8319,8 @@
         this.renderSettingsOverlay(context, width, height);
       } else if (this.screenState === "glossary") {
         this.renderGlossaryOverlay(context, width, height);
+      } else if (this.screenState === "weapon-preview") {
+        this.renderWeaponPreviewOverlay(context, width, height);
       } else if (this.screenState === "paused") {
         this.renderPauseOverlay(context, width, height);
       } else if (this.screenState === "upgrade") {
@@ -7745,16 +8456,14 @@
         const alpha = Math.max(0, 1 - progress);
         const x = Math.round(effect.x - this.camera.x);
         const y = Math.round(effect.y - this.camera.y);
-        const distance = effect.radius * (0.45 + progress * 0.95);
         context.save();
         context.globalAlpha = alpha;
         context.fillStyle = effect.color;
-        context.fillRect(x - 3, y - 3, 6, 6);
-        for (let index = 0; index < 6; index += 1) {
-          const angle = effect.angle + index / 6 * Math.PI * 2;
-          const particleX = Math.round(x + Math.cos(angle) * distance);
-          const particleY = Math.round(y + Math.sin(angle) * distance);
-          context.fillRect(particleX - 2, particleY - 2, 4, 4);
+        for (const particle of effect.particles ?? []) {
+          const size = Math.max(2, Math.round(particle.size * (1 - progress * 0.35)));
+          const particleX = Math.round(x + particle.x);
+          const particleY = Math.round(y + particle.y);
+          context.fillRect(particleX - Math.floor(size / 2), particleY - Math.floor(size / 2), size, size);
         }
         context.restore();
       }
@@ -7836,34 +8545,41 @@
         this.progress.equippedWeapons,
       ));
       const panelX = 24;
-      const panelY = height - 102;
+      const panelY = height - 120;
       context.fillStyle = "rgba(24, 27, 15, 0.88)";
-      context.fillRect(panelX, panelY, 300, 78);
+      context.fillRect(panelX, panelY, 300, 96);
       context.strokeStyle = "#9a9256";
       context.lineWidth = 3;
-      context.strokeRect(panelX, panelY, 300, 78);
+      context.strokeRect(panelX, panelY, 300, 96);
 
       context.fillStyle = "#2a211b";
       context.fillRect(panelX + 12, panelY + 12, 146, 12);
       context.fillStyle = "#a23b32";
-      context.fillRect(panelX + 14, panelY + 14, 142 * (this.player.health / this.player.maxHealth), 8);
+      context.fillRect(panelX + 14, panelY + 14, 142 * clamp01(this.player.health / Math.max(1, this.player.maxHealth)), 8);
       context.fillStyle = "#f2e5b7";
       context.font = "bold 12px 'Courier New', monospace";
       context.fillText(`HEALTH ${this.player.health}/${this.player.maxHealth}`, panelX + 168, panelY + 22);
 
+      context.fillStyle = "#17262d";
+      context.fillRect(panelX + 12, panelY + 28, 146, 10);
+      context.fillStyle = "#55bde8";
+      context.fillRect(panelX + 14, panelY + 30, 142 * clamp01(this.player.shield / Math.max(1, this.player.maxShield)), 6);
+      context.fillStyle = "#bfeaff";
+      context.fillText(`SHIELD ${formatHudValue(this.player.shield)}/${formatHudValue(this.player.maxShield)}`, panelX + 168, panelY + 37);
+
       const meleeDisplay = weaponById(this.progress.equippedWeapons.melee) ?? WEAPONS.melee;
       const rangedDisplay = weaponById(this.progress.equippedWeapons.ranged) ?? WEAPONS.ranged;
-      renderWeaponSlot(context, panelX + 12, panelY + 35, meleeDisplay, this.weaponSlot === 1,
+      renderWeaponSlot(context, panelX + 12, panelY + 47, meleeDisplay, this.weaponSlot === 1,
         weaponLevelWithLoadoutBonus(meleeDisplay.id, this.progress.weaponLevels[meleeDisplay.id], this.progress.equippedWeapons));
-      renderWeaponSlot(context, panelX + 155, panelY + 35, rangedDisplay, this.weaponSlot === 2,
+      renderWeaponSlot(context, panelX + 155, panelY + 47, rangedDisplay, this.weaponSlot === 2,
         weaponLevelWithLoadoutBonus(rangedDisplay.id, this.progress.weaponLevels[rangedDisplay.id], this.progress.equippedWeapons));
 
       const effectiveCooldown = weapon.cooldown * this.player.cooldownMultiplier;
       const cooldownProgress = effectiveCooldown === 0 ? 1 : 1 - this.attackCooldowns[this.weaponSlot] / effectiveCooldown;
       context.fillStyle = "#24251b";
-      context.fillRect(panelX + 12, panelY + 66, 276, 5);
+      context.fillRect(panelX + 12, panelY + 84, 276, 5);
       context.fillStyle = "#dcc45f";
-      context.fillRect(panelX + 12, panelY + 66, 276 * clamp01(cooldownProgress), 5);
+      context.fillRect(panelX + 12, panelY + 84, 276 * clamp01(cooldownProgress), 5);
 
       context.fillStyle = "rgba(24, 27, 15, 0.88)";
       context.fillRect(width - 254, 24, 230, 68);
@@ -8040,23 +8756,25 @@
       const visibleHeight = height - 92 - listTop;
       const collectionWeapons = weaponsVisibleInCollection(this.progress.ownedWeapons);
       const itemCount = this.glossaryTab === "bestiary" ? ENEMY_GLOSSARY.length : collectionWeapons.length + 4;
-      const contentHeight = this.glossaryTab === "bestiary" ? itemCount * 112 : Math.ceil(collectionWeapons.length / 2) * 56 + 160;
+      const limitedRows = Math.ceil(collectionWeapons.filter((weapon) => weapon.limited).length / 2);
+      const regularRows = Math.ceil(collectionWeapons.filter((weapon) => !weapon.limited).length / 2);
+      const contentHeight = this.glossaryTab === "bestiary" ? itemCount * 112 : (limitedRows + regularRows) * 56 + (limitedRows > 0 ? 62 : 30) + 170;
       return Math.max(0, contentHeight - visibleHeight);
     }
 
     renderCollection(context, width, height) {
       const owned = new Set(this.progress.ownedWeapons);
       const collectionWeapons = weaponsVisibleInCollection(this.progress.ownedWeapons);
-      const rowsPerColumn = Math.ceil(collectionWeapons.length / 2);
+      const limitedWeapons = collectionWeapons.filter((weapon) => weapon.limited && owned.has(weapon.id));
+      const regularWeapons = collectionWeapons.filter((weapon) => !weapon.limited);
       const weaponListTop = height / 2 - 135;
       const weaponRowSpacing = 56;
-      context.fillStyle = "#ead77b";
-      context.font = "bold 14px 'Courier New', monospace";
       const ordinaryWeaponCount = WEAPON_DEFINITIONS.filter((weapon) => !weapon.limited).length;
-      const ownedLimitedCount = collectionWeapons.filter((weapon) => weapon.limited).length;
-      context.fillText(`WEAPONS ${owned.size}/${ordinaryWeaponCount + ownedLimitedCount}`, width / 2, weaponListTop - 20);
       const listTop = height / 2 - 135;
-      const contentHeight = Math.ceil(collectionWeapons.length / 2) * weaponRowSpacing + 170;
+      const limitedRows = Math.ceil(limitedWeapons.length / 2);
+      const regularRows = Math.ceil(regularWeapons.length / 2);
+      const limitedSectionHeight = limitedWeapons.length > 0 ? 34 + limitedRows * weaponRowSpacing : 0;
+      const contentHeight = limitedSectionHeight + 34 + regularRows * weaponRowSpacing + 170;
       const visibleHeight = height - 92 - listTop;
       const maxScroll = Math.max(0, contentHeight - visibleHeight);
       this.glossaryScroll = clamp(this.glossaryScroll, 0, maxScroll);
@@ -8064,13 +8782,18 @@
       context.beginPath();
       context.rect(width / 2 - 300, listTop - 28, 600, visibleHeight + 28);
       context.clip();
-      collectionWeapons.forEach((weapon, index) => {
+      const renderWeaponSection = (weapons, sectionTop) => weapons.forEach((weapon, index) => {
+        const rowsPerColumn = Math.ceil(weapons.length / 2);
         const column = index < rowsPerColumn ? 0 : 1;
         const row = column === 0 ? index : index - rowsPerColumn;
         const boxWidth = Math.min(275, Math.max(130, (width - 70) / 2));
         const x = width / 2 - boxWidth - 10 + column * (boxWidth + 20);
-        const y = weaponListTop + row * weaponRowSpacing - this.glossaryScroll;
+        const y = sectionTop + row * weaponRowSpacing - this.glossaryScroll;
         const unlocked = owned.has(weapon.id);
+        if (unlocked && y + 52 >= listTop - 28 && y <= listTop + visibleHeight) {
+          this.renderButton(context, x, y, boxWidth, 52, "", { type: "weapon-preview", value: weapon.id },
+            { fill: "#343621", hoverFill: "#4b4d2d", border: "#807a4b", lineWidth: 2 });
+        }
         context.fillStyle = unlocked ? "#343621" : "#29291f";
         context.fillRect(x, y, boxWidth, 52);
         context.strokeStyle = unlocked ? "#807a4b" : "#4d493a";
@@ -8087,9 +8810,21 @@
       });
 
       context.textAlign = "center";
+      context.fillStyle = "#f2b6ff";
+      context.font = "bold 14px 'Courier New', monospace";
+      if (limitedWeapons.length > 0) {
+        context.fillText(`LIMITED ${limitedWeapons.length}`, width / 2, weaponListTop - 12 - this.glossaryScroll);
+        renderWeaponSection(limitedWeapons, weaponListTop + 4);
+      }
+      const regularTitleY = weaponListTop + limitedSectionHeight;
+      context.fillStyle = "#ead77b";
+      context.fillText(`WEAPONS ${regularWeapons.filter((weapon) => owned.has(weapon.id)).length}/${ordinaryWeaponCount}`, width / 2, regularTitleY - 12 - this.glossaryScroll);
+      renderWeaponSection(regularWeapons, regularTitleY + 4);
+
+      context.textAlign = "center";
       context.fillStyle = "#ead77b";
       context.font = "bold 14px 'Courier New', monospace";
-      const mapsTitleY = weaponListTop + rowsPerColumn * weaponRowSpacing + 30;
+      const mapsTitleY = regularTitleY + regularRows * weaponRowSpacing + 34;
       context.fillText(`MAPS ${this.unlockedMaps.size}/${MAP_SLOTS.length}`, width / 2, mapsTitleY - this.glossaryScroll);
       const mapCardWidth = Math.min(180, Math.max(130, (width - 80) / 2));
       const mapGap = 15;
@@ -8286,6 +9021,103 @@
       context.textAlign = "start";
     }
 
+    renderWeaponPreviewOverlay(context, width, height) {
+      renderDarkOverlay(context, width, height);
+      const preview = this.weaponPreview;
+      const weapon = weaponById(preview?.weaponId);
+      if (!preview || !weapon) return;
+      const arenaX = 18; const arenaY = 18; const arenaWidth = 360; const arenaHeight = 250;
+      context.fillStyle = "#587640"; context.fillRect(arenaX, arenaY, arenaWidth, arenaHeight);
+      context.strokeStyle = "#ead77b"; context.lineWidth = 4; context.strokeRect(arenaX, arenaY, arenaWidth, arenaHeight);
+      context.fillStyle = "rgba(20,25,16,.28)";
+      for (let line = 0; line < 6; line += 1) context.fillRect(arenaX + 12, arenaY + 24 + line * 39, arenaWidth - 24, 2);
+      context.fillStyle = "#f3e7bd"; context.font = "bold 10px 'Courier New', monospace"; context.textAlign = "left";
+      context.fillText("TEST RANGE · WASD MOVE · HOLD CLICK TO FIRE", arenaX + 10, arenaY + 16);
+
+      if (preview.simulation) {
+        context.save();
+        context.beginPath(); context.rect(arenaX + 3, arenaY + 20, arenaWidth - 6, arenaHeight - 23); context.clip();
+        context.drawImage(preview.simulation.canvas, arenaX, arenaY);
+        context.restore();
+        context.fillStyle = "rgba(22,25,17,.8)"; context.fillRect(arenaX + 4, arenaY + 3, arenaWidth - 8, 19);
+        context.fillStyle = "#f3e7bd"; context.fillText("TEST RANGE · WASD MOVE · HOLD CLICK TO FIRE", arenaX + 10, arenaY + 16);
+      } else {
+      const playerX = arenaX + preview.player.x; const playerY = arenaY + preview.player.y;
+      const aimAngle = Math.atan2(this.input.pointer.y - playerY, this.input.pointer.x - playerX);
+      const walkFrame = preview.player.isMoving ? Math.floor(preview.player.walkTime * 8) % 2 : 0;
+      const leftStep = walkFrame === 0 ? 2 : -2;
+      context.fillStyle = "#f1c89b"; context.fillRect(playerX - 12, playerY - 20, 24, 25);
+      context.fillStyle = "#554235"; context.fillRect(playerX - 12, playerY - 20, 24, 5);
+      context.fillStyle = "#25231f"; context.fillRect(playerX - 7, playerY - 10, 3, 3); context.fillRect(playerX + 4, playerY - 10, 3, 3);
+      context.fillStyle = "#e8d65b"; context.fillRect(playerX - 13, playerY + 5, 26, 20);
+      context.fillStyle = "#29486d";
+      context.fillRect(playerX - 12, playerY + 25, 10, 15 + leftStep);
+      context.fillRect(playerX + 2, playerY + 25, 10, 15 - leftStep);
+      context.save(); context.translate(playerX, playerY); context.rotate(aimAngle); renderHeldWeaponVisual(context, weapon); context.restore();
+
+      for (const dummy of preview.dummies) {
+        const x = arenaX + dummy.x; const y = arenaY + dummy.y;
+        const alive = dummy.health > 0;
+        context.fillStyle = alive ? "#d5b373" : "#66543c"; context.fillRect(x - 14, y - 23, 28, 46);
+        context.fillStyle = alive ? "#df5550" : "#4a4035"; context.fillRect(x - 10, y - 15, 20, 20);
+        context.fillStyle = "#2a261f"; context.fillRect(x - 18, y + 23, 36, 5);
+        context.fillStyle = "#241f19"; context.fillRect(x - 18, y - 32, 36, 5);
+        context.fillStyle = alive ? "#7fd36b" : "#5b5747"; context.fillRect(x - 17, y - 31, 34 * Math.max(0, dummy.health) / dummy.maxHealth, 3);
+      }
+      for (const projectile of preview.projectiles) {
+        context.fillStyle = projectile.color ?? "#fff1bf"; context.beginPath(); context.arc(projectile.x, projectile.y, projectile.radius, 0, Math.PI * 2); context.fill();
+      }
+      for (const effect of preview.effects) {
+        const alpha = Math.max(0, effect.lifetime / effect.maxLifetime); context.save(); context.globalAlpha = alpha;
+        if (effect.hit) { context.fillStyle="#fff3b5";for(let i=0;i<8;i++){const a=i/8*Math.PI*2;context.fillRect(effect.x+Math.cos(a)*14-2,effect.y+Math.sin(a)*14-2,5,5);} }
+        else { context.translate(effect.x,effect.y);context.rotate(effect.angle);context.fillStyle=effect.melee?"#f5e29a":"#fff6cf";context.fillRect(18,-5,effect.melee?48:25,10); }
+        context.restore();
+      }
+      if (this.input.pointer.x >= arenaX && this.input.pointer.x <= arenaX + arenaWidth
+        && this.input.pointer.y >= arenaY && this.input.pointer.y <= arenaY + arenaHeight) {
+        context.strokeStyle="#fff4bf";context.lineWidth=2;context.beginPath();context.arc(this.input.pointer.x,this.input.pointer.y,8,0,Math.PI*2);context.stroke();
+      }
+      }
+
+      const detailX = Math.max(400, width / 2 - 25); const detailWidth = Math.min(500, width - detailX - 24);
+      const detailY = 18; const detailHeight = Math.min(520, height - 36);
+      context.fillStyle = "rgba(35,36,25,.97)"; context.fillRect(detailX, detailY, detailWidth, detailHeight);
+      context.strokeStyle = "#9a9256"; context.lineWidth = 3; context.strokeRect(detailX, detailY, detailWidth, detailHeight);
+      context.textAlign = "center"; context.fillStyle="#ead77b";context.font="bold 25px 'Courier New', monospace";
+      fitCenteredText(context, weapon.name.toUpperCase(), detailX + detailWidth / 2, 58, detailWidth - 32, 25, 14, true);
+      context.fillStyle = rarityColor(weapon.rarity); context.font="bold 14px 'Courier New', monospace";
+      context.fillText(`${weapon.rarity.toUpperCase()}${weapon.limited ? " · LIMITED" : ""}`, detailX + detailWidth / 2, 84);
+      if (weapon.limited) { context.fillStyle="#f2b6ff";context.font="bold 11px 'Courier New', monospace";context.fillText(`SEASON: ${(weapon.season ?? "Unknown").toUpperCase()}`, detailX + detailWidth / 2, 104); }
+      context.save();context.translate(detailX + detailWidth / 2 - 25,132);context.scale(1.65,1.65);renderHeldWeaponVisual(context,weapon);context.restore();
+      context.fillStyle="#d8d0ae";context.font="12px 'Courier New', monospace";
+      wrapCenteredText(context, weapon.description, detailX + detailWidth / 2, 172, detailWidth - 42, 16, 3);
+      const effectiveLevel = weaponLevelWithLoadoutBonus(
+        weapon.id,
+        this.progress.weaponLevels[weapon.id] ?? 1,
+        this.progress.equippedWeapons,
+      );
+      const displayedWeapon = weaponStatsWithPermanentProgress(weapon, effectiveLevel, this.progress.characterStats);
+      const statLines = weaponPopupStats(displayedWeapon);
+      context.textAlign = "left"; context.font = "bold 11px 'Courier New', monospace";
+      const columnWidth = (detailWidth - 48) / 2;
+      statLines.slice(0, 10).forEach((line, index) => {
+        const column = index % 2; const row = Math.floor(index / 2);
+        context.fillStyle = line.special ? "#f2c66d" : "#c8d9b0";
+        fitLeftText(context, line.text, detailX + 24 + column * columnWidth, 232 + row * 20, columnWidth - 10, 11, 8, true);
+      });
+      context.textAlign = "center";
+      context.fillStyle="#9fcf71";context.font="bold 11px 'Courier New', monospace";
+      wrapCenteredText(context, `LV 10: ${weapon.levelTenFeature}`, detailX + detailWidth / 2, 350, detailWidth - 42, 15, 3);
+      const buttonY = detailY + detailHeight - 52;
+      this.renderButton(context, detailX + 18, buttonY, 110, 38, "CLOSE", "preview-close", { font: "bold 12px 'Courier New', monospace" });
+      if (this.weaponPreviewReturnState === "shop") {
+        const owned = this.progress.ownedWeapons.includes(weapon.id);
+        this.renderButton(context, detailX + detailWidth - 148, buttonY, 130, 38,
+          owned ? "OWNED" : `BUY ${shopWeaponPrice(weapon.id)}`, owned ? null : "preview-buy", { font: "bold 10px 'Courier New', monospace" });
+      }
+      context.textAlign = "start";
+    }
+
     renderShopOverlay(context, width, height) {
       renderDarkOverlay(context, width, height);
       this.renderButton(context, 30, height - 62, 110, 34, "BACK", "back", { font: "12px 'Courier New', monospace" });
@@ -8308,10 +9140,18 @@
         const label = item.chest
           ? `WEAPON CHEST — ${chestCost(this.progress)} coins`
           : "";
-        this.renderButton(context, width / 2 - 260, rowY, 520, 43, label,
-          { type: "choice", value: index + 1 }, { font: "12px 'Courier New', monospace", textY: rowY + 14 });
-        if (weapon) renderWeaponMenuEntry(context, weapon, width / 2 - 225, rowY + 24, width / 2 - 165, rowY + 16,
-          `${weapon.name} — ${ownedOrPrice(this.progress, item.id)}`, 390, 0.74);
+        if (item.chest) {
+          this.renderButton(context, width / 2 - 260, rowY, 520, 43, label,
+            { type: "choice", value: index + 1 }, { font: "12px 'Courier New', monospace", textY: rowY + 14 });
+        } else if (weapon) {
+          this.renderButton(context, width / 2 - 260, rowY, 405, 43, "",
+            { type: "weapon-preview", value: weapon.id }, { font: "12px 'Courier New', monospace" });
+          renderWeaponMenuEntry(context, weapon, width / 2 - 225, rowY + 24, width / 2 - 165, rowY + 16,
+            `${weapon.name} — ${ownedOrPrice(this.progress, item.id)}`, 275, 0.74);
+          const owned = this.progress.ownedWeapons.includes(weapon.id);
+          this.renderButton(context, width / 2 + 150, rowY, 110, 43, owned ? "OWNED" : "BUY",
+            owned ? null : { type: "choice", value: index + 1 }, { font: "bold 11px 'Courier New', monospace" });
+        }
       });
       this.renderScrollBar(context, Math.min(width / 2 + 294, width - 14), height / 2 - 132, visibleCount * rowHeight, maxScroll, this.shopScroll);
       if (maxScroll > 0) {
@@ -8321,7 +9161,7 @@
       context.fillStyle = "#9fcf71";
       context.fillText(this.menuMessage, width / 2, height / 2 + 200);
       context.fillStyle = "#d8d0ae";
-      context.fillText("Click an item to buy · Escape to return", width / 2, height / 2 + 228);
+      context.fillText("Click a weapon to test it · Use BUY to purchase · Escape to return", width / 2, height / 2 + 228);
       context.textAlign = "start";
     }
 
@@ -8368,8 +9208,12 @@
       renderDarkOverlay(context, width, height);
       this.renderButton(context, 30, height - 62, 110, 34, "BACK", "back", { font: "12px 'Courier New', monospace" });
       const season = ensureSeasonState(this.progress);
-      const rainbowApple = weaponById("rainbow-apples");
-      const partyHat = weaponById("party-hat");
+      const seasonOffers = [
+        [weaponById("rainbow-apples"), RAINBOW_APPLE_COST],
+        [weaponById("rainbow-horseshoe"), RAINBOW_HORSESHOE_COST],
+        [weaponById("pinata"), PINATA_COST],
+        [weaponById("party-hat"), PARTY_HAT_COST],
+      ];
       context.textAlign = "center";
       context.fillStyle = "#ead77b";
       context.font = "bold 28px 'Courier New', monospace";
@@ -8378,51 +9222,53 @@
       context.font = "bold 12px 'Courier New', monospace";
       context.fillText(`SEASON SHOP · ENDS OCTOBER 1 · ${season.coins} SEASON COINS · ${season.claimsToday}/${SEASON_DAILY_CLAIM_LIMIT} REWARDS TODAY`, width / 2, height / 2 - 252);
 
-      [[rainbowApple, RAINBOW_APPLE_COST, width / 2 - 290], [partyHat, PARTY_HAT_COST, width / 2 + 10]].forEach(([weapon, cost, x]) => {
+      seasonOffers.forEach(([weapon, cost], index) => {
+        const x = width / 2 - 290 + index % 2 * 300;
+        const y = height / 2 - 230 + Math.floor(index / 2) * 76;
         const owned = this.progress.ownedWeapons.includes(weapon.id);
         context.fillStyle = "rgba(48, 49, 32, 0.96)";
-        context.fillRect(x, height / 2 - 230, 280, 90);
+        context.fillRect(x, y, 280, 70);
         context.strokeStyle = "#817b4d";
-        context.strokeRect(x, height / 2 - 230, 280, 90);
-        renderWeaponMenuEntry(context, weapon, x + 32, height / 2 - 185, x + 68, height / 2 - 207,
-          weapon.name.toUpperCase(), 125, 0.86);
+        context.strokeRect(x, y, 280, 70);
+        renderWeaponMenuEntry(context, weapon, x + 30, y + 37, x + 64, y + 20,
+          weapon.name.toUpperCase(), 126, 0.8);
         context.fillStyle = "#ead77b";
         context.font = "bold 10px 'Courier New', monospace";
         context.textAlign = "left";
-        context.fillText(owned ? "OWNED" : `${cost} SEASON COINS`, x + 68, height / 2 - 167);
-        this.renderButton(context, x + 198, height / 2 - 213, 66, 56, owned ? "OWNED" : "BUY",
+        context.fillText(owned ? "OWNED" : `${cost} SEASON COINS`, x + 64, y + 55);
+        this.renderButton(context, x + 205, y + 8, 60, 54, owned ? "OWNED" : "BUY",
           { type: "season-buy", value: weapon.id }, { font: "bold 10px 'Courier New', monospace" });
       });
       context.textAlign = "center";
 
       season.quests.forEach((quest, index) => {
         const x = width / 2 - 290;
-        const y = height / 2 - 118 + index * 76;
+        const y = height / 2 - 68 + index * 58;
         context.fillStyle = quest.completed ? "rgba(52, 82, 48, 0.95)" : "rgba(48, 49, 32, 0.95)";
-        context.fillRect(x, y, 580, 64);
+        context.fillRect(x, y, 580, 50);
         context.strokeStyle = quest.completed ? "#9fcf71" : "#817b4d";
-        context.strokeRect(x, y, 580, 64);
+        context.strokeRect(x, y, 580, 50);
         context.fillStyle = "#f3e7bd";
         context.font = "bold 13px 'Courier New', monospace";
-        context.fillText(quest.label.toUpperCase(), width / 2, y + 21);
+        context.fillText(quest.label.toUpperCase(), width / 2, y + 18);
         const shownProgress = quest.type === "play-time"
           ? `${Math.floor(quest.progress / 60)} / ${Math.floor(quest.goal / 60)} MIN`
           : `${Math.floor(quest.progress)} / ${quest.goal}`;
         context.fillStyle = quest.completed ? "#9fcf71" : "#ead77b";
         context.font = "bold 11px 'Courier New', monospace";
-        context.fillText(`${shownProgress} · ${quest.reward} SEASON COINS`, width / 2, y + 43);
+        context.fillText(`${shownProgress} · ${quest.reward} SEASON COINS`, width / 2, y + 37);
       });
       const completed = season.quests.filter((quest) => quest.completed).length;
-      this.renderButton(context, width / 2 - 220, height / 2 + 124, 440, 42,
+      this.renderButton(context, width / 2 - 220, height / 2 + 112, 440, 38,
         completed ? `CLAIM REWARDS & REFRESH (${completed})` : "COMPLETE QUESTS TO CLAIM", "season-claim", { font: "bold 12px 'Courier New', monospace" });
-      this.renderButton(context, width / 2 - 220, height / 2 + 174, 440, 38,
+      this.renderButton(context, width / 2 - 220, height / 2 + 156, 440, 36,
         "EXCHANGE 1 SEASON COIN FOR 800 REGULAR COINS", "season-exchange", { font: "bold 11px 'Courier New', monospace" });
       context.fillStyle = "#d8d0ae";
       context.font = "11px 'Courier New', monospace";
-      context.fillText("Quests refresh only when completed rewards are claimed.", width / 2, height / 2 + 226);
-      context.fillText("After 6 rewarded quests in a day, completed quests wait in their slots until tomorrow.", width / 2, height / 2 + 244);
+      context.fillText("Quests refresh only when completed rewards are claimed.", width / 2, height / 2 + 208);
+      context.fillText("After 6 rewarded quests in a day, completed quests wait in their slots until tomorrow.", width / 2, height / 2 + 226);
       context.fillStyle = "#9fcf71";
-      context.fillText(this.menuMessage, width / 2, height / 2 + 268);
+      context.fillText(this.menuMessage, width / 2, height / 2 + 250);
       context.textAlign = "start";
     }
 
@@ -8433,7 +9279,7 @@
         this.renderWeaponUpgradeCategoryOverlay(context, width, height);
         return;
       }
-      const statCap = Math.min(CHARACTER_STAT_COSTS.length, this.unlockedMaps.size * 5);
+      const statCap = characterStatMaxLevelForMaps(this.unlockedMaps);
       context.textAlign = "center";
       context.fillStyle = "#ead77b";
       context.font = "bold 34px 'Courier New', monospace";
@@ -8640,6 +9486,14 @@
         this.renderSchoolFieldLandmarks(context);
         return;
       }
+      if (this.currentMap.id === "construction-site") {
+        this.renderConstructionLandmarks(context);
+        return;
+      }
+      if (this.currentMap.id === "chicken-farm") {
+        this.renderChickenFarmLandmarks(context);
+        return;
+      }
       if (this.currentMap.id === "aquatic-garden") {
         this.renderAquaticGardenLandmarks(context);
         return;
@@ -8748,6 +9602,56 @@
         const x = 160 + (index * 173) % Math.max(220, width - 320) - this.camera.x;
         const y = 185 + (index * 241) % Math.max(220, height - 370) - this.camera.y;
         context.fillRect(Math.round(x), Math.round(y), 10, 14); context.fillRect(Math.round(x - 4), Math.round(y + 14), 18, 4);
+      }
+    }
+
+    renderConstructionLandmarks(context) {
+      for (const obstacle of this.activeObstacles ?? []) {
+        const x = Math.round((obstacle.x ?? 0) - this.camera.x); const y = Math.round((obstacle.y ?? 0) - this.camera.y);
+        if (obstacle.kind === "temporary-dirt") { context.fillStyle = "rgba(92,61,34,.65)"; context.beginPath(); context.arc(x,y,obstacle.radius,0,Math.PI*2); context.fill(); continue; }
+        if (obstacle.kind === "dirt-pile") { context.fillStyle="#6c4b2f";context.fillRect(x,y,obstacle.width,obstacle.height); }
+        else if (obstacle.kind === "pipes") { context.fillStyle="#777b75";for(let i=0;i<3;i++){context.fillRect(x+i*42,y,36,obstacle.height);context.fillStyle="#4c504c";context.fillRect(x+7+i*42,y+9,22,obstacle.height-18);context.fillStyle="#777b75";} }
+        else if (obstacle.kind === "pallets") { context.fillStyle="#9b6c3e";for(let i=0;i<4;i++)context.fillRect(x,y+i*15,obstacle.width,8); }
+        else if (obstacle.kind === "barrier") { context.fillStyle="#f1e8d0";context.fillRect(x,y,obstacle.width,obstacle.height);context.fillStyle="#e67b28";for(let i=0;i<obstacle.width;i+=40)context.fillRect(x+i,y,20,obstacle.height); }
+      }
+      context.fillStyle="#ed7428";for(let i=0;i<18;i++){const x=(120+i*211)%this.world.width-this.camera.x;const y=(90+i*137)%this.world.height-this.camera.y;context.fillRect(x-8,y-16,16,22);context.fillRect(x-13,y+6,26,5);}
+    }
+
+    renderChickenFarmLandmarks(context) {
+      for (const obstacle of this.activeObstacles ?? []) {
+        const x = Math.round(obstacle.x - this.camera.x); const y = Math.round(obstacle.y - this.camera.y);
+        if (obstacle.kind === "barn") { context.fillStyle="#9f3e32";context.fillRect(x,y,obstacle.width,obstacle.height);context.fillStyle="#f0e3c4";context.fillRect(x+obstacle.width*.38,y+obstacle.height*.42,obstacle.width*.24,obstacle.height*.58);context.fillStyle="#663127";context.fillRect(x-12,y-18,obstacle.width+24,24); }
+        else if (obstacle.kind === "chicken-coop") { context.fillStyle="#9b693c";context.fillRect(x,y,obstacle.width,obstacle.height);context.strokeStyle="#e2c897";context.lineWidth=4;for(let line=15;line<obstacle.width;line+=28){context.beginPath();context.moveTo(x+line,y);context.lineTo(x+line,y+obstacle.height);context.stroke();} }
+        else if (obstacle.kind === "hay-bales") { context.fillStyle="#d6a93c";context.fillRect(x,y,obstacle.width,obstacle.height);context.fillStyle="#f0ce61";for(let stripe=8;stripe<obstacle.width;stripe+=28)context.fillRect(x+stripe,y,5,obstacle.height); }
+        else if (obstacle.kind === "feeding-area") { context.fillStyle="#7a4e2c";context.fillRect(x,y,obstacle.width,obstacle.height);context.fillStyle="#e0bd63";for(let grain=0;grain<12;grain++)context.fillRect(x+8+(grain*29)%obstacle.width,y+8+(grain*17)%Math.max(10,obstacle.height-12),5,4); }
+      }
+      context.fillStyle="rgba(219,190,117,.42)";
+      for(let index=0;index<20;index++){const x=(index*191+70)%this.world.width-this.camera.x;const y=(index*127+80)%this.world.height-this.camera.y;context.fillRect(x,y,22,5);}
+    }
+
+    renderConstructionEffects(context) {
+      if (this.currentMap.id !== "construction-site") return;
+      for (const hazard of this.constructionHazards ?? []) {
+        const x=Math.round(hazard.x-this.camera.x),y=Math.round(hazard.y-this.camera.y);
+        if (!hazard.impacted) { context.save();context.globalAlpha=.72;context.strokeStyle="#ffcf42";context.lineWidth=6;context.setLineDash([14,10]);context.beginPath();context.arc(x,y,hazard.radius,0,Math.PI*2);context.stroke();context.setLineDash([]);context.restore(); }
+      }
+      for (const projectile of this.constructionProjectiles ?? []) {
+        const x=Math.round(projectile.x-this.camera.x),y=Math.round(projectile.y-this.camera.y);
+        if (projectile.type === "brick") {
+          const speed = Math.hypot(projectile.velocityX, projectile.velocityY) || 1;
+          const trailX = projectile.velocityX / speed * 22;
+          const trailY = projectile.velocityY / speed * 22;
+          context.save();
+          context.strokeStyle = "rgba(255, 211, 111, 0.8)";
+          context.lineWidth = 7;
+          context.beginPath(); context.moveTo(x - trailX, y - trailY); context.lineTo(x, y); context.stroke();
+          context.fillStyle = "#e34f35"; context.fillRect(x - 15, y - 10, 30, 20);
+          context.strokeStyle = "#fff0b8"; context.lineWidth = 3; context.strokeRect(x - 15, y - 10, 30, 20);
+          context.fillStyle = "#7d241d"; context.fillRect(x - 2, y - 9, 4, 18);
+          context.restore();
+        } else {
+          context.fillStyle="#765130";context.fillRect(x-9,y-9,18,18);
+        }
       }
     }
 
@@ -9025,6 +9929,75 @@
     context.fillText(text, x, y);
   }
 
+  function fitLeftText(context, text, x, y, maxWidth, startSize, minimumSize, bold = false) {
+    let size = startSize;
+    do {
+      context.font = `${bold ? "bold " : ""}${size}px 'Courier New', monospace`;
+      size -= 1;
+    } while (size >= minimumSize && context.measureText(text).width > maxWidth);
+    context.fillText(text, x, y);
+  }
+
+  function weaponPopupStats(weapon) {
+    const lines = [];
+    const add = (label, value, special = false) => lines.push({ text: `${label}: ${value}`, special });
+    add("LEVEL", weapon.level ?? 1, true);
+    add("DAMAGE", Number.isFinite(weapon.damage) ? formatHudValue(weapon.damage) : "UTILITY");
+    const hitsPerAttack = Math.max(1, weapon.projectileCount ?? 1)
+      * Math.max(1, weapon.rounds ?? 1)
+      * Math.max(1, weapon.burstCount ?? 1);
+    let damagePerAttack = (Number.isFinite(weapon.damage) ? weapon.damage : 0) * hitsPerAttack;
+    if (weapon.explosive && weapon.splashRadius > 0) {
+      damagePerAttack += (weapon.damage ?? 0) * (weapon.splashDamageMultiplier ?? 0.5) * hitsPerAttack;
+    }
+    const splitHits = Math.max(0, weapon.splitCount ?? 0) * hitsPerAttack;
+    damagePerAttack += Math.max(0, weapon.splitDamage ?? 0) * splitHits;
+    const statusApplications = hitsPerAttack + splitHits;
+    damagePerAttack += Math.max(0, weapon.fireDamagePerSecond ?? 0)
+      * Math.max(0, weapon.fireDuration ?? 0) * statusApplications;
+    const maximumDps = weapon.cooldown > 0 ? damagePerAttack / weapon.cooldown : 0;
+    add("MAX DPS", formatHudValue(maximumDps), true);
+    if (weapon.cooldown > 0) add("ATTACK SPEED", `${(1 / weapon.cooldown).toFixed(2)}/SEC`);
+    if (weapon.cooldown > 0) add("RELOAD", `${weapon.cooldown.toFixed(2)} SEC`);
+    if (weapon.range > 0) add("RANGE", Math.round(weapon.range));
+    else if (weapon.projectileSpeed > 0 && weapon.projectileLifetime > 0) add("RANGE", Math.round(weapon.projectileSpeed * weapon.projectileLifetime));
+    if ((weapon.projectileCount ?? 1) > 1) add("PROJECTILES", weapon.projectileCount);
+    if (weapon.spread > 0) add("SPREAD", `${(weapon.spread * 180 / Math.PI).toFixed(1)}°`);
+    else if (weapon.perfectAccuracy) add("ACCURACY", "PERFECT", true);
+    if (weapon.pierces >= Number.MAX_SAFE_INTEGER) add("PIERCE", "MAX", true);
+    else if (weapon.pierces > 0) add("PIERCE", weapon.pierces);
+    if (weapon.bounces > 0) add("BOUNCES", weapon.bounces);
+    if (weapon.knockback > 0) add("KNOCKBACK", formatHudValue(weapon.knockback));
+    if (weapon.splashRadius > 0) add("EXPLOSION", `RADIUS ${Math.round(weapon.splashRadius)}`, true);
+    if (weapon.fireDuration > 0) add("BURN", `${formatHudValue(weapon.fireDamagePerSecond)} DPS / ${formatHudValue(weapon.fireDuration)}S`, true);
+    if (weapon.freezeDuration > 0) add("FREEZE", `${formatHudValue(weapon.freezeDuration)} SEC`, true);
+    if (weapon.lifesteal > 0) add("LIFESTEAL", `${(weapon.lifesteal * 100).toFixed(2)}%`, true);
+    if (weapon.chainCount > 0 || weapon.maxChainJumps > 0) add("CHAIN", weapon.chainCount || weapon.maxChainJumps, true);
+    if (weapon.splitCount > 0) add("SPLITS", weapon.splitCount, true);
+    if (weapon.gravityPull > 0 || weapon.polarityForce > 0 || weapon.tornadoPullForce > 0) add("SPECIAL", "PULL / PUSH", true);
+    if (weapon.boomerangRange > 0) add("SPECIAL", "RETURNS", true);
+    if (weapon.decoyHealth > 0) add("DECOY HP", weapon.decoyHealth, true);
+    if (weapon.pinataConfettiCount > 0) add("CONFETTI", `${weapon.pinataConfettiCount} RADIAL`, true);
+    return lines;
+  }
+
+  function weaponStatsWithPermanentProgress(weapon, level, characterStats = {}) {
+    const leveled = weaponStatsAtLevel(weapon, level);
+    const damageBonus = Math.max(0, Number(characterStats.damage) || 0) * 0.08;
+    const cooldownMultiplier = Math.max(0.55, 1 - Math.max(0, Number(characterStats.attackSpeed) || 0) * 0.06);
+    const accuracyMultiplier = 1 + Math.max(0, Number(characterStats.accuracy) || 0) * 0.08;
+    return {
+      ...leveled,
+      damage: Number((leveled.damage * (1 + damageBonus)).toFixed(2)),
+      cooldown: leveled.cooldown * cooldownMultiplier,
+      spread: (leveled.spread ?? 0) / accuracyMultiplier,
+      recoil: (leveled.recoil ?? 0) / accuracyMultiplier,
+      permanentDamageBonus: damageBonus,
+      permanentCooldownMultiplier: cooldownMultiplier,
+      permanentAccuracyMultiplier: accuracyMultiplier,
+    };
+  }
+
   function renderGrassTuft(context, x, y, seed) {
     const roundedX = Math.round(x);
     const roundedY = Math.round(y);
@@ -9097,6 +10070,11 @@
 
   function clamp01(value) {
     return Math.max(0, Math.min(1, value));
+  }
+
+  function formatHudValue(value) {
+    if (!Number.isFinite(value)) return "0";
+    return Number.isInteger(value) ? String(value) : value.toFixed(1);
   }
 
   function clamp(value, min, max) {
@@ -9197,7 +10175,7 @@
       context.restore();
       return;
     }
-    const bossIds = ["king-gnomulus", "dandelion", "lily-queen", "groundskeeper", "pondfather", "pro-golfer", "ancient-snail", "pe-teacher", "ball-launcher"];
+    const bossIds = ["king-gnomulus", "dandelion", "lily-queen", "groundskeeper", "pondfather", "pro-golfer", "ancient-snail", "pe-teacher", "ball-launcher", "mother-hen"];
     const large = bossIds.includes(enemyId);
     context.save();
     context.translate(Math.round(x), Math.round(y));
@@ -9276,6 +10254,17 @@
     else if (enemyId === "ancient-snail") enemy = new AncientSnailBoss({ ...common, config: { ...bossConfig, shieldStrength: 2000, shieldRegeneration: 40, spitCooldown: 2, shellSlamCooldown: 5, snailArmyCooldown: 4, shellSlamRadius: 180 } });
     else if (enemyId === "pe-teacher") enemy = new PeTeacherBoss({ ...common, config: { ...bossConfig, dodgeballCooldown: 2, whistleCooldown: 6, lapCooldown: 8, lapExitDistance: 220 }, world: PREVIEW_WORLD });
     else if (enemyId === "ball-launcher") enemy = new BallLauncherBoss({ ...common, config: { ...bossConfig, ballCooldown: 1, dumpCooldown: 8 } });
+    else if (enemyId === "construction-worker") enemy = new ConstructionWorker(common);
+    else if (enemyId === "traffic-cone") enemy = new TrafficConeEnemy(common);
+    else if (enemyId === "runaway-tire") enemy = new RunawayTire({ ...common, world: PREVIEW_WORLD });
+    else if (enemyId === "brick-carrier") enemy = new BrickCarrier(common);
+    else if (enemyId === "safety-vest") enemy = new SafetyVestEnemy(common);
+    else if (enemyId === "excavator") enemy = new ExcavatorBoss({ ...common, config: { ...bossConfig, health: 12000, speed: 52, name: "The Excavator" }, world: PREVIEW_WORLD });
+    else if (enemyId === "chicken") enemy = new Chicken(common);
+    else if (enemyId === "chicken-egg") enemy = new ChickenEgg(common);
+    else if (enemyId === "chick") enemy = new Chick(common);
+    else if (enemyId === "rooster") enemy = new Rooster(common);
+    else if (enemyId === "mother-hen") enemy = new MotherHenBoss({ ...common, config: { ...bossConfig, health: 15000, speed: 88, name: "Mother Hen" }, world: PREVIEW_WORLD });
     if (!enemy) return null;
     enemy.x = 0;
     enemy.y = 0;
@@ -9338,6 +10327,88 @@
 
   function formatKeyCode(code) {
     return code.replace(/^Key/, "").replace(/^Digit/, "").replace(/^Arrow/, "Arrow ");
+  }
+
+  function normalizeAngle(angle) {
+    return Math.atan2(Math.sin(angle), Math.cos(angle));
+  }
+
+  function createPreviewInput() {
+    return {
+      keys: new Set(),
+      pointer: { x: 0, y: 0, inside: false, down: false },
+      setKeybinds() {},
+      setTextCapture() {},
+      movementVector() {
+        const horizontal = Number(this.keys.has("KeyD") || this.keys.has("ArrowRight"))
+          - Number(this.keys.has("KeyA") || this.keys.has("ArrowLeft"));
+        const vertical = Number(this.keys.has("KeyS") || this.keys.has("ArrowDown"))
+          - Number(this.keys.has("KeyW") || this.keys.has("ArrowUp"));
+        const length = Math.hypot(horizontal, vertical);
+        return length > 0 ? { x: horizontal / length, y: vertical / length } : { x: 0, y: 0 };
+      },
+      consumeBossSpawnRequest: () => false,
+      consumeDebugToggle: () => false,
+      consumePauseRequest: () => false,
+      consumeUpgradeChoice: () => null,
+      consumeMenuAction: () => null,
+      consumeClickRequest: () => null,
+      consumeWeaponSlot: () => null,
+      consumeAttackRequest: () => false,
+      consumeConfirmRequest: () => false,
+      consumeRestartRequest: () => false,
+      consumeScrollRequest: () => 0,
+    };
+  }
+
+  class PreviewDummy {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      this.radius = 18;
+      this.maxHealth = 500;
+      this.health = 500;
+      this.active = true;
+      this.targetable = true;
+      this.damage = 0;
+      this.coinValue = 0;
+      this.xpValue = 0;
+      this.enemyType = "preview-dummy";
+      this.resetTimer = 0;
+    }
+
+    takeDamage(amount) {
+      if (!this.targetable || !Number.isFinite(amount) || amount <= 0) return false;
+      this.health = Math.max(0, this.health - amount);
+      if (this.health <= 0) {
+        this.targetable = false;
+        this.resetTimer = 0.7;
+      }
+      return false;
+    }
+
+    update(deltaTime) {
+      if (!this.targetable) {
+        this.resetTimer -= deltaTime;
+        if (this.resetTimer <= 0) {
+          this.health = this.maxHealth;
+          this.targetable = true;
+        }
+      }
+      return {};
+    }
+
+    render(context, camera) {
+      const x = Math.round(this.x - camera.x);
+      const y = Math.round(this.y - camera.y);
+      const alive = this.targetable;
+      context.fillStyle = alive ? "#d5b373" : "#66543c"; context.fillRect(x - 14, y - 23, 28, 46);
+      context.fillStyle = alive ? "#df5550" : "#4a4035"; context.fillRect(x - 10, y - 15, 20, 20);
+      context.fillStyle = "#2a261f"; context.fillRect(x - 18, y + 23, 36, 5);
+      context.fillStyle = "#241f19"; context.fillRect(x - 18, y - 32, 36, 5);
+      context.fillStyle = alive ? "#7fd36b" : "#5b5747";
+      context.fillRect(x - 17, y - 31, 34 * this.health / this.maxHealth, 3);
+    }
   }
 
   function weaponUpgradeLabel(progress, weapon) {

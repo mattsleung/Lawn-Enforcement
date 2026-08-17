@@ -24,6 +24,7 @@ export class CommonWeed {
     this.shuffleTimer = 0;
     this.shuffleVelocityX = 0;
     this.shuffleVelocityY = 0;
+    this.playerDriftSpeed = bossMode ? 15 : 0;
     this.enemyType = bossMode ? "strongweed" : "common-weed";
   }
 
@@ -40,6 +41,7 @@ export class CommonWeed {
     this.copyTimer = this.copyInterval;
     this.hasCloned = true;
     this.hasLateCloned = true;
+    this.playerDriftSpeed = 15;
   }
 
   update(deltaTime, target) {
@@ -56,8 +58,12 @@ export class CommonWeed {
         this.shuffleVelocityY = Math.sin(angle) * speed;
         this.shuffleTimer = 0.2 + Math.random() * 0.35;
       }
-      this.x += this.shuffleVelocityX * deltaTime;
-      this.y += this.shuffleVelocityY * deltaTime;
+      const targetX = target.x - this.x;
+      const targetY = target.y - this.y;
+      const targetDistance = Math.hypot(targetX, targetY) || 1;
+      const slowMultiplier = this.slowTime > 0 ? 0.5 : 1;
+      this.x += (this.shuffleVelocityX + targetX / targetDistance * this.playerDriftSpeed) * slowMultiplier * deltaTime;
+      this.y += (this.shuffleVelocityY + targetY / targetDistance * this.playerDriftSpeed) * slowMultiplier * deltaTime;
       return {};
     }
     if (this.freezeTime > 0) return {};

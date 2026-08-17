@@ -2,10 +2,17 @@ const SEASON_QUEST_COUNT = 3;
 export const SEASON_DAILY_CLAIM_LIMIT = 6;
 export const RAINBOW_APPLE_COST = 5;
 export const PARTY_HAT_COST = 25;
+export const RAINBOW_HORSESHOE_COST = 15;
+export const PINATA_COST = 20;
 export const SEASON_COIN_EXCHANGE_VALUE = 800;
 export const SEASON_END_AT = new Date(2026, 9, 1).getTime();
 export const SEASON_ACTIVE = Date.now() < SEASON_END_AT;
-const SEASON_WEAPONS = Object.freeze({ "rainbow-apples": RAINBOW_APPLE_COST, "party-hat": PARTY_HAT_COST });
+const SEASON_WEAPONS = Object.freeze({
+  "rainbow-apples": RAINBOW_APPLE_COST,
+  "rainbow-horseshoe": RAINBOW_HORSESHOE_COST,
+  pinata: PINATA_COST,
+  "party-hat": PARTY_HAT_COST,
+});
 
 const QUESTS = Object.freeze([
   { id: "season-gnomes", type: "enemy-kills", targetId: "gnome", goal: 40, reward: 1, label: "Defeat 40 Lawn Gnomes", maps: ["backyard"] },

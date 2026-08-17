@@ -69,6 +69,11 @@ export class ThrownGnome {
       context.restore();
       return;
     }
+    if (this.enemyType === "chicken-egg") {
+      context.fillStyle = "#f4ead2"; context.fillRect(-10, -14, 20, 28);
+      context.fillStyle = "#d4c59f"; context.fillRect(-6, -10, 5, 4);
+      context.restore(); return;
+    }
     context.fillStyle = "#b23832";
     context.fillRect(-8, -14, 16, 8);
     context.fillStyle = "#d8a074";

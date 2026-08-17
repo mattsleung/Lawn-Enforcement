@@ -27,6 +27,14 @@ export const PERMANENT_WEAPONS = WEAPON_DEFINITIONS;
 export const CHARACTER_STAT_COSTS = Object.freeze([40, 80, 140, 220, 320, 450, 600, 780, 980, 1200]);
 export const WEAPON_LEVEL_COSTS = Object.freeze([100, 250, 500, 900]);
 export const BASE_WEAPON_MAX_LEVEL = 5;
+export const CHARACTER_STAT_LEVELS_PER_MAP = 2;
+
+export function characterStatMaxLevelForMaps(unlockedMaps = ["backyard"]) {
+  const mapCount = unlockedMaps instanceof Set
+    ? unlockedMaps.size
+    : Array.isArray(unlockedMaps) ? new Set(unlockedMaps).size : 1;
+  return Math.min(CHARACTER_STAT_COSTS.length, Math.max(1, mapCount) * CHARACTER_STAT_LEVELS_PER_MAP);
+}
 
 export function weaponMaxLevelForMaps(unlockedMaps = ["backyard"]) {
   const mapCount = unlockedMaps instanceof Set

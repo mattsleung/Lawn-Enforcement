@@ -100,6 +100,14 @@ test("Strongweeds have 150 health, no expiry, and never reproduce", () => {
   assert.equal(weed.active, true);
 });
 
+test("Strongweeds gently drift toward the player between random shuffles", () => {
+  const weed = new CommonWeed({ x: 100, y: 100, bossMode: true });
+  weed.shuffleTimer = 10; weed.shuffleVelocityX = 0; weed.shuffleVelocityY = 0;
+  weed.update(1, { x: 300, y: 100 });
+  assert.equal(weed.x, 115);
+  assert.equal(weed.y, 100);
+});
+
 test("Dandelion boss mode converts existing and spawned weeds", () => {
   const existing = new CommonWeed({ x: 100, y: 100 });
   const game = Object.create(Game.prototype);

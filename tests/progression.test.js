@@ -158,6 +158,8 @@ test("unlockAllMaps grants every current map", () => {
     "aquatic-garden",
     "redwood-trail",
     "school-field",
+    "construction-site",
+    "chicken-farm",
   ]);
 });
 
@@ -229,8 +231,8 @@ test("all weapon-specific Gold upgrades modify final weapon stats", () => {
 
 test("the full upgrade catalog has one weapon-specific Gold upgrade per weapon", () => {
   const weaponUpgrades = RUN_UPGRADES.filter((upgrade) => upgrade.weaponId);
-  assert.equal(weaponUpgrades.length, 44);
-  assert.equal(new Set(weaponUpgrades.map((upgrade) => upgrade.weaponId)).size, 44);
+  assert.equal(weaponUpgrades.length, 46);
+  assert.equal(new Set(weaponUpgrades.map((upgrade) => upgrade.weaponId)).size, 46);
 });
 
 test("banked coins save, load, and reject malformed data", () => {
@@ -295,6 +297,17 @@ test("glossary enemy defeat counts persist and reject malformed values", () => {
     basketball: 0,
     "pe-teacher": 0,
     "ball-launcher": 0,
+    "construction-worker": 0,
+    "traffic-cone": 0,
+    "runaway-tire": 0,
+    "brick-carrier": 0,
+    "safety-vest": 0,
+    excavator: 0,
+    chicken: 0,
+    "chicken-egg": 0,
+    chick: 0,
+    rooster: 0,
+    "mother-hen": 0,
   });
   values.set("lawn-enforcement-save-v1", JSON.stringify({
     defeatedEnemies: { gnome: -5, gopher: "many", "king-gnomulus": 2.9 },
@@ -324,6 +337,17 @@ test("glossary enemy defeat counts persist and reject malformed values", () => {
     basketball: 0,
     "pe-teacher": 0,
     "ball-launcher": 0,
+    "construction-worker": 0,
+    "traffic-cone": 0,
+    "runaway-tire": 0,
+    "brick-carrier": 0,
+    "safety-vest": 0,
+    excavator: 0,
+    chicken: 0,
+    "chicken-egg": 0,
+    chick: 0,
+    rooster: 0,
+    "mother-hen": 0,
   });
 });
 

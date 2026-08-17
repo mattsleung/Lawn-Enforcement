@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { CHEST_COST, CHEST_ODDS, PERMANENT_WEAPONS, weaponMaxLevelForMaps, weaponUpgradeCost } from "../src/config/economy-config.js";
+import { CHARACTER_STAT_COSTS, CHEST_COST, CHEST_ODDS, PERMANENT_WEAPONS, characterStatMaxLevelForMaps, weaponMaxLevelForMaps, weaponUpgradeCost } from "../src/config/economy-config.js";
 import { buyWeapon, chestCost, openChest, rollChestRarity, shopWeaponPrice, upgradeCharacterStat, upgradeWeapon } from "../src/systems/economy.js";
 import { defaultProgress } from "../src/systems/progression.js";
 import { WEAPON_DEFINITIONS } from "../src/config/weapons.js";
@@ -32,6 +32,13 @@ test("purchases and upgrades never create negative balances", () => {
   assert.equal(upgradeCharacterStat(progress, "health"), false);
   assert.equal(openChest(progress, () => 0), null);
   assert.equal(progress.coins, 0);
+});
+
+test("each unlocked map grants two regular character-stat levels", () => {
+  assert.equal(characterStatMaxLevelForMaps(["backyard"]), 2);
+  assert.equal(characterStatMaxLevelForMaps(["backyard", "frontyard"]), 4);
+  assert.equal(characterStatMaxLevelForMaps(new Set(["backyard", "frontyard", "garden"])), 6);
+  assert.equal(characterStatMaxLevelForMaps(Array.from({ length: 20 }, (_, index) => `map-${index}`)), CHARACTER_STAT_COSTS.length);
 });
 
 test("Regeneration unlocks after Golf Course and has only one level", () => {
