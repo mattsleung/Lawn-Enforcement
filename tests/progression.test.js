@@ -18,6 +18,14 @@ import {
   unlockAllWeapons,
   xpRequiredForLevel,
 } from "../src/systems/progression.js";
+import { isDeveloperHost } from "../src/core/game.js";
+
+test("developer unlocks are restricted to loopback hosts", () => {
+  assert.equal(isDeveloperHost({ hostname: "localhost" }), true);
+  assert.equal(isDeveloperHost({ hostname: "127.0.0.1" }), true);
+  assert.equal(isDeveloperHost({ hostname: "mattsleung.github.io" }), false);
+  assert.equal(isDeveloperHost({ hostname: "lawn-enforcement.example" }), false);
+});
 
 test("run XP requirements rise each level", () => {
   assert.equal(xpRequiredForLevel(1), 30);

@@ -27,7 +27,26 @@
       </aside>
 
       <output id="debug" class="debug" aria-live="off"></output>
+      <button id="account-button" class="account-button" type="button">ACCOUNT</button>
     </main>
+
+    <dialog id="account-modal" class="account-modal">
+      <form method="dialog" class="account-panel">
+        <h2>PLAYER ACCOUNT</h2>
+        <p id="account-status" class="account-status" aria-live="polite">Not signed in.</p>
+        <label>EMAIL<input id="account-email" type="email" autocomplete="email" maxlength="254"></label>
+        <label>PRIVATE USERNAME<input id="account-username" type="text" autocomplete="username" minlength="3" maxlength="20"></label>
+        <label>PASSWORD<input id="account-password" type="password" autocomplete="current-password" minlength="10"></label>
+        <label>CONFIRM PASSWORD<input id="account-password-confirm" type="password" autocomplete="new-password" minlength="10"></label>
+        <p class="account-note">Email confirmation is required. Passwords are handled by Supabase and are never stored in the game save.</p>
+        <div class="account-actions">
+          <button id="account-signin" type="button">SIGN IN</button>
+          <button id="account-signup" type="button">CREATE ACCOUNT</button>
+          <button id="account-signout" type="button" hidden>SIGN OUT</button>
+          <button id="account-close" type="button">CLOSE</button>
+        </div>
+      </form>
+    </dialog>
 
     <noscript>Lawn Enforcement requires JavaScript to run.</noscript>
     <script defer src="game.bundle.js?v=20260816-limited-collection"></script>

@@ -13,6 +13,7 @@ const sourceFiles = [
   "src/systems/progression.js",
   "src/systems/daily-quests.js",
   "src/systems/season.js",
+  "src/systems/cloud-save.js",
   "src/systems/economy.js",
   "src/core/camera.js",
   "src/core/input.js",

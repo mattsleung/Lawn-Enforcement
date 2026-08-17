@@ -88,16 +88,19 @@ export class Game {
     this.fpsElapsed = 0;
     const savedProgress = loadProgress(window.localStorage);
     this.progress = savedProgress;
-    unlockAllWeapons(this.progress);
-    unlockSeasonWeapons(this.progress);
-    unlockAllMaps(this.progress);
+    this.developerBuild = isDeveloperHost(window.location);
+    if (this.developerBuild) {
+      unlockAllWeapons(this.progress);
+      unlockSeasonWeapons(this.progress);
+      unlockAllMaps(this.progress);
+    }
     ensureDailyQuests(this.progress);
     ensureSeasonState(this.progress);
     saveProgress(window.localStorage, this.progress);
     this.input.setKeybinds(savedProgress.keybinds);
     this.bankCoins = this.progress.coins;
     this.questSaveTimer = 0;
-    this.unlockedMaps = new Set(savedProgress.unlockedMaps);
+    this.unlockedMaps = new Set(this.progress.unlockedMaps);
     this.selectedMapId = "backyard";
     this.currentMap = FIRST_MAP;
     this.world = FIRST_MAP.world;
@@ -1378,6 +1381,17 @@ export class Game {
     this.progress.coins = this.bankCoins;
     this.progress.unlockedMaps = [...this.unlockedMaps];
     saveProgress(window.localStorage, this.progress);
+    window.dispatchEvent(new CustomEvent("lawn-save", { detail: this.progress }));
+  }
+
+  applyCloudProgress(cloudProgress) {
+    const memoryStorage = { getItem: () => JSON.stringify(cloudProgress), setItem: () => {} };
+    this.progress = loadProgress(memoryStorage);
+    this.bankCoins = this.progress.coins;
+    this.unlockedMaps = new Set(this.progress.unlockedMaps);
+    this.input.setKeybinds(this.progress.keybinds);
+    saveProgress(window.localStorage, this.progress);
+    this.menuMessage = "Cloud save loaded";
   }
 
   handleShopChoice(choice) {
@@ -4891,6 +4905,11 @@ function hashCoordinates(x, y) {
 function renderDarkOverlay(context, width, height) {
   context.fillStyle = "rgba(20, 18, 12, 0.82)";
   context.fillRect(0, 0, width, height);
+}
+
+export function isDeveloperHost(locationLike) {
+  const hostname = String(locationLike?.hostname ?? "").toLowerCase();
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname === "[::1]";
 }
 
 function randomDropOffset(random = Math.random) {
