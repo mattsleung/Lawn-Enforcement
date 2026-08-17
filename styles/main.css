@@ -119,15 +119,19 @@ kbd {
   top: 20px;
   right: 20px;
   border: 2px solid #9a9256;
-  padding: 9px 14px;
+  padding: 14px 20px;
   background: #24291a;
   color: #ead77b;
-  font: bold 12px "Courier New", monospace;
+  font: bold 15px "Courier New", monospace;
   cursor: pointer;
+  transition: transform 100ms ease, background 140ms ease, box-shadow 140ms ease;
 }
 
+.account-button:hover, .account-button:focus-visible { background: #4b4d28; box-shadow: 0 0 18px rgb(234 215 123 / 55%); outline: none; }
+.account-button:active { transform: translateY(3px) scale(0.97); background: #d4bd5a; color: #211f12; }
+
 .account-modal {
-  width: min(460px, calc(100vw - 32px));
+  width: min(560px, calc(100vw - 32px));
   border: 3px solid #9a9256;
   padding: 0;
   background: #202418;
@@ -136,15 +140,25 @@ kbd {
 }
 
 .account-modal::backdrop { background: rgb(8 12 7 / 82%); }
-.account-panel { display: grid; gap: 12px; padding: 24px; }
-.account-panel h2 { margin: 0; color: #ead77b; text-align: center; }
-.account-panel label { display: grid; gap: 5px; color: #c8d9b0; font-weight: bold; font-size: 12px; }
-.account-panel input { width: 100%; border: 2px solid #6f7149; padding: 10px; background: #11170f; color: #fff4ce; font: 14px "Courier New", monospace; }
-.account-status { min-height: 34px; margin: 0; color: #9fcf71; font-size: 12px; line-height: 1.4; }
+.account-panel { display: grid; gap: 16px; padding: 32px; }
+.account-panel h2 { margin: 0; color: #ead77b; text-align: center; font-size: 28px; }
+.account-panel label { display: grid; gap: 8px; color: #c8d9b0; font-weight: bold; font-size: 15px; }
+.account-panel input { width: 100%; border: 3px solid #6f7149; padding: 14px; background: #11170f; color: #fff4ce; font: 18px "Courier New", monospace; transition: border-color 120ms ease, box-shadow 120ms ease; }
+.account-panel input:focus { border-color: #ead77b; box-shadow: 0 0 14px rgb(234 215 123 / 35%); outline: none; }
+.account-status { min-height: 44px; margin: 0; padding: 8px 10px; border-left: 4px solid #79b65a; background: rgb(121 182 90 / 9%); color: #9fcf71; font-size: 15px; line-height: 1.4; }
 .account-status.is-error { color: #ef786f; }
-.account-note { margin: 0; color: #aaa985; font-size: 10px; line-height: 1.4; }
-.account-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.account-actions button { flex: 1 1 120px; border: 2px solid #77744b; padding: 9px; background: #343621; color: #f3e7bd; font: bold 11px "Courier New", monospace; cursor: pointer; }
+.account-status.is-confirming { animation: account-confirm 420ms ease-out; }
+.account-note { margin: 0; color: #aaa985; font-size: 13px; line-height: 1.5; }
+.account-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.account-actions button { flex: 1 1 150px; min-height: 48px; border: 3px solid #77744b; padding: 12px 16px; background: #343621; color: #f3e7bd; font: bold 14px "Courier New", monospace; cursor: pointer; transition: transform 90ms ease, background 120ms ease, box-shadow 120ms ease; }
+.account-actions button:hover, .account-actions button:focus-visible { background: #5b5d31; border-color: #d8c568; box-shadow: 0 0 14px rgb(234 215 123 / 42%); outline: none; }
+.account-actions button:active { transform: translateY(3px) scale(0.98); background: #d8c568; color: #211f12; }
+
+@keyframes account-confirm {
+  0% { transform: scale(0.97); filter: brightness(1.8); }
+  55% { transform: scale(1.015); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
 
 @media (max-width: 600px) {
   .title-card {

@@ -71,7 +71,10 @@ export class Player {
       && Math.hypot(this.x - obstacle.x, this.y - obstacle.y) <= obstacle.radius);
     const inDirtPile = obstacles.some((obstacle) => obstacle.kind === "temporary-dirt"
       && Math.hypot(this.x - obstacle.x, this.y - obstacle.y) <= obstacle.radius);
-    const movementSpeed = inSlime ? this.speed * 0.4 : inDirtPile ? this.speed * 0.7 : (inSandBunker || inWater) ? this.speed * 0.5 : onRunningTrack ? this.speed * 1.2 : this.speed;
+    const inMatureCorn = obstacles.some((obstacle) => obstacle.kind === "mature-corn"
+      && this.x >= obstacle.x && this.x <= obstacle.x + obstacle.width
+      && this.y >= obstacle.y && this.y <= obstacle.y + obstacle.height);
+    const movementSpeed = inSlime ? this.speed * 0.4 : inDirtPile ? this.speed * 0.7 : (inSandBunker || inWater) ? this.speed * 0.5 : inMatureCorn ? this.speed * 0.7 : onRunningTrack ? this.speed * 1.2 : this.speed;
     if (this.maxShield > 0) this.shield = Math.min(this.maxShield, this.shield + this.shieldRegen * deltaTime);
     if (this.healthRegenAmount > 0 && this.healthRegenInterval > 0) {
       this.healthRegenTimer += deltaTime;

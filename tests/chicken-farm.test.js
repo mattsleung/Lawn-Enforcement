@@ -6,7 +6,8 @@ import { MotherHenBoss } from "../src/entities/mother-hen-boss.js";
 
 test("Chicken Farm follows Construction Site and raises its enemy cap to 150", () => {
   const map = mapById("chicken-farm");
-  assert.equal(MAP_SLOTS.at(-1).id, "chicken-farm");
+  assert.equal(MAP_SLOTS.at(-2).id, "chicken-farm");
+  assert.equal(map.unlocks, "corn-farm");
   assert.equal(map.enemyCap, 150);
   assert.equal(map.chickenEggDeathChance, 0.5);
   assert.equal(map.boss.health, 15000);
@@ -31,9 +32,9 @@ test("Mother Hen enrages below 4000 health and strengthens all three attacks", (
   assert.equal(events.tossEggs.length,4); assert.ok(events.wingBlast); assert.equal(boss.wingTimer,3);
 });
 
-test("Crow shields expire with the movement boost", () => {
+test("Rooster crow grants movement speed without a shield", () => {
   const chicken = new Chicken({x:0,y:0});
-  chicken.speedBuffTime = 3; chicken.maxShield = 100; chicken.shield = 100; chicken.crowShieldActive = true;
+  chicken.speedBuffTime = 3;
   chicken.tick(3.1);
-  assert.equal(chicken.shield, 0); assert.equal(chicken.maxShield, 0); assert.equal(chicken.crowShieldActive, false);
+  assert.equal(chicken.shield, 0); assert.equal(chicken.maxShield, 0); assert.equal(chicken.speedBuffTime, 0);
 });

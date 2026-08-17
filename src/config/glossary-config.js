@@ -34,4 +34,8 @@ export const ENEMY_GLOSSARY = Object.freeze([
   Object.freeze({ id: "chick", name: "Chick", description: "A small fast enemy that grows into a Chicken after surviving for twenty seconds." }),
   Object.freeze({ id: "rooster", name: "Rooster", description: "A durable farm support enemy whose crow speeds nearby Chickens and Chicks for three seconds." }),
   Object.freeze({ id: "mother-hen", name: "Mother Hen", description: "The oversized Chicken Farm boss with Egg Toss, Chicken Rush, Wing Blast, and an enraged phase." }),
+  Object.freeze({ id: "angry-corn", name: "Angry Corn", description: "A 350-health crop that stops every four seconds and fires a fan of three kernels." }),
+  Object.freeze({ id: "popcorn", name: "Popcorn", description: "A fast 100-health enemy that bursts into a damaging, high-knockback blast when defeated." }),
+  Object.freeze({ id: "mini-tractor", name: "Mini Tractor", description: "A rare 1,000-health charger that harvests crop rows and clears space as it drives." }),
+  Object.freeze({ id: "combine", name: "The Combine", description: "The Corn Farm boss. It harvests rows, fires kernel fans, dumps Popcorn piles, and enters overdrive below 5,000 HP." }),
 ]);

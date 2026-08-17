@@ -35,6 +35,12 @@ export class Pickup {
       context.fillRect(x + 4, y - 7, 2, 7);
       return;
     }
+    if (this.type === "corn") {
+      context.fillStyle = "#4f7c35"; context.fillRect(x - 7, y - 1, 4, 11); context.fillRect(x + 3, y - 1, 4, 11);
+      context.fillStyle = "#f0c83e"; context.fillRect(x - 5, y - 10, 10, 17);
+      context.fillStyle = "#fff09a"; context.fillRect(x - 3, y - 8, 3, 5);
+      return;
+    }
     context.fillStyle = this.type === "xp" ? "#71d98b" : "#edcc4f";
     if (this.type === "xp") {
       context.fillRect(x - 6, y - 6, 12, 12);

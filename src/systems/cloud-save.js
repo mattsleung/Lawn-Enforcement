@@ -143,7 +143,14 @@ export class CloudSaveClient {
   readSession() { try { return JSON.parse(localStorage.getItem(CLOUD_SESSION_KEY)); } catch { return null; } }
   clearSession() { this.session = null; localStorage.removeItem(CLOUD_SESSION_KEY); }
   clearSensitiveInputs() { this.password.value = ""; this.confirmPassword.value = ""; }
-  setStatus(message, error = false) { if (this.status) { this.status.textContent = message; this.status.classList.toggle("is-error", error); } }
+  setStatus(message, error = false) {
+    if (!this.status) return;
+    this.status.textContent = message;
+    this.status.classList.toggle("is-error", error);
+    this.status.classList.remove("is-confirming");
+    void this.status.offsetWidth;
+    this.status.classList.add("is-confirming");
+  }
   updateStatus() {
     const signedIn = Boolean(this.session?.user);
     document.querySelector("#account-signout")?.toggleAttribute("hidden", !signedIn);

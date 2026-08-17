@@ -33,7 +33,7 @@ export function characterStatMaxLevelForMaps(unlockedMaps = ["backyard"]) {
   const mapCount = unlockedMaps instanceof Set
     ? unlockedMaps.size
     : Array.isArray(unlockedMaps) ? new Set(unlockedMaps).size : 1;
-  return Math.min(CHARACTER_STAT_COSTS.length, Math.max(1, mapCount) * CHARACTER_STAT_LEVELS_PER_MAP);
+  return Math.max(1, mapCount) * CHARACTER_STAT_LEVELS_PER_MAP;
 }
 
 export function weaponMaxLevelForMaps(unlockedMaps = ["backyard"]) {
@@ -48,4 +48,11 @@ export function weaponUpgradeCost(currentLevel) {
   if (configuredCost != null) return configuredCost;
   const extraLevel = currentLevel - WEAPON_LEVEL_COSTS.length;
   return WEAPON_LEVEL_COSTS.at(-1) + extraLevel * 500 + extraLevel * (extraLevel + 1) * 50;
+}
+
+export function characterStatUpgradeCost(currentLevel) {
+  const configuredCost = CHARACTER_STAT_COSTS[currentLevel];
+  if (configuredCost != null) return configuredCost;
+  const extraLevel = currentLevel - CHARACTER_STAT_COSTS.length + 1;
+  return CHARACTER_STAT_COSTS.at(-1) + extraLevel * 300 + extraLevel * (extraLevel + 1) * 75;
 }

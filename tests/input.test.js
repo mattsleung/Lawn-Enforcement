@@ -1,7 +1,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { Input } from "../src/core/input.js";
+import { Input, isEditableTarget } from "../src/core/input.js";
+
+test("account fields receive typing without triggering game controls", () => {
+  assert.equal(isEditableTarget({ tagName: "INPUT" }), true);
+  assert.equal(isEditableTarget({ tagName: "TEXTAREA" }), true);
+  assert.equal(isEditableTarget({ tagName: "CANVAS" }), false);
+
+  const input = Object.create(Input.prototype);
+  input.keys = new Set(["KeyW"]);
+  input.handleKeyDown({ target: { tagName: "INPUT" }, code: "KeyS", repeat: false });
+  assert.deepEqual([...input.keys], []);
+});
 
 test("X requests one immediate boss spawn without repeating", () => {
   const input = Object.create(Input.prototype);

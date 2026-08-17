@@ -46,11 +46,29 @@ test("every permanent weapon level improves damage and attack speed", () => {
 test("weapon roster has unique playable designs in both slots", () => {
   assert.equal(new Set(WEAPON_DEFINITIONS.map((weapon) => weapon.id)).size, WEAPON_DEFINITIONS.length);
   assert.equal(WEAPON_DEFINITIONS.filter((weapon) => weapon.slot === "melee").length, 9);
-  assert.equal(WEAPON_DEFINITIONS.filter((weapon) => weapon.slot === "ranged").length, 37);
+  assert.equal(WEAPON_DEFINITIONS.filter((weapon) => weapon.slot === "ranged").length, 42);
   for (const weapon of WEAPON_DEFINITIONS) {
     assert.ok(weapon.description.length > 10);
     assert.ok(weapon.levelTenFeature.length > 10);
   }
+});
+
+test("new deployable weapons expose their distinct level-ten mechanics", () => {
+  const rain = weaponById("rain-cloud");
+  const pigeon = weaponById("homing-pigeon");
+  const sprinkler = weaponById("lawn-sprinkler");
+  const plate = weaponById("pressure-plate");
+  const fartGun = weaponById("fart-gun");
+  assert.equal(rain.rarity, "Epic");
+  assert.ok(weaponStatsAtLevel(rain, 10).cloudRadius > rain.cloudRadius);
+  assert.equal(weaponStatsAtLevel(pigeon, 10).pigeonHits, pigeon.pigeonHits + 2);
+  assert.equal(sprinkler.sprinklerFireInterval, 0.2);
+  assert.equal(weaponStatsAtLevel(sprinkler, 10).sprinklerFireInterval, 0.16);
+  assert.equal(weaponStatsAtLevel(plate, 10).plateMaxStoredDamage, plate.plateMaxStoredDamage * 1.5);
+  assert.equal(weaponStatsAtLevel(fartGun, 10).fertilizerCloudDuration, fartGun.fertilizerCloudDuration * 1.5);
+  assert.equal(fartGun.cooldown, 1);
+  assert.equal(fartGun.cloudExpands, true);
+  assert.ok(fartGun.cloudExpansionDuration > 1);
 });
 
 test("arsenal presentation is sorted from Common through Secret", () => {
@@ -158,6 +176,7 @@ test("weapon kickback scales from no rebound to medium and high power", () => {
 test("Ordinance Undefined is a Developer weapon with doubled damage", () => {
   const ordinance = weaponById("ordinance-undefined");
   assert.equal(ordinance.rarity, "Developer");
+  assert.equal(ordinance.limited, true);
   assert.equal(ordinance.developerOnly, true);
   assert.equal(ordinance.damage, 8.88832);
   assert.equal(ordinance.burstRounds, 2);
