@@ -7,7 +7,7 @@ import { ExcavatorBoss } from "../src/entities/excavator-boss.js";
 
 test("Construction Site follows School Field and uses a 100-enemy cap", () => {
   const map = mapById("construction-site");
-  assert.equal(MAP_SLOTS.at(-2).id, "construction-site");
+  assert.equal(MAP_SLOTS.at(-3).id, "construction-site");
   assert.equal(map.world.width / 1280, 1.8);
   assert.equal(map.world.height / 720, 1.6);
   assert.equal(map.enemyCap, 100);

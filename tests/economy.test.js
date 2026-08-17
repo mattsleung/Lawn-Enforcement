@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { CHARACTER_STAT_COSTS, CHEST_COST, CHEST_ODDS, PERMANENT_WEAPONS, characterStatMaxLevelForMaps, weaponMaxLevelForMaps, weaponUpgradeCost } from "../src/config/economy-config.js";
+import { CHEST_COST, CHEST_ODDS, PERMANENT_WEAPONS, characterStatMaxLevelForMaps, characterStatUpgradeCost, weaponMaxLevelForMaps, weaponUpgradeCost } from "../src/config/economy-config.js";
 import { buyWeapon, chestCost, openChest, rollChestRarity, shopWeaponPrice, upgradeCharacterStat, upgradeWeapon } from "../src/systems/economy.js";
 import { defaultProgress } from "../src/systems/progression.js";
 import { WEAPON_DEFINITIONS } from "../src/config/weapons.js";
@@ -38,7 +38,8 @@ test("each unlocked map grants two regular character-stat levels", () => {
   assert.equal(characterStatMaxLevelForMaps(["backyard"]), 2);
   assert.equal(characterStatMaxLevelForMaps(["backyard", "frontyard"]), 4);
   assert.equal(characterStatMaxLevelForMaps(new Set(["backyard", "frontyard", "garden"])), 6);
-  assert.equal(characterStatMaxLevelForMaps(Array.from({ length: 20 }, (_, index) => `map-${index}`)), CHARACTER_STAT_COSTS.length);
+  assert.equal(characterStatMaxLevelForMaps(Array.from({ length: 20 }, (_, index) => `map-${index}`)), 40);
+  assert.ok(characterStatUpgradeCost(20) > characterStatUpgradeCost(19));
 });
 
 test("Regeneration unlocks after Golf Course and has only one level", () => {
@@ -94,6 +95,7 @@ test("Developer weapons cannot be purchased or obtained from chests", () => {
   assert.equal(buyWeapon(progress, "ordinance-undefined"), false);
   const ordinance = PERMANENT_WEAPONS.find((weapon) => weapon.id === "ordinance-undefined");
   assert.equal(ordinance.rarity, "Developer");
+  assert.equal(ordinance.limited, true);
   assert.equal(ordinance.developerOnly, true);
   assert.equal(openChest(progress, () => 0.9995).weapon.id !== ordinance.id, true);
 });

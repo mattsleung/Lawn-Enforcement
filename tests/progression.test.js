@@ -18,6 +18,14 @@ import {
   unlockAllWeapons,
   xpRequiredForLevel,
 } from "../src/systems/progression.js";
+import { isDeveloperHost } from "../src/core/game.js";
+
+test("developer unlocks are restricted to loopback hosts", () => {
+  assert.equal(isDeveloperHost({ hostname: "localhost" }), true);
+  assert.equal(isDeveloperHost({ hostname: "127.0.0.1" }), true);
+  assert.equal(isDeveloperHost({ hostname: "mattsleung.github.io" }), false);
+  assert.equal(isDeveloperHost({ hostname: "lawn-enforcement.example" }), false);
+});
 
 test("run XP requirements rise each level", () => {
   assert.equal(xpRequiredForLevel(1), 30);
@@ -160,6 +168,7 @@ test("unlockAllMaps grants every current map", () => {
     "school-field",
     "construction-site",
     "chicken-farm",
+    "corn-farm",
   ]);
 });
 
@@ -231,8 +240,27 @@ test("all weapon-specific Gold upgrades modify final weapon stats", () => {
 
 test("the full upgrade catalog has one weapon-specific Gold upgrade per weapon", () => {
   const weaponUpgrades = RUN_UPGRADES.filter((upgrade) => upgrade.weaponId);
-  assert.equal(weaponUpgrades.length, 46);
-  assert.equal(new Set(weaponUpgrades.map((upgrade) => upgrade.weaponId)).size, 46);
+  assert.equal(weaponUpgrades.length, 51);
+  assert.equal(new Set(weaponUpgrades.map((upgrade) => upgrade.weaponId)).size, 51);
+});
+
+test("new deployable weapon Gold upgrades alter their runtime behavior", () => {
+  const cases = [
+    ["rain-thunderstorm", "rain-cloud", "thunderstorm", true],
+    ["pigeon-flock", "homing-pigeon", "projectileCount", 2],
+    ["sprinkler-eight-way", "lawn-sprinkler", "sprinklerDirections", 8],
+    ["plate-chain-reaction", "pressure-plate", "chainReaction", true],
+  ];
+  for (const [upgradeId, weaponId, property, expected] of cases) {
+    const player = new Player();
+    assert.equal(applyRunUpgrade(player, upgradeId), true);
+    assert.equal(applyRunWeaponBonuses(weaponById(weaponId), player)[property], expected);
+  }
+  const player = new Player();
+  applyRunUpgrade(player, "fart-extra-stinky");
+  const fartGun = applyRunWeaponBonuses(weaponById("fart-gun"), player);
+  assert.equal(fartGun.fertilizerCloudRadius, 78 * 1.5);
+  assert.equal(fartGun.damage, 9 * 1.25);
 });
 
 test("banked coins save, load, and reject malformed data", () => {
@@ -308,6 +336,10 @@ test("glossary enemy defeat counts persist and reject malformed values", () => {
     chick: 0,
     rooster: 0,
     "mother-hen": 0,
+    "angry-corn": 0,
+    popcorn: 0,
+    "mini-tractor": 0,
+    combine: 0,
   });
   values.set("lawn-enforcement-save-v1", JSON.stringify({
     defeatedEnemies: { gnome: -5, gopher: "many", "king-gnomulus": 2.9 },
@@ -348,6 +380,10 @@ test("glossary enemy defeat counts persist and reject malformed values", () => {
     chick: 0,
     rooster: 0,
     "mother-hen": 0,
+    "angry-corn": 0,
+    popcorn: 0,
+    "mini-tractor": 0,
+    combine: 0,
   });
 });
 
@@ -364,7 +400,7 @@ test("structurally invalid save fields safely fall back and clamp", () => {
   const progress = loadProgress(storage);
   assert.equal(progress.coins, 0);
   assert.equal(progress.weaponLevels.apples, 1);
-  assert.equal(progress.characterStats.health, 10);
+  assert.equal(progress.characterStats.health, 2);
   assert.equal(progress.characterStats.damage, 0);
   assert.equal(progress.characterStats.accuracy, 0);
   assert.equal(progress.settings.sound, true);

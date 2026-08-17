@@ -2,12 +2,12 @@ class FarmEnemy {
   constructor({ x, y, health, speed, damage, radius, enemyType, coinValue = 2, xpValue = 15 }) {
     Object.assign(this, { x, y, speed, damage, radius, enemyType, coinValue, xpValue });
     this.maxHealth = health; this.health = health; this.shield = 0; this.maxShield = 0;
-    this.hitFlash = 0; this.slowTime = 0; this.speedBuffTime = 0; this.crowShieldActive = false; this.bossMinion = false;
+    this.hitFlash = 0; this.slowTime = 0; this.speedBuffTime = 0; this.bossMinion = false;
   }
   get active() { return this.health > 0; }
   takeDamage(amount) { if (!this.active) return false; let damage=Math.max(0,Number(amount)||0);const blocked=Math.min(this.shield,damage);this.shield-=blocked;damage-=blocked;this.health=Math.max(0,this.health-damage);this.hitFlash=0.12;return this.health===0; }
   chase(target, dt, multiplier = 1) { const dx = target.x - this.x; const dy = target.y - this.y; const d = Math.hypot(dx, dy) || 1; this.x += dx / d * this.speed * multiplier * dt; this.y += dy / d * this.speed * multiplier * dt; }
-  tick(dt) { this.hitFlash = Math.max(0, this.hitFlash - dt); this.speedBuffTime = Math.max(0, this.speedBuffTime - dt);if(this.crowShieldActive&&this.speedBuffTime<=0){this.shield=0;this.maxShield=0;this.crowShieldActive=false;} }
+  tick(dt) { this.hitFlash = Math.max(0, this.hitFlash - dt); this.speedBuffTime = Math.max(0, this.speedBuffTime - dt); }
   bar(c, x, y) { c.fillStyle="#38271e";c.fillRect(x-this.radius,y-this.radius-10,this.radius*2,4);c.fillStyle="#d95b49";c.fillRect(x-this.radius,y-this.radius-10,this.radius*2*this.health/this.maxHealth,4);if(this.shield>0){c.fillStyle="#65d7f2";c.fillRect(x-this.radius,y-this.radius-16,this.radius*2*Math.min(1,this.shield/Math.max(1,this.maxShield)),4);} }
 }
 

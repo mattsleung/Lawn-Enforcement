@@ -105,6 +105,14 @@ The deployment workflow tests the game, creates a minimal `dist/` artifact, and 
 
 Before the first deployment, open the repository's **Settings → Pages** and select **GitHub Actions** as the source. Once the release is committed and pushed, follow the **Deploy GitHub Pages** run in the Actions tab. The expected project URL is `https://mattsleung.github.io/Lawn-Enforcement/`.
 
+## Accounts and cloud saves
+
+The public build supports email-confirmed Supabase accounts. Passwords are handled by Supabase Auth and never enter the repository or saved game JSON. Player saves are stored in `game_saves` with Row Level Security limiting every request to the signed-in user's own row.
+
+Before enabling cloud saves, open the Supabase project's SQL Editor and run [`supabase/schema.sql`](supabase/schema.sql) once. Keep the service-role/secret key out of this repository and out of all browser assets. The publishable key in the browser bundle is intentionally public and has no access outside the RLS policies.
+
+Developer unlocks run only on `localhost`, `127.0.0.1`, and IPv6 loopback. Cloud synchronization is disabled on those hosts so an all-unlocked developer save cannot be uploaded into a public player account.
+
 ## Commit and Push Later
 
 This clone is connected to `https://github.com/mattsleung/Lawn-Enforcement.git`. When a set of changes is ready:

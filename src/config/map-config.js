@@ -333,7 +333,7 @@ export const CHICKEN_FARM_MAP = Object.freeze({
   bossSpawnTime: 120,
   victoryCoinBonus: 6000,
   bossThrownEnemy: null,
-  unlocks: null,
+  unlocks: "corn-farm",
   obstacles: Object.freeze([
     Object.freeze({ x: 80, y: 90, width: 260, height: 150, kind: "barn", solid: true }),
     Object.freeze({ x: 1640, y: 120, width: 190, height: 115, kind: "chicken-coop", solid: true }),
@@ -345,7 +345,26 @@ export const CHICKEN_FARM_MAP = Object.freeze({
   boss: Object.freeze({ type: "mother-hen", name: "Mother Hen", health: 15000, speed: 88, damage: 35 }),
 });
 
-export const MAP_SLOTS = Object.freeze([FIRST_MAP, FRONTYARD_MAP, GARDEN_MAP, PUBLIC_PARK_MAP, LAKE_ELIZABETH_MAP, GOLF_COURSE_MAP, AQUATIC_GARDEN_MAP, REDWOOD_TRAIL_MAP, SCHOOL_FIELD_MAP, CONSTRUCTION_SITE_MAP, CHICKEN_FARM_MAP]);
+export const CORN_FARM_MAP = Object.freeze({
+  id: "corn-farm",
+  name: "Corn Farm",
+  world: Object.freeze({ width: VIEWPORT.designWidth * 1.8, height: VIEWPORT.designHeight * 1.6, gridSize: 96 }),
+  lawnColors: Object.freeze({ primary: "#8a843d", secondary: "#756f34" }),
+  houseSide: null,
+  normalEnemyType: "corn-farm",
+  enemyCap: 100,
+  bossSpawnTime: 120,
+  victoryCoinBonus: 6500,
+  bossThrownEnemy: null,
+  unlocks: null,
+  cornSpawnWeights: Object.freeze({ angryCorn: 0.44, popcorn: 0.50, miniTractor: 0.06 }),
+  boss: Object.freeze({
+    type: "combine", name: "The Combine", health: 18000, damage: 50, speed: 52,
+    harvestRunCooldown: 7, cornCannonCooldown: 4, cornDumpCooldown: 8,
+  }),
+});
+
+export const MAP_SLOTS = Object.freeze([FIRST_MAP, FRONTYARD_MAP, GARDEN_MAP, PUBLIC_PARK_MAP, LAKE_ELIZABETH_MAP, GOLF_COURSE_MAP, AQUATIC_GARDEN_MAP, REDWOOD_TRAIL_MAP, SCHOOL_FIELD_MAP, CONSTRUCTION_SITE_MAP, CHICKEN_FARM_MAP, CORN_FARM_MAP]);
 export const MAPS_BY_ID = Object.freeze(Object.fromEntries(MAP_SLOTS.map((map) => [map.id, map])));
 
 export function mapById(id) {

@@ -44,6 +44,11 @@ export const HELD_WEAPON_VISUALS = Object.freeze({
   "storm-sprinkler": { kind: "minigun", primary: "#78e4ff", secondary: "#547b87" },
   "backyard-flamethrower": { kind: "flamethrower", primary: "#f27a32", secondary: "#7b4540" },
   "plastic-ghost": { kind: "ghost", primary: "#b9f4ed", secondary: "#5c9f9b" },
+  "rain-cloud": { kind: "tech-gun", primary: "#8cb9d2", secondary: "#d9f2ff" },
+  "homing-pigeon": { kind: "pigeon", primary: "#aeb8bd", secondary: "#59666b" },
+  "lawn-sprinkler": { kind: "sprinkler", primary: "#66d4ec", secondary: "#456b72" },
+  "pressure-plate": { kind: "lid", primary: "#d4a64e", secondary: "#6b542d" },
+  "fart-gun": { kind: "small-gun", primary: "#93a94e", secondary: "#526333" },
   "ordinance-undefined": { kind: "glitch-gun", primary: "#e05cff", secondary: "#51f0de" },
 });
 
@@ -102,6 +107,8 @@ export function renderHeldWeaponVisual(context, weapon) {
       if (kind === "bowling-ball") { circle(context, 6, -2, 1.3, secondary); circle(context, 10, -3, 1.3, secondary); } break;
     case "shuriken":
       context.fillStyle = primary; context.beginPath(); for (let index = 0; index < 8; index += 1) { const angle = index * Math.PI / 4; const radius = index % 2 ? 3 : 10; const x = 9 + Math.cos(angle) * radius; const y = Math.sin(angle) * radius; if (index === 0) context.moveTo(x, y); else context.lineTo(x, y); } context.closePath(); context.fill(); circle(context, 9, 0, 2, secondary); break;
+    case "pigeon":
+      context.fillStyle = primary; context.fillRect(2, -6, 20, 12); context.fillStyle = secondary; context.fillRect(17, -10, 9, 9); context.fillRect(6, -12, 9, 7); context.fillStyle = "#e7b24b"; context.fillRect(26, -7, 6, 3); break;
     case "sprinkler": case "orbital":
       context.fillStyle = secondary; context.fillRect(0, -4, 18, 8); circle(context, 17, 0, 8, primary); context.fillStyle = "#e8fbff"; context.fillRect(15, -11, 3, 6); context.fillRect(15, 5, 3, 6); break;
     case "zapper": case "rod":

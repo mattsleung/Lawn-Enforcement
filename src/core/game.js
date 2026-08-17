@@ -36,11 +36,14 @@ import { ConstructionWorker, TrafficConeEnemy, RunawayTire, BrickCarrier, Safety
 import { ExcavatorBoss } from "../entities/excavator-boss.js";
 import { Chicken, Chick, ChickenEgg, Rooster } from "../entities/chicken-farm-enemies.js";
 import { MotherHenBoss } from "../entities/mother-hen-boss.js";
+import { AngryCorn, PopcornEnemy, MiniTractor } from "../entities/corn-farm-enemies.js";
+import { CornKernelProjectile } from "../entities/corn-kernel-projectile.js";
+import { CombineBoss } from "../entities/combine-boss.js";
 import { renderHeldWeaponVisual } from "../entities/held-weapon.js";
 import { COLORS } from "../config/game-config.js";
 import { FIRST_MAP, MAP_SLOTS, mapById } from "../config/map-config.js";
 import { ENEMY_GLOSSARY } from "../config/glossary-config.js";
-import { CHARACTER_STAT_COSTS, characterStatMaxLevelForMaps, weaponMaxLevelForMaps, weaponUpgradeCost } from "../config/economy-config.js";
+import { characterStatMaxLevelForMaps, characterStatUpgradeCost, weaponMaxLevelForMaps, weaponUpgradeCost } from "../config/economy-config.js";
 import { applyRunWeaponBonuses, isEnemyHitByMelee, WEAPON_DEFINITIONS, WEAPONS, WEAPONS_SORTED_BY_RARITY, weaponById, weaponForSlot, weaponLevelWithLoadoutBonus, weaponStatsAtLevel, weaponsForSlot, weaponsVisibleInCollection } from "../config/weapons.js";
 import { applyFire, applyFreeze, applyKnockback, nearestBounceTarget, totalContactDamage, updateEnemyStatus } from "../systems/combat.js";
 import { applyRunUpgrade, chooseRunUpgrades, loadProgress, REPEATABLE_GOLD_UPGRADES, saveProgress, unlockAllMaps, unlockAllWeapons, unlockSeasonWeapons, xpRequiredForLevel } from "../systems/progression.js";
@@ -88,16 +91,19 @@ export class Game {
     this.fpsElapsed = 0;
     const savedProgress = loadProgress(window.localStorage);
     this.progress = savedProgress;
-    unlockAllWeapons(this.progress);
-    unlockSeasonWeapons(this.progress);
-    unlockAllMaps(this.progress);
+    this.developerBuild = isDeveloperHost(window.location);
+    if (this.developerBuild) {
+      unlockAllWeapons(this.progress);
+      unlockSeasonWeapons(this.progress);
+      unlockAllMaps(this.progress);
+    }
     ensureDailyQuests(this.progress);
     ensureSeasonState(this.progress);
     saveProgress(window.localStorage, this.progress);
     this.input.setKeybinds(savedProgress.keybinds);
     this.bankCoins = this.progress.coins;
     this.questSaveTimer = 0;
-    this.unlockedMaps = new Set(savedProgress.unlockedMaps);
+    this.unlockedMaps = new Set(this.progress.unlockedMaps);
     this.selectedMapId = "backyard";
     this.currentMap = FIRST_MAP;
     this.world = FIRST_MAP.world;
@@ -113,6 +119,7 @@ export class Game {
     this.weaponPreview = null;
     this.weaponPreviewReturnState = null;
     this.uiHitTargets = [];
+    this.uiClickEffects = [];
 
     this.resize = this.resize.bind(this);
     this.frame = this.frame.bind(this);
@@ -150,6 +157,10 @@ export class Game {
     this.bugZappers = [];
     this.gardenDecoys = [];
     this.fertilizerClouds = [];
+    this.rainClouds = [];
+    this.homingPigeons = [];
+    this.lawnSprinklers = [];
+    this.pressurePlates = [];
     this.pendingBurstShots = [];
     this.leafTornadoes = [];
     this.lightningRods = [];
@@ -166,6 +177,10 @@ export class Game {
     this.constructionProjectiles = [];
     this.constructionDebrisTimer = 6 + Math.random() * 4;
     this.lilypads = this.currentMap.id === "aquatic-garden" ? this.createLilyPads() : [];
+    this.cornSections = this.currentMap.id === "corn-farm" ? this.createCornSections() : [];
+    this.cornDumps = [];
+    this.cornDamageBonus = 0;
+    this.cornShotsRemaining = 0;
     this.weaponSlot = 1;
     this.attackCooldown = 0;
     this.attackCooldowns = { 1: 0, 2: 0 };
@@ -587,6 +602,7 @@ export class Game {
     deltaTime = this.applyBossIntroSlowdown(deltaTime);
     this.updateTemporaryObstacles(deltaTime);
     this.updateConstructionSite(deltaTime);
+    this.updateCornFarm(deltaTime);
     const river = this.currentMap.obstacles?.find((obstacle) => obstacle.kind === "river");
     if (river) {
       for (const lilyPad of this.lilypads) {
@@ -1112,9 +1128,6 @@ export class Game {
           if ((farmEnemy instanceof Chicken || farmEnemy instanceof Chick) && !farmEnemy.isBoss
             && Math.hypot(farmEnemy.x - enemy.x, farmEnemy.y - enemy.y) <= bossEvents.crow.radius) {
             farmEnemy.speedBuffTime = Math.max(farmEnemy.speedBuffTime ?? 0, bossEvents.crow.duration);
-            farmEnemy.maxShield = Math.max(farmEnemy.maxShield ?? 0, 100);
-            farmEnemy.shield = Math.max(farmEnemy.shield ?? 0, 100);
-            farmEnemy.crowShieldActive = true;
           }
         }
       }
@@ -1123,6 +1136,14 @@ export class Game {
           const x = clamp(target.x, 20, this.world.width - 20);
           const y = clamp(target.y, 20, this.world.height - 20);
           this.thrownGnomes.push(new ThrownGnome({ x: enemy.x, y: enemy.y, targetX: x, targetY: y, speed: 560, enemyType: "chicken-egg" }));
+        }
+      }
+      if (bossEvents.cornFan) this.fireCornFan(enemy, bossEvents.cornFan);
+      if (bossEvents.harvest) this.harvestCornAt(enemy.x, enemy.y, (enemy.radius ?? 30) + 32);
+      if (bossEvents.cornDump) this.cornDumps.push({ ...bossEvents.cornDump, lifetime: 2 });
+      if (enemy instanceof CombineBoss && bossEvents.runOver) {
+        for (const minion of this.enemies) {
+          if (minion !== enemy && minion.active && !minion.isBoss && circlesOverlap(enemy, minion)) this.damageEnemy(minion, Number.POSITIVE_INFINITY);
         }
       }
       if (enemy.isBoss && bossEvents.chickenRush) {
@@ -1378,6 +1399,17 @@ export class Game {
     this.progress.coins = this.bankCoins;
     this.progress.unlockedMaps = [...this.unlockedMaps];
     saveProgress(window.localStorage, this.progress);
+    window.dispatchEvent(new CustomEvent("lawn-save", { detail: this.progress }));
+  }
+
+  applyCloudProgress(cloudProgress) {
+    const memoryStorage = { getItem: () => JSON.stringify(cloudProgress), setItem: () => {} };
+    this.progress = loadProgress(memoryStorage);
+    this.bankCoins = this.progress.coins;
+    this.unlockedMaps = new Set(this.progress.unlockedMaps);
+    this.input.setKeybinds(this.progress.keybinds);
+    saveProgress(window.localStorage, this.progress);
+    this.menuMessage = "Cloud save loaded";
   }
 
   handleShopChoice(choice) {
@@ -1516,6 +1548,10 @@ export class Game {
       this.spawnChickenFarmGroup(forcedAngle);
       return;
     }
+    if (this.currentMap.normalEnemyType === "corn-farm") {
+      this.spawnCornFarmEnemy(forcedAngle);
+      return;
+    }
     this.spawnEnemy(forcedAngle);
   }
 
@@ -1563,6 +1599,28 @@ export class Game {
     const enemy = type === "chick" ? new Chick(options) : type === "egg" ? new ChickenEgg(options)
       : type === "rooster" ? new Rooster(options) : new Chicken(options);
     enemy.bossMinion = bossMinion; this.enemies.push(enemy); return enemy;
+  }
+
+  spawnCornFarmEnemy(forcedAngle = Math.random() * Math.PI * 2) {
+    const distance = Math.max(this.camera.viewWidth, this.camera.viewHeight) * 0.52 + 90;
+    return this.spawnCornFarmEnemyAt(
+      clamp(this.player.x + Math.cos(forcedAngle) * distance, 35, this.world.width - 35),
+      clamp(this.player.y + Math.sin(forcedAngle) * distance, 35, this.world.height - 35),
+    );
+  }
+
+  spawnCornFarmEnemyAt(x, y, forcedType = null, bossMinion = false) {
+    if (this.enemies.filter((enemy) => enemy.active).length >= (this.currentMap.enemyCap ?? 100)) return null;
+    const weights = this.currentMap.cornSpawnWeights ?? { angryCorn: .44, popcorn: .50, miniTractor: .06 };
+    const roll = (this.random ?? Math.random)();
+    const type = forcedType ?? (roll < weights.angryCorn ? "angry-corn"
+      : roll < weights.angryCorn + weights.popcorn ? "popcorn" : "mini-tractor");
+    const options = { x, y, world: this.world };
+    const enemy = type === "popcorn" ? new PopcornEnemy(options)
+      : type === "mini-tractor" ? new MiniTractor(options) : new AngryCorn(options);
+    enemy.bossMinion = bossMinion;
+    this.enemies.push(enemy);
+    return enemy;
   }
 
   spawnSchoolFieldEnemy(forcedAngle = Math.random() * Math.PI * 2, bossMinion = false, forcedType = null) {
@@ -1841,6 +1899,60 @@ export class Game {
     this.separateWeeds();
   }
 
+  createCornSections() {
+    const sections = [];
+    const marginX = 110; const marginY = 135; const sectionWidth = 150; const sectionHeight = 58;
+    const columns = Math.max(5, Math.floor((this.world.width - marginX * 2) / (sectionWidth + 28)));
+    const rows = Math.max(5, Math.floor((this.world.height - marginY * 2) / 150));
+    for (let row = 0; row < rows; row += 1) {
+      for (let column = 0; column < columns; column += 1) {
+        sections.push({ x: marginX + column * (sectionWidth + 28), y: marginY + row * 150, width: sectionWidth, height: sectionHeight, phase: 0, growthTimer: 20 });
+      }
+    }
+    return sections;
+  }
+
+  updateCornFarm(deltaTime) {
+    if (this.currentMap.id !== "corn-farm") return;
+    this.activeObstacles = this.activeObstacles.filter((obstacle) => obstacle.kind !== "mature-corn");
+    for (const section of this.cornSections) {
+      if (section.phase < 3) {
+        section.growthTimer -= deltaTime;
+        if (section.growthTimer <= 0) { section.phase += 1; section.growthTimer += 20; }
+      }
+      if (section.phase === 3) this.activeObstacles.push({ ...section, kind: "mature-corn", solid: false });
+    }
+    for (const dump of this.cornDumps) dump.lifetime -= deltaTime;
+    for (const dump of this.cornDumps.filter((entry) => entry.lifetime <= 0 && !entry.burst)) {
+      dump.burst = true;
+      for (let index = 0; index < 6; index += 1) {
+        const angle = index / 6 * Math.PI * 2;
+        this.spawnCornFarmEnemyAt(dump.x + Math.cos(angle) * 48, dump.y + Math.sin(angle) * 48, "popcorn", true);
+      }
+      this.explosions.push({ x: dump.x, y: dump.y, radius: 65, lifetime: .35, maxLifetime: .35, color: "#f4dda0" });
+    }
+    this.cornDumps = this.cornDumps.filter((entry) => !entry.burst);
+  }
+
+  harvestCornAt(x, y, radius) {
+    for (const section of this.cornSections) {
+      const closestX = clamp(x, section.x, section.x + section.width); const closestY = clamp(y, section.y, section.y + section.height);
+      if (section.phase > 0 && Math.hypot(x - closestX, y - closestY) <= radius) {
+        section.phase = 0; section.growthTimer = 20;
+        this.pickups.push(new Pickup({ x: section.x + section.width / 2, y: section.y + section.height / 2, type: "corn", amount: 1 }));
+      }
+    }
+  }
+
+  fireCornFan(source, event) {
+    const center = Math.atan2(event.targetY - source.y, event.targetX - source.x);
+    const count = event.count ?? 3;
+    for (let index = 0; index < count; index += 1) {
+      const angle = center + (index - (count - 1) / 2) * .18;
+      this.bossProjectiles.push(new CornKernelProjectile({ x: source.x, y: source.y, velocityX: Math.cos(angle) * event.speed, velocityY: Math.sin(angle) * event.speed, damage: event.damage }));
+    }
+  }
+
   spawnBoss() {
     this.bossSpawned = true;
     this.bossNextSpawnTimer = null;
@@ -1857,8 +1969,8 @@ export class Game {
               : bossConfig.type === "ancient-snail" ? AncientSnailBoss
                 : bossConfig.type === "pe-teacher" ? PeTeacherBoss
                   : bossConfig.type === "ball-launcher" ? BallLauncherBoss
-                    : bossConfig.type === "excavator" ? ExcavatorBoss : Boss;
-    const ResolvedBossType = bossConfig.type === "mother-hen" ? MotherHenBoss : BossType;
+                  : bossConfig.type === "excavator" ? ExcavatorBoss : Boss;
+    const ResolvedBossType = bossConfig.type === "mother-hen" ? MotherHenBoss : bossConfig.type === "combine" ? CombineBoss : BossType;
     const pond = this.currentMap.obstacles?.find((obstacle) => obstacle.kind === "lake");
     this.boss = new ResolvedBossType({
       x: bossConfig.type === "pondfather" && pond ? pond.x + pond.width / 2
@@ -2143,6 +2255,15 @@ export class Game {
       if (enemy.deathAoe && this.currentMap.id === "construction-site") {
         this.applyConstructionAreaDamage(enemy.x, enemy.y, enemy.deathAoe.radius, enemy.deathAoe.damage, 85, enemy);
       }
+      if (enemy instanceof PopcornEnemy && enemy.deathAoe) {
+        const dx = this.player.x - enemy.x; const dy = this.player.y - enemy.y; const distance = Math.hypot(dx, dy) || 1;
+        if (distance <= enemy.deathAoe.radius) {
+          this.damagePlayer(enemy.deathAoe.damage);
+          this.player.x = clamp(this.player.x + dx / distance * enemy.deathAoe.pushback, this.player.radius, this.world.width - this.player.radius);
+          this.player.y = clamp(this.player.y + dy / distance * enemy.deathAoe.pushback, this.player.radius, this.world.height - this.player.radius);
+        }
+        this.explosions.push({ x: enemy.x, y: enemy.y, radius: enemy.deathAoe.radius, lifetime: .3, maxLifetime: .3, color: "#f5e4a8" });
+      }
       this.addScreenShake(enemy.isBoss ? 0.16 : 0.1, enemy.isBoss ? 0.24 : 0.14);
       // A compact pixel burst marks the exact frame an enemy is removed. Use
       // the shared explosion renderer so it remains cheap even in large waves.
@@ -2288,6 +2409,11 @@ export class Game {
     }
     if (pickup.type === "coin") {
       this.runCoins += 1;
+      return;
+    }
+    if (pickup.type === "corn") {
+      this.cornDamageBonus += pickup.amount;
+      this.cornShotsRemaining = 15;
       return;
     }
     this.runXp += pickup.amount;
@@ -2453,6 +2579,27 @@ export class Game {
       this.sprinklerMines.push({ x: this.player.x, y: this.player.y, active: true, warningTime: weapon.mineWarningDuration, triggerRadius: weapon.mineTriggerRadius, explosionRadius: weapon.mineExplosionRadius, damage: weapon.damage * this.player.damageMultiplier, freezeDuration: weapon.freezeDuration, color: weapon.color });
       return;
     }
+    if (weapon.projectileKind === "rain-cloud") {
+      this.rainClouds.push({ x: aimPoint.x, y: aimPoint.y, lifetime: weapon.cloudDuration, radius: weapon.cloudRadius, tick: 0, tickInterval: weapon.cloudTickInterval, damage: weapon.damage * this.player.damageMultiplier, thunderstorm: weapon.thunderstorm, lightningTimer: 1.2, lightningDamage: weapon.lightningDamage * this.player.damageMultiplier, color: weapon.color, active: true });
+      return;
+    }
+    if (weapon.projectileKind === "homing-pigeon") {
+      const count = weapon.projectileCount || 1;
+      for (let index = 0; index < count; index += 1) this.homingPigeons.push({ x: this.player.x, y: this.player.y, speed: weapon.projectileSpeed, damage: weapon.damage * this.player.damageMultiplier, hitsRemaining: weapon.pigeonHits, hitEnemies: new Set(), returning: false, active: true, color: weapon.color });
+      return;
+    }
+    if (weapon.projectileKind === "lawn-sprinkler") {
+      this.lawnSprinklers.push({ x: this.player.x, y: this.player.y, lifetime: weapon.sprinklerDuration, angle: 0, rotationSpeed: weapon.sprinklerRotationSpeed, tick: 0, tickInterval: weapon.sprinklerFireInterval, directions: weapon.sprinklerDirections, speed: weapon.projectileSpeed, projectileLifetime: weapon.projectileLifetime, damage: weapon.damage * this.player.damageMultiplier, color: weapon.color, active: true });
+      return;
+    }
+    if (weapon.projectileKind === "pressure-plate") {
+      this.pressurePlates.push({ x: this.player.x, y: this.player.y, radius: weapon.plateRadius, charge: 0, threshold: weapon.plateChargeThreshold, baseDamage: weapon.damage * this.player.damageMultiplier, maxDamage: weapon.plateMaxStoredDamage * this.player.damageMultiplier, chainReaction: weapon.chainReaction, color: weapon.color, active: true });
+      return;
+    }
+    if (weapon.projectileKind === "fart-gun") {
+      this.createFertilizerCloud(this.player.x + Math.cos(aimAngle) * 45, this.player.y + Math.sin(aimAngle) * 45, { fertilizerCloudRadius: weapon.fertilizerCloudRadius, fertilizerCloudDuration: weapon.fertilizerCloudDuration, fertilizerTickInterval: weapon.fertilizerTickInterval, damage: weapon.damage * this.player.damageMultiplier, color: weapon.color, cloudExpands: weapon.cloudExpands, cloudStartScale: weapon.cloudStartScale, cloudExpansionDuration: weapon.cloudExpansionDuration });
+      return;
+    }
     if (weapon.projectileKind === "bug-zapper") {
       this.bugZappers.push({ x: this.player.x, y: this.player.y, active: true, lifetime: weapon.zapperDuration, cooldown: 0, zapCooldown: weapon.zapCooldown, range: weapon.zapperRange, damage: weapon.damage * this.player.damageMultiplier, chainCount: weapon.chainCount, chainDamageMultiplier: weapon.chainDamageMultiplier, color: weapon.color });
       return;
@@ -2615,7 +2762,7 @@ export class Game {
         y: weapon.projectileKind === "gravity-portal" ? aimPoint.y : this.player.y - 8,
         velocityX: weapon.projectileKind === "gravity-portal" ? 0 : Math.cos(angle) * weapon.projectileSpeed,
         velocityY: weapon.projectileKind === "gravity-portal" ? 0 : Math.sin(angle) * weapon.projectileSpeed,
-        damage: Math.round(weapon.damage * this.player.damageMultiplier),
+        damage: Math.round(weapon.damage * this.player.damageMultiplier + this.consumeCornProjectileBonus()),
         lifetime: weapon.projectileLifetime,
         kind: weapon.projectileKind,
         color: weaponId === "party-hat" ? `hsl(${(index * 53 + Date.now() / 18) % 360} 90% 60%)` : weapon.color,
@@ -2654,20 +2801,73 @@ export class Game {
       shot.delay -= deltaTime;
       if (shot.delay <= 0 && !shot.fired) {
         shot.fired = true;
-        this.projectiles.push(new Projectile(shot.projectileOptions ?? {
+        const options = shot.projectileOptions ?? {
           x: this.player.x, y: this.player.y - 8,
           velocityX: Math.cos(shot.angle) * shot.weapon.projectileSpeed,
           velocityY: Math.sin(shot.angle) * shot.weapon.projectileSpeed,
           damage: shot.damage, lifetime: shot.weapon.projectileLifetime,
           kind: shot.weapon.projectileKind, color: shot.weapon.color, radius: shot.weapon.projectileRadius,
           weaponId: shot.weapon.id,
-        }));
+        };
+        options.damage = (options.damage ?? 0) + this.consumeCornProjectileBonus();
+        this.projectiles.push(new Projectile(options));
       }
     }
     this.pendingBurstShots = this.pendingBurstShots.filter((shot) => !shot.fired);
   }
 
+  consumeCornProjectileBonus() {
+    if (this.cornShotsRemaining <= 0 || this.cornDamageBonus <= 0) return 0;
+    const bonus = this.cornDamageBonus;
+    this.cornShotsRemaining -= 1;
+    if (this.cornShotsRemaining <= 0) { this.cornShotsRemaining = 0; this.cornDamageBonus = 0; }
+    return bonus;
+  }
+
   updateWeaponDeployables(deltaTime) {
+    const aimPoint = this.camera.screenToWorld(this.input.pointer);
+    for (const cloud of this.rainClouds) {
+      cloud.lifetime -= deltaTime; cloud.tick -= deltaTime; cloud.lightningTimer -= deltaTime;
+      cloud.x += (aimPoint.x - cloud.x) * Math.min(1, deltaTime * 9); cloud.y += (aimPoint.y - cloud.y) * Math.min(1, deltaTime * 9);
+      if (cloud.tick <= 0) {
+        for (const enemy of this.enemies) if (enemy.active && Math.hypot(enemy.x - cloud.x, enemy.y - cloud.y) <= cloud.radius) this.damageEnemy(enemy, cloud.damage, 0, "rain-cloud");
+        cloud.tick = cloud.tickInterval;
+      }
+      if (cloud.thunderstorm && cloud.lightningTimer <= 0) {
+        const target = this.enemies.find((enemy) => enemy.active && Math.hypot(enemy.x - cloud.x, enemy.y - cloud.y) <= cloud.radius);
+        if (target) { this.damageEnemy(target, cloud.lightningDamage, 0, "rain-cloud"); this.lightningArcs.push({ x1: cloud.x, y1: cloud.y - 35, x2: target.x, y2: target.y, lifetime: .2, color: "#fff28a" }); }
+        cloud.lightningTimer = 1.2;
+      }
+      if (cloud.lifetime <= 0) cloud.active = false;
+    }
+    this.rainClouds = this.rainClouds.filter((cloud) => cloud.active);
+    for (const pigeon of this.homingPigeons) {
+      const candidates = this.enemies.filter((enemy) => enemy.active && enemy.targetable !== false && !pigeon.hitEnemies.has(enemy));
+      const target = pigeon.returning || candidates.length === 0 ? this.player : candidates.sort((a, b) => Math.hypot(a.x - pigeon.x, a.y - pigeon.y) - Math.hypot(b.x - pigeon.x, b.y - pigeon.y))[0];
+      if (!target) { pigeon.active = false; continue; }
+      const dx = target.x - pigeon.x; const dy = target.y - pigeon.y; const distance = Math.hypot(dx, dy) || 1;
+      pigeon.x += dx / distance * Math.min(distance, pigeon.speed * deltaTime); pigeon.y += dy / distance * Math.min(distance, pigeon.speed * deltaTime);
+      if (distance <= (target.radius ?? 18) + 8) {
+        if (target === this.player) pigeon.active = false;
+        else { this.damageEnemy(target, pigeon.damage, 0, "homing-pigeon"); pigeon.hitEnemies.add(target); pigeon.hitsRemaining -= 1; if (pigeon.hitsRemaining <= 0) pigeon.returning = true; }
+      }
+    }
+    this.homingPigeons = this.homingPigeons.filter((pigeon) => pigeon.active);
+    for (const sprinkler of this.lawnSprinklers) {
+      sprinkler.lifetime -= deltaTime; sprinkler.tick -= deltaTime; sprinkler.angle += sprinkler.rotationSpeed * deltaTime;
+      if (sprinkler.tick <= 0) {
+        for (let index = 0; index < sprinkler.directions; index += 1) { const angle = sprinkler.angle + index / sprinkler.directions * Math.PI * 2; this.projectiles.push(new Projectile({ x: sprinkler.x, y: sprinkler.y, velocityX: Math.cos(angle) * sprinkler.speed, velocityY: Math.sin(angle) * sprinkler.speed, damage: sprinkler.damage, lifetime: sprinkler.projectileLifetime, kind: "water", color: sprinkler.color, radius: 5, weaponId: "lawn-sprinkler" })); }
+        sprinkler.tick = sprinkler.tickInterval;
+      }
+      if (sprinkler.lifetime <= 0) sprinkler.active = false;
+    }
+    this.lawnSprinklers = this.lawnSprinklers.filter((sprinkler) => sprinkler.active);
+    for (const plate of this.pressurePlates) {
+      const occupants = this.enemies.filter((enemy) => enemy.active && Math.hypot(enemy.x - plate.x, enemy.y - plate.y) <= plate.radius + enemy.radius);
+      plate.charge += occupants.reduce((sum, enemy) => sum + (enemy.damage ?? 5) * deltaTime * 4, 0);
+      if (plate.charge >= plate.threshold) this.detonatePressurePlate(plate);
+    }
+    this.pressurePlates = this.pressurePlates.filter((plate) => plate.active);
     for (const tornado of this.leafTornadoes) {
       if (!tornado.active) continue;
       tornado.x += tornado.velocityX * deltaTime; tornado.y += tornado.velocityY * deltaTime;
@@ -2810,6 +3010,9 @@ export class Game {
     for (const cloud of this.fertilizerClouds) {
       if (!cloud.active) continue;
       cloud.lifetime -= deltaTime; cloud.tick -= deltaTime;
+      if (cloud.expands && cloud.radius < cloud.targetRadius) {
+        cloud.radius = Math.min(cloud.targetRadius, cloud.radius + cloud.expansionSpeed * deltaTime);
+      }
       if (cloud.tick <= 0) {
         for (const enemy of this.enemies) if (enemy.active && Math.hypot(enemy.x - cloud.x, enemy.y - cloud.y) <= cloud.radius) this.damageEnemy(enemy, cloud.damage);
         cloud.tick = cloud.tickInterval;
@@ -2817,6 +3020,16 @@ export class Game {
       if (cloud.lifetime <= 0) cloud.active = false;
     }
     this.fertilizerClouds = this.fertilizerClouds.filter((cloud) => cloud.active);
+  }
+
+  detonatePressurePlate(plate) {
+    if (!plate.active) return;
+    plate.active = false;
+    const damage = Math.min(plate.maxDamage, plate.baseDamage + plate.charge);
+    const radius = plate.radius * 2.5;
+    this.explosions.push({ x: plate.x, y: plate.y, lifetime: .35, maxLifetime: .35, radius, color: plate.color });
+    for (const enemy of this.enemies) if (enemy.active && Math.hypot(enemy.x - plate.x, enemy.y - plate.y) <= radius) this.damageEnemy(enemy, damage, 0, "pressure-plate");
+    if (plate.chainReaction) for (const other of this.pressurePlates) if (other.active && Math.hypot(other.x - plate.x, other.y - plate.y) <= radius * 1.5) this.detonatePressurePlate(other);
   }
 
   strikeLightningRod(rod) {
@@ -2864,8 +3077,18 @@ export class Game {
   }
 
   createFertilizerCloud(x, y, projectile) {
-    this.explosions.push({ x, y, lifetime: 0.25, radius: projectile.fertilizerCloudRadius, color: projectile.color, ring: true });
-    this.fertilizerClouds.push({ x, y, radius: projectile.fertilizerCloudRadius, lifetime: projectile.fertilizerCloudDuration, tick: 0, tickInterval: projectile.fertilizerTickInterval, damage: projectile.damage, color: projectile.color, active: true });
+    const targetRadius = projectile.fertilizerCloudRadius;
+    const startScale = projectile.cloudExpands ? (projectile.cloudStartScale ?? .5) : 1;
+    const expansionDuration = Math.max(.1, projectile.cloudExpansionDuration ?? 1);
+    this.explosions.push({ x, y, lifetime: 0.25, radius: targetRadius * startScale, color: projectile.color, ring: true });
+    this.fertilizerClouds.push({
+      x, y, radius: targetRadius * startScale, targetRadius,
+      expands: projectile.cloudExpands === true,
+      expansionSpeed: targetRadius * (1 - startScale) / expansionDuration,
+      lifetime: projectile.fertilizerCloudDuration, tick: 0,
+      tickInterval: projectile.fertilizerTickInterval, damage: projectile.damage,
+      color: projectile.color, active: true,
+    });
   }
 
   updatePassiveAbilities(deltaTime) {
@@ -3098,6 +3321,7 @@ export class Game {
     if (!point) return null;
     const target = this.uiHitTargets.find((entry) => point.x >= entry.x && point.x <= entry.x + entry.width
       && point.y >= entry.y && point.y <= entry.y + entry.height);
+    if (target?.action != null) this.uiClickEffects.push({ x: point.x, y: point.y, startedAt: performance.now() });
     return target?.action ?? null;
   }
 
@@ -3105,17 +3329,36 @@ export class Game {
     const hovered = this.input.pointer.inside
       && this.input.pointer.x >= x && this.input.pointer.x <= x + width
       && this.input.pointer.y >= y && this.input.pointer.y <= y + height;
+    const pressed = hovered && this.input.pointer.down;
     if (hovered && action !== null) this.canvas.style.cursor = "pointer";
-    context.fillStyle = hovered ? (options.hoverFill ?? "#c8b452") : (options.fill ?? "#343621");
-    context.fillRect(x, y, width, height);
+    context.save();
+    if (hovered) { context.shadowColor = "rgba(234, 215, 123, 0.72)"; context.shadowBlur = pressed ? 5 : 12; }
+    context.fillStyle = pressed ? (options.pressedFill ?? "#eee09b") : hovered ? (options.hoverFill ?? "#c8b452") : (options.fill ?? "#343621");
+    context.fillRect(x, y + (pressed ? 2 : 0), width, height - (pressed ? 2 : 0));
     context.strokeStyle = options.border ?? "#9a9256";
-    context.lineWidth = options.lineWidth ?? 3;
-    context.strokeRect(x, y, width, height);
+    context.lineWidth = pressed ? 4 : (options.lineWidth ?? 3);
+    context.strokeRect(x, y + (pressed ? 2 : 0), width, height - (pressed ? 2 : 0));
     context.fillStyle = hovered ? (options.hoverText ?? "#242116") : (options.text ?? "#f3e7bd");
     context.font = options.font ?? "bold 13px 'Courier New', monospace";
     context.textAlign = "center";
-    context.fillText(label, x + width / 2, options.textY ?? y + height / 2 + 5);
+    context.fillText(label, x + width / 2, (options.textY ?? y + height / 2 + 5) + (pressed ? 2 : 0));
+    context.restore();
     this.uiHitTargets.push({ x, y, width, height, action });
+  }
+
+  renderUiClickEffects(context) {
+    const now = performance.now();
+    this.uiClickEffects = this.uiClickEffects.filter((effect) => now - effect.startedAt < 420);
+    for (const effect of this.uiClickEffects) {
+      const progress = (now - effect.startedAt) / 420;
+      context.save();
+      context.globalAlpha = 1 - progress;
+      context.strokeStyle = "#fff1a6";
+      context.lineWidth = 5 - progress * 3;
+      context.beginPath(); context.arc(effect.x, effect.y, 8 + progress * 34, 0, Math.PI * 2); context.stroke();
+      context.fillStyle = "#fff6c7"; context.fillRect(effect.x - 3, effect.y - 3, 6, 6);
+      context.restore();
+    }
   }
 
   updateFps(elapsed) {
@@ -3129,6 +3372,50 @@ export class Game {
   }
 
   renderWeaponDeployables(context) {
+    const renderTime = performance.now() / 1000;
+    for (const cloud of this.rainClouds) {
+      const x = Math.round(cloud.x - this.camera.x); const y = Math.round(cloud.y - this.camera.y - 42);
+      context.save();
+      context.globalAlpha = Math.min(1, cloud.lifetime / 0.5);
+      context.fillStyle = "rgba(84,128,158,0.16)"; context.beginPath(); context.ellipse(x, y + 42, cloud.radius, cloud.radius * 0.48, 0, 0, Math.PI * 2); context.fill();
+      context.fillStyle = "#657784";
+      context.fillRect(x - 27, y - 4, 54, 17); context.fillRect(x - 18, y - 13, 24, 24); context.fillRect(x + 5, y - 9, 19, 20);
+      context.fillStyle = "#91a6b2"; context.fillRect(x - 14, y - 10, 18, 5); context.fillRect(x + 7, y - 6, 12, 4);
+      context.strokeStyle = cloud.color; context.lineWidth = 2;
+      for (let drop = 0; drop < 8; drop += 1) {
+        const dropX = x - cloud.radius * 0.7 + (drop / 7) * cloud.radius * 1.4;
+        const dropY = y + 20 + ((renderTime * 105 + drop * 19) % Math.max(24, cloud.radius * 0.75));
+        context.beginPath(); context.moveTo(dropX, dropY); context.lineTo(dropX - 3, dropY + 9); context.stroke();
+      }
+      context.restore();
+    }
+    for (const pigeon of this.homingPigeons) {
+      const x = Math.round(pigeon.x - this.camera.x); const y = Math.round(pigeon.y - this.camera.y);
+      const flap = Math.sin(renderTime * 22 + pigeon.x * 0.03) > 0 ? -5 : 1;
+      context.save(); context.fillStyle = "#37444c"; context.fillRect(x - 9, y - 5, 18, 11);
+      context.fillStyle = pigeon.color; context.fillRect(x - 5, y - 9, 13, 14); context.fillRect(x - 11, y + flap, 9, 5);
+      context.fillStyle = "#dce6e8"; context.fillRect(x - 2, y - 7, 7, 4);
+      context.fillStyle = "#e5a044"; context.fillRect(x + 8, y - 5, 5, 3);
+      context.fillStyle = "#15191b"; context.fillRect(x + 4, y - 7, 2, 2); context.restore();
+    }
+    for (const sprinkler of this.lawnSprinklers) {
+      const x = Math.round(sprinkler.x - this.camera.x); const y = Math.round(sprinkler.y - this.camera.y);
+      context.save(); context.fillStyle = "#315a68"; context.fillRect(x - 10, y + 5, 20, 8); context.fillStyle = sprinkler.color; context.fillRect(x - 4, y - 7, 8, 15);
+      context.strokeStyle = sprinkler.color; context.lineWidth = 4;
+      for (let direction = 0; direction < sprinkler.directions; direction += 1) {
+        const angle = sprinkler.angle + direction / sprinkler.directions * Math.PI * 2;
+        context.beginPath(); context.moveTo(x, y - 3); context.lineTo(x + Math.cos(angle) * 23, y - 3 + Math.sin(angle) * 23); context.stroke();
+      }
+      context.restore();
+    }
+    for (const plate of this.pressurePlates) {
+      const x = Math.round(plate.x - this.camera.x); const y = Math.round(plate.y - this.camera.y);
+      const charge = Math.min(1, plate.charge / plate.threshold);
+      context.save(); context.fillStyle = "rgba(212,166,78,0.12)"; context.beginPath(); context.arc(x, y, plate.radius, 0, Math.PI * 2); context.fill();
+      context.fillStyle = "#514a3e"; context.fillRect(x - 25, y - 8 + charge * 5, 50, 12 - charge * 5);
+      context.fillStyle = plate.color; context.fillRect(x - 20, y - 12 + charge * 8, 40, 8);
+      context.fillStyle = charge > 0.75 ? "#ff694f" : "#ffe178"; context.fillRect(x - 20, y + 8, 40 * charge, 3); context.restore();
+    }
     for (const tornado of this.leafTornadoes) {
       const x = Math.round(tornado.x - this.camera.x); const y = Math.round(tornado.y - this.camera.y);
       context.save(); context.globalAlpha = Math.max(0.18, Math.min(1, tornado.lifetime / 0.8));
@@ -3203,7 +3490,12 @@ export class Game {
     }
     for (const cloud of this.fertilizerClouds) {
       const x = Math.round(cloud.x - this.camera.x); const y = Math.round(cloud.y - this.camera.y);
-      context.fillStyle = "rgba(159,120,61,0.25)"; context.beginPath(); context.arc(x, y, cloud.radius, 0, Math.PI * 2); context.fill();
+      const isGas = cloud.color === "#93a94e";
+      context.fillStyle = isGas ? "rgba(129,158,67,0.32)" : "rgba(159,120,61,0.25)"; context.beginPath(); context.arc(x, y, cloud.radius, 0, Math.PI * 2); context.fill();
+      if (isGas) {
+        context.fillStyle = "rgba(190,211,91,0.32)";
+        for (let puff = 0; puff < 6; puff += 1) { const angle = renderTime * 0.8 + puff * Math.PI / 3; context.beginPath(); context.arc(x + Math.cos(angle) * cloud.radius * 0.42, y + Math.sin(angle) * cloud.radius * 0.3, cloud.radius * 0.17, 0, Math.PI * 2); context.fill(); }
+      }
       context.strokeStyle = cloud.color; context.lineWidth = 3; context.stroke();
     }
   }
@@ -3231,6 +3523,7 @@ export class Game {
     }
     this.renderLawn(context, width, height);
     this.renderGardenBeds(context);
+    this.renderCornFarm(context);
     this.renderFence(context);
     this.renderLandmarks(context);
     this.renderConstructionEffects(context);
@@ -3245,6 +3538,12 @@ export class Game {
     this.renderDeathEffects(context);
     for (const thrownGnome of this.thrownGnomes) thrownGnome.render(context, this.camera);
     for (const spore of this.bossProjectiles) spore.render(context, this.camera);
+    for (const dump of this.cornDumps ?? []) {
+      const x = Math.round(dump.x - this.camera.x); const y = Math.round(dump.y - this.camera.y);
+      context.fillStyle = "#8c6531"; context.fillRect(x - 22, y - 13, 44, 26);
+      context.fillStyle = "#f2d367"; context.fillRect(x - 15, y - 18, 10, 10); context.fillRect(x + 4, y - 17, 11, 9);
+      context.strokeStyle = "#fff0a0"; context.beginPath(); context.arc(x, y, 30 + Math.sin(dump.lifetime * 16) * 5, 0, Math.PI * 2); context.stroke();
+    }
     for (const splat of this.syrupSplats) {
       const x = Math.round(splat.x - this.camera.x);
       const y = Math.round(splat.y - this.camera.y);
@@ -3329,6 +3628,7 @@ export class Game {
     } else if (this.screenState === "victory") {
       this.renderVictoryOverlay(context, width, height);
     }
+    this.renderUiClickEffects(context);
     context.restore();
   }
 
@@ -3591,6 +3891,10 @@ export class Game {
     context.fillText(`COINS ${this.runCoins}`, width - 147, 42);
     context.fillText(`XP ${this.runXp}`, width - 240, 57);
     context.fillText(`LEVEL ${this.runLevel}`, width - 240, 75);
+    if (this.cornShotsRemaining > 0) {
+      context.fillStyle = "#ffe27a";
+      context.fillText(`CORN +${this.cornDamageBonus} DMG · ${this.cornShotsRemaining} SHOTS`, width - 360, 108);
+    }
     context.fillStyle = "#29291d";
     context.fillRect(width - 240, 81, 202, 5);
     context.fillStyle = "#78a84a";
@@ -3936,17 +4240,17 @@ export class Game {
     const offset = clamp(this.weaponSelectionScroll[slot], 0, maxOffset);
     this.weaponSelectionScroll[slot] = offset;
     const listTop = Math.max(155, height / 2 - 145);
-    const weaponRowHeight = 54;
+    const weaponRowHeight = 56;
     const listBottom = listTop + visibleCount * weaponRowHeight;
-    const descriptionY = Math.min(height - 170, listBottom + 38);
+    const descriptionY = Math.min(height - 190, listBottom + 34);
     context.textAlign = "center";
     context.fillStyle = "#ead77b";
-    context.font = "bold 34px 'Courier New', monospace";
+    context.font = "bold 40px 'Courier New', monospace";
     context.fillText(`CHOOSE LOADOUT ${slot === "melee" ? "1" : "2"} WEAPON`, width / 2, listTop - 82);
-    this.renderButton(context, width / 2 - 245, listTop - 58, 400, 28,
+    this.renderButton(context, width / 2 - 245, listTop - 62, 400, 36,
       `SEARCH: ${this.weaponSearch[slot] || "type to filter"}`,
-      { type: "weapon-search-focus" }, { font: "11px 'Courier New', monospace", text: this.weaponSearch[slot] ? "#f3e7bd" : "#a9a27d" });
-    this.renderButton(context, width / 2 + 165, listTop - 58, 80, 28, "CLEAR", { type: "weapon-search-clear" }, { font: "11px 'Courier New', monospace" });
+      { type: "weapon-search-focus" }, { font: "bold 14px 'Courier New', monospace", text: this.weaponSearch[slot] ? "#f3e7bd" : "#a9a27d" });
+    this.renderButton(context, width / 2 + 165, listTop - 62, 80, 36, "CLEAR", { type: "weapon-search-clear" }, { font: "bold 14px 'Courier New', monospace" });
     context.fillStyle = "#f3e7bd";
     context.font = "14px 'Courier New', monospace";
     weapons.slice(offset, offset + visibleCount).forEach((weapon, visibleIndex) => {
@@ -3958,12 +4262,12 @@ export class Game {
       );
       const synergy = effectiveLevel > this.progress.weaponLevels[weapon.id] ? " · PAIR +1" : "";
       const rowY = listTop + visibleIndex * weaponRowHeight;
-      this.renderButton(context, width / 2 - 245, rowY, 490, 49,
+      this.renderButton(context, width / 2 - 245, rowY, 490, 52,
         "",
         { type: "choice", value: visibleIndex + 1 },
         { fill: selected ? "#5a5530" : "#343621", font: "12px 'Courier New', monospace", textY: rowY + 15 });
-      renderWeaponMenuEntry(context, weapon, width / 2 - 213, rowY + 28, width / 2 - 155, rowY + 18,
-        `${visibleIndex + 1}. ${selected ? "> " : ""}${weapon.name} · LV ${effectiveLevel}${synergy}`, 375, 0.78);
+      renderWeaponMenuEntry(context, weapon, width / 2 - 210, rowY + 29, width / 2 - 151, rowY + 19,
+        `${visibleIndex + 1}. ${selected ? "> " : ""}${weapon.name} · LV ${effectiveLevel}${synergy}`, 370, 0.9, 1.28);
     });
     if (weapons.length === 0) {
       context.fillStyle = "#c9b95f";
@@ -3979,15 +4283,16 @@ export class Game {
     }
     const equipped = weaponById(equippedId);
     context.fillStyle = "#9fcf71";
-    context.font = "12px 'Courier New', monospace";
-    context.fillText(equipped?.description ?? "", width / 2, descriptionY);
+    context.font = "bold 15px 'Courier New', monospace";
+    wrapCenteredText(context, equipped?.description ?? "", width / 2, descriptionY, Math.min(720, width - 120), 18, 2);
     context.fillStyle = "#c9b95f";
-    context.fillText(`LV 10: ${equipped?.levelTenFeature ?? ""}`, width / 2, descriptionY + 21);
-    this.renderButton(context, width / 2 - 155, descriptionY + 39, 310, 36,
-      slot === "melee" ? "CONTINUE TO RANGED" : "BEGIN RUN", "confirm");
+    context.font = "bold 14px 'Courier New', monospace";
+    wrapCenteredText(context, `LV 10: ${equipped?.levelTenFeature ?? ""}`, width / 2, descriptionY + 39, Math.min(720, width - 120), 17, 2);
+    this.renderButton(context, width / 2 - 180, descriptionY + 76, 360, 46,
+      slot === "melee" ? "CONTINUE TO LOADOUT 2" : "BEGIN RUN", "confirm", { font: "bold 16px 'Courier New', monospace" });
     context.fillStyle = "#d8d0ae";
-    context.font = "11px 'Courier New', monospace";
-    context.fillText("Type to search · Click a weapon · Wheel/arrows move one item · Escape returns", width / 2, descriptionY + 94);
+    context.font = "13px 'Courier New', monospace";
+    context.fillText("Type to search · Click a weapon · Wheel/arrows move one item · Escape returns", width / 2, descriptionY + 142);
     context.textAlign = "start";
   }
 
@@ -4296,7 +4601,7 @@ export class Game {
         || (stat === "regeneration" && !this.unlockedMaps.has("aquatic-garden"));
       const statMaxLevel = stat === "regeneration" ? 1 : statCap;
       const unlockLabel = stat === "regeneration" ? "BEAT GOLF COURSE" : "UNLOCK REDWOOD TRAIL BOSS";
-      const cost = unavailable ? unlockLabel : level >= statMaxLevel ? "MAX" : `${CHARACTER_STAT_COSTS[level] * (this.progress.shieldUnlocked ? 2 : 1)} coins`;
+      const cost = unavailable ? unlockLabel : level >= statMaxLevel ? "MAX" : `${characterStatUpgradeCost(level) * (this.progress.shieldUnlocked ? 2 : 1)} coins`;
       this.renderButton(context, width / 2 - 225, height / 2 - 185 + index * 27, 450, 24,
         `${stat.toUpperCase()} LV ${level} → ${cost}`, { type: "choice", value: index + 3 },
         { font: "12px 'Courier New', monospace" });
@@ -4476,7 +4781,7 @@ export class Game {
   }
 
   renderLandmarks(context) {
-    if (this.currentMap.id === "garden") return;
+    if (this.currentMap.id === "garden" || this.currentMap.id === "corn-farm") return;
     if (this.currentMap.id === "redwood-trail") {
       this.renderRedwoodLandmarks(context);
       return;
@@ -4519,8 +4824,6 @@ export class Game {
       : [
           { x: this.world.width / 2 - 220, y: this.world.height - 360, width: 440, height: 320, color: "#6d5140" },
           { x: this.world.width / 2 - 75, y: this.world.height - 900, width: 150, height: 540, color: "#aaa08b" },
-          { x: 280, y: 300, width: 240, height: 150, color: "#7891a0" },
-          { x: this.world.width - 580, y: 280, width: 300, height: 180, color: "#9d7b54" },
         ];
 
     for (const landmark of landmarks) {
@@ -4819,6 +5122,25 @@ export class Game {
     }
   }
 
+  renderCornFarm(context) {
+    if (this.currentMap.id !== "corn-farm") return;
+    for (const section of this.cornSections ?? []) {
+      const x = Math.round(section.x - this.camera.x); const y = Math.round(section.y - this.camera.y);
+      if (x > this.camera.viewWidth || y > this.camera.viewHeight || x + section.width < 0 || y + section.height < 0) continue;
+      context.fillStyle = "#5b3c20"; context.fillRect(x, y, section.width, section.height);
+      context.fillStyle = "#795329"; context.fillRect(x + 3, y + 5, section.width - 6, section.height - 10);
+      if (section.phase === 0) continue;
+      const stalkHeight = section.phase === 1 ? 11 : section.phase === 2 ? 24 : 42;
+      for (let plant = 12; plant < section.width - 5; plant += 18) {
+        context.fillStyle = section.phase === 3 ? "#35602c" : "#62823d";
+        context.fillRect(x + plant, y + section.height - stalkHeight - 5, 4, stalkHeight);
+        context.fillRect(x + plant - 5, y + section.height - stalkHeight / 2, 7, 4);
+        context.fillStyle = section.phase === 3 ? "#e2b832" : "#9caf4e";
+        context.fillRect(x + plant + 3, y + section.height - stalkHeight + 7, 6, 13);
+      }
+    }
+  }
+
   renderAim(context) {
     if (!this.input.pointer.inside) {
       return;
@@ -4891,6 +5213,11 @@ function hashCoordinates(x, y) {
 function renderDarkOverlay(context, width, height) {
   context.fillStyle = "rgba(20, 18, 12, 0.82)";
   context.fillRect(0, 0, width, height);
+}
+
+export function isDeveloperHost(locationLike) {
+  const hostname = String(locationLike?.hostname ?? "").toLowerCase();
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname === "[::1]";
 }
 
 function randomDropOffset(random = Math.random) {
@@ -5127,7 +5454,7 @@ function renderWeaponSlot(context, x, y, weapon, selected, level = 1) {
   context.fillText(`LV ${level} · ${weapon.rarity}${weapon.limited ? " · LIMITED" : ""}`, x + 7, y + 21);
 }
 
-function renderWeaponMenuEntry(context, weapon, iconX, iconY, textX, topY, topText, maxTextWidth, scale = 0.72) {
+function renderWeaponMenuEntry(context, weapon, iconX, iconY, textX, topY, topText, maxTextWidth, scale = 0.72, textScale = 1) {
   context.save();
   context.translate(iconX, iconY);
   context.scale(scale, scale);
@@ -5135,17 +5462,17 @@ function renderWeaponMenuEntry(context, weapon, iconX, iconY, textX, topY, topTe
   context.restore();
   context.save();
   context.fillStyle = "#f3e7bd";
-  context.font = "bold 11px 'Courier New', monospace";
+  context.font = `bold ${Math.round(11 * textScale)}px 'Courier New', monospace`;
   context.textAlign = "left";
   context.fillText(topText, textX, topY, maxTextWidth);
   context.fillStyle = rarityColor(weapon.rarity);
-  context.font = "bold 10px 'Courier New', monospace";
-  context.fillText(weapon.rarity.toUpperCase(), textX, topY + 17);
+  context.font = `bold ${Math.round(10 * textScale)}px 'Courier New', monospace`;
+  context.fillText(weapon.rarity.toUpperCase(), textX, topY + 19);
   if (weapon.limited) {
     const hue = typeof performance === "undefined" ? 0 : performance.now() / 12 % 360;
     const rarityWidth = context.measureText(weapon.rarity.toUpperCase()).width;
     context.fillStyle = `hsl(${hue} 90% 65%)`;
-    context.fillText(" · LIMITED", textX + rarityWidth, topY + 17);
+    context.fillText(" · LIMITED", textX + rarityWidth, topY + 19);
   }
   context.restore();
 }
@@ -5264,6 +5591,10 @@ export function bestiaryEnemyPreview(enemyId) {
   else if (enemyId === "chick") enemy = new Chick(common);
   else if (enemyId === "rooster") enemy = new Rooster(common);
   else if (enemyId === "mother-hen") enemy = new MotherHenBoss({ ...common, config: { ...bossConfig, health: 15000, speed: 88, name: "Mother Hen" }, world: PREVIEW_WORLD });
+  else if (enemyId === "angry-corn") enemy = new AngryCorn(common);
+  else if (enemyId === "popcorn") enemy = new PopcornEnemy(common);
+  else if (enemyId === "mini-tractor") enemy = new MiniTractor({ ...common, world: PREVIEW_WORLD });
+  else if (enemyId === "combine") enemy = new CombineBoss({ ...common, config: { ...bossConfig, health: 18000, speed: 52, name: "The Combine" }, world: PREVIEW_WORLD });
   if (!enemy) return null;
   enemy.x = 0;
   enemy.y = 0;

@@ -55,6 +55,10 @@ export class Input {
   }
 
   handleKeyDown(event) {
+    if (isEditableTarget(event.target)) {
+      this.keys.clear();
+      return;
+    }
     if (this.rebindingAction && !event.repeat) {
       event.preventDefault();
       this.keybinds[this.rebindingAction] = event.code;
@@ -232,4 +236,9 @@ export class Input {
     this.backspaceRequested = 0;
     return count;
   }
+}
+
+export function isEditableTarget(target) {
+  const tagName = String(target?.tagName ?? "").toLowerCase();
+  return tagName === "input" || tagName === "textarea" || tagName === "select" || Boolean(target?.isContentEditable);
 }

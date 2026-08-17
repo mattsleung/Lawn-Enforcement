@@ -1,4 +1,4 @@
-import { CHARACTER_STAT_COSTS, CHEST_COST, CHEST_COST_INCREASE, CHEST_ODDS, MAX_CHEST_COST, PERMANENT_WEAPONS, SHOP_RARITY_PRICES, weaponMaxLevelForMaps, weaponUpgradeCost } from "../config/economy-config.js";
+import { characterStatUpgradeCost, CHEST_COST, CHEST_COST_INCREASE, CHEST_ODDS, MAX_CHEST_COST, PERMANENT_WEAPONS, SHOP_RARITY_PRICES, weaponMaxLevelForMaps, weaponUpgradeCost } from "../config/economy-config.js";
 
 export function rollChestRarity(random = Math.random) {
   const roll = random() * 1000;
@@ -52,10 +52,10 @@ export function upgradeWeapon(progress, weaponId, maxLevel = weaponMaxLevelForMa
 export function upgradeCharacterStat(progress, stat, maxLevel = 5) {
   const level = progress.characterStats[stat] ?? 0;
   const statMaxLevel = stat === "regeneration" ? 1 : maxLevel;
-  if (!(stat in progress.characterStats) || level >= statMaxLevel || level >= CHARACTER_STAT_COSTS.length) return false;
+  if (!(stat in progress.characterStats) || level >= statMaxLevel) return false;
   if (stat === "shield" && !progress.shieldUnlocked) return false;
   if (stat === "regeneration" && !(progress.unlockedMaps ?? []).includes("aquatic-garden")) return false;
-  const cost = CHARACTER_STAT_COSTS[level] * (progress.shieldUnlocked ? 2 : 1);
+  const cost = characterStatUpgradeCost(level) * (progress.shieldUnlocked ? 2 : 1);
   if (progress.coins < cost) return false;
   progress.coins -= cost;
   progress.characterStats[stat] = level + 1;

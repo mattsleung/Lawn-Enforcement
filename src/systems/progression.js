@@ -1,6 +1,6 @@
 import { WEAPON_DEFINITIONS, weaponById } from "../config/weapons.js";
 import { ENEMY_GLOSSARY } from "../config/glossary-config.js";
-import { weaponMaxLevelForMaps } from "../config/economy-config.js";
+import { characterStatMaxLevelForMaps, weaponMaxLevelForMaps } from "../config/economy-config.js";
 import { MAPS_BY_ID, MAP_SLOTS } from "../config/map-config.js";
 
 export const RUN_UPGRADES = Object.freeze([
@@ -64,6 +64,11 @@ export const RUN_UPGRADES = Object.freeze([
   weaponUpgrade("double-reflection", "Double Reflection", "Garden Mirror: place two mirrors and increase capacity to 10", "garden-mirror"),
   weaponUpgrade("ding-dong", "Ding Dong", "Doorbell: each activation emits two sound waves", "doorbell"),
   weaponUpgrade("double-strike", "Double Strike", "Orbital Sprinkler: call a second strike at the same location", "orbital-sprinkler"),
+  weaponUpgrade("rain-thunderstorm", "Thunderstorm", "Rain Cloud: periodically strike an enemy below with lightning", "rain-cloud"),
+  weaponUpgrade("pigeon-flock", "Flock", "Homing Pigeon: launch 2 pigeons", "homing-pigeon"),
+  weaponUpgrade("sprinkler-eight-way", "Eight-Way Sprinkler", "Lawn Sprinkler: fire in 8 directions", "lawn-sprinkler"),
+  weaponUpgrade("plate-chain-reaction", "Chain Reaction", "Pressure Plate: explosions trigger nearby plates", "pressure-plate"),
+  weaponUpgrade("fart-extra-stinky", "Extra Stinky", "Fart Gun: +50% cloud size and damage", "fart-gun"),
 ]);
 
 function upgrade(id, name, rarity, description, options = {}) {
@@ -170,6 +175,11 @@ export function applyRunUpgrade(player, upgradeId) {
     "double-reflection": () => addWeaponBonus(player, "garden-mirror", { mirrorMaxAdd: 5, projectileCountAdd: 1 }),
     "ding-dong": () => addWeaponBonus(player, "doorbell", { doorbellRingCountAdd: 1 }),
     "double-strike": () => addWeaponBonus(player, "orbital-sprinkler", { orbitalSecondStrike: true }),
+    "rain-thunderstorm": () => addWeaponBonus(player, "rain-cloud", { thunderstorm: true }),
+    "pigeon-flock": () => addWeaponBonus(player, "homing-pigeon", { projectileCountAdd: 1 }),
+    "sprinkler-eight-way": () => addWeaponBonus(player, "lawn-sprinkler", { sprinklerDirectionsAdd: 4 }),
+    "plate-chain-reaction": () => addWeaponBonus(player, "pressure-plate", { chainReaction: true }),
+    "fart-extra-stinky": () => addWeaponBonus(player, "fart-gun", { fertilizerCloudRadiusMultiplier: 1.5, damageMultiplier: 1.25 }),
     "explosive-projectiles": () => { player.rangedExplosion = true; },
     "second-wind": () => {
       player.health = player.maxHealth;
@@ -245,7 +255,8 @@ export function loadProgress(storage) {
           1,
         )])),
       characterStats: Object.fromEntries(Object.keys(fallback.characterStats)
-        .map((stat) => [stat, clampInteger(characterStats[stat], 0, 10, 0)])),
+        .map((stat) => [stat, clampInteger(characterStats[stat], 0,
+          stat === "regeneration" ? 1 : characterStatMaxLevelForMaps(unlockedMaps), 0)])),
       shieldUnlocked: parsed.shieldUnlocked === true,
       settings: Object.fromEntries(Object.keys(fallback.settings)
         .map((setting) => [setting, typeof settings[setting] === "boolean" ? settings[setting] : fallback.settings[setting]])),

@@ -365,7 +365,7 @@
     bossSpawnTime: 120,
     victoryCoinBonus: 6000,
     bossThrownEnemy: null,
-    unlocks: null,
+    unlocks: "corn-farm",
     obstacles: Object.freeze([
       Object.freeze({ x: 80, y: 90, width: 260, height: 150, kind: "barn", solid: true }),
       Object.freeze({ x: 1640, y: 120, width: 190, height: 115, kind: "chicken-coop", solid: true }),
@@ -377,7 +377,26 @@
     boss: Object.freeze({ type: "mother-hen", name: "Mother Hen", health: 15000, speed: 88, damage: 35 }),
   });
 
-  const MAP_SLOTS = Object.freeze([FIRST_MAP, FRONTYARD_MAP, GARDEN_MAP, PUBLIC_PARK_MAP, LAKE_ELIZABETH_MAP, GOLF_COURSE_MAP, AQUATIC_GARDEN_MAP, REDWOOD_TRAIL_MAP, SCHOOL_FIELD_MAP, CONSTRUCTION_SITE_MAP, CHICKEN_FARM_MAP]);
+  const CORN_FARM_MAP = Object.freeze({
+    id: "corn-farm",
+    name: "Corn Farm",
+    world: Object.freeze({ width: VIEWPORT.designWidth * 1.8, height: VIEWPORT.designHeight * 1.6, gridSize: 96 }),
+    lawnColors: Object.freeze({ primary: "#8a843d", secondary: "#756f34" }),
+    houseSide: null,
+    normalEnemyType: "corn-farm",
+    enemyCap: 100,
+    bossSpawnTime: 120,
+    victoryCoinBonus: 6500,
+    bossThrownEnemy: null,
+    unlocks: null,
+    cornSpawnWeights: Object.freeze({ angryCorn: 0.44, popcorn: 0.50, miniTractor: 0.06 }),
+    boss: Object.freeze({
+      type: "combine", name: "The Combine", health: 18000, damage: 50, speed: 52,
+      harvestRunCooldown: 7, cornCannonCooldown: 4, cornDumpCooldown: 8,
+    }),
+  });
+
+  const MAP_SLOTS = Object.freeze([FIRST_MAP, FRONTYARD_MAP, GARDEN_MAP, PUBLIC_PARK_MAP, LAKE_ELIZABETH_MAP, GOLF_COURSE_MAP, AQUATIC_GARDEN_MAP, REDWOOD_TRAIL_MAP, SCHOOL_FIELD_MAP, CONSTRUCTION_SITE_MAP, CHICKEN_FARM_MAP, CORN_FARM_MAP]);
   const MAPS_BY_ID = Object.freeze(Object.fromEntries(MAP_SLOTS.map((map) => [map.id, map])));
 
   function mapById(id) {
@@ -421,6 +440,10 @@
     Object.freeze({ id: "chick", name: "Chick", description: "A small fast enemy that grows into a Chicken after surviving for twenty seconds." }),
     Object.freeze({ id: "rooster", name: "Rooster", description: "A durable farm support enemy whose crow speeds nearby Chickens and Chicks for three seconds." }),
     Object.freeze({ id: "mother-hen", name: "Mother Hen", description: "The oversized Chicken Farm boss with Egg Toss, Chicken Rush, Wing Blast, and an enraged phase." }),
+    Object.freeze({ id: "angry-corn", name: "Angry Corn", description: "A 350-health crop that stops every four seconds and fires a fan of three kernels." }),
+    Object.freeze({ id: "popcorn", name: "Popcorn", description: "A fast 100-health enemy that bursts into a damaging, high-knockback blast when defeated." }),
+    Object.freeze({ id: "mini-tractor", name: "Mini Tractor", description: "A rare 1,000-health charger that harvests crop rows and clears space as it drives." }),
+    Object.freeze({ id: "combine", name: "The Combine", description: "The Corn Farm boss. It harvests rows, fires kernel fans, dumps Popcorn piles, and enters overdrive below 5,000 HP." }),
   ]);
 
 
@@ -774,8 +797,47 @@
       levelTenProjectileLifetimeMultiplier: 1.3,
     }),
     rangedWeapon({
+      id: "rain-cloud", name: "Rain Cloud", rarity: "Epic", price: null, duplicateValue: 260,
+      damage: 7, cooldown: 5, projectileSpeed: 0, projectileLifetime: 0, projectileKind: "rain-cloud", color: "#8cb9d2",
+      cloudDuration: 7, cloudRadius: 105, cloudTickInterval: .3, lightningDamage: 45,
+      description: "Summons a cursor-following cloud that repeatedly rains on enemies below.",
+      levelTenFeature: "Downpour: +30% rain radius and attack rate",
+      levelTenModifiers: { cloudRadius: 137, cloudTickInterval: .23 },
+    }),
+    rangedWeapon({
+      id: "homing-pigeon", name: "Homing Pigeon", rarity: "Rare", price: null, duplicateValue: 170,
+      damage: 34, cooldown: 1.5, projectileSpeed: 470, projectileLifetime: 0, projectileKind: "homing-pigeon", color: "#aeb8bd",
+      pigeonHits: 4, description: "Launches a pigeon that seeks several enemies before returning.",
+      levelTenFeature: "Experienced Pigeon: +2 enemy hits", levelTenModifiers: { pigeonHits: 6 },
+    }),
+    rangedWeapon({
+      id: "lawn-sprinkler", name: "Lawn Sprinkler", rarity: "Uncommon", price: null, duplicateValue: 90,
+      damage: 7, cooldown: 4, projectileSpeed: 430, projectileLifetime: 1, projectileKind: "lawn-sprinkler", color: "#66d4ec",
+      sprinklerDuration: 8, sprinklerFireInterval: .2, sprinklerDirections: 4, sprinklerRotationSpeed: 1.8,
+      description: "Places a rotating sprinkler that fires four crossing water streams.",
+      levelTenFeature: "High Pressure: rotates and fires 25% faster",
+      levelTenModifiers: { sprinklerFireInterval: .16, sprinklerRotationSpeed: 2.25 },
+    }),
+    rangedWeapon({
+      id: "pressure-plate", name: "Pressure Plate", rarity: "Rare", price: null, duplicateValue: 170,
+      damage: 90, cooldown: 3, projectileSpeed: 0, projectileLifetime: 0, projectileKind: "pressure-plate", color: "#d4a64e",
+      plateRadius: 42, plateChargeThreshold: 100, plateMaxStoredDamage: 260,
+      description: "Stores pressure from enemies standing on it, then releases a scaling explosion.",
+      levelTenFeature: "Reinforced Plate: +50% maximum stored explosion damage",
+      levelTenModifiers: { plateMaxStoredDamage: 390 },
+    }),
+    rangedWeapon({
+      id: "fart-gun", name: "Fart Gun", rarity: "Uncommon", price: null, duplicateValue: 90,
+      damage: 9, cooldown: 1, projectileSpeed: 0, projectileLifetime: 0, projectileKind: "fart-gun", color: "#93a94e",
+      fertilizerCloudRadius: 78, fertilizerCloudDuration: 4, fertilizerTickInterval: .35,
+      cloudExpands: true, cloudStartScale: .45, cloudExpansionDuration: 1.8,
+      description: "Immediately creates a lingering damaging gas cloud just in front of you.",
+      levelTenFeature: "Lingering Stink: gas clouds last 50% longer",
+      levelTenModifiers: { fertilizerCloudDuration: 6 },
+    }),
+    rangedWeapon({
       id: "ordinance-undefined", name: "Ordinance Undefined", rarity: "Developer", price: null,
-      developerOnly: true, duplicateValue: 2000, damage: 8.88832, cooldown: 0.5859375, projectileSpeed: 1040,
+      limited: true, developerOnly: true, duplicateValue: 2000, damage: 8.88832, cooldown: 0.5859375, projectileSpeed: 1040,
       projectileLifetime: 1.1, projectileKind: "undefined", color: "#e05cff", projectileCount: 2, bounces: 2,
       burstRounds: 2, burstInterval: 0.045,
       pierces: 1, explosive: true, splashRadius: 44, knockback: 10, spread: 0.08, recoil: 0.035,
@@ -883,6 +945,9 @@
       decoyExplosionRadius: (weapon.decoyExplosionRadius ?? 0) * (bonus.decoyExplosionRadiusMultiplier ?? 1),
       returnDamageMultiplier: (weapon.returnDamageMultiplier ?? 1) * (bonus.returnDamageMultiplier ?? 1),
       fertilizerCloudRadius: (weapon.fertilizerCloudRadius ?? 0) * (bonus.fertilizerCloudRadiusMultiplier ?? 1),
+      thunderstorm: weapon.thunderstorm || Boolean(bonus.thunderstorm),
+      sprinklerDirections: (weapon.sprinklerDirections ?? 0) + (bonus.sprinklerDirectionsAdd ?? 0),
+      chainReaction: weapon.chainReaction || Boolean(bonus.chainReaction),
       tornadoPullRadius: (weapon.tornadoPullRadius ?? 0) * (bonus.tornadoPullRadiusMultiplier ?? 1),
       tornadoPullForce: (weapon.tornadoPullForce ?? 0) * (bonus.tornadoPullForceMultiplier ?? 1),
       polarityRadius: (weapon.polarityRadius ?? 0) * (bonus.polarityRadiusMultiplier ?? 1),
@@ -1004,7 +1069,7 @@
     const mapCount = unlockedMaps instanceof Set
       ? unlockedMaps.size
       : Array.isArray(unlockedMaps) ? new Set(unlockedMaps).size : 1;
-    return Math.min(CHARACTER_STAT_COSTS.length, Math.max(1, mapCount) * CHARACTER_STAT_LEVELS_PER_MAP);
+    return Math.max(1, mapCount) * CHARACTER_STAT_LEVELS_PER_MAP;
   }
 
   function weaponMaxLevelForMaps(unlockedMaps = ["backyard"]) {
@@ -1019,6 +1084,13 @@
     if (configuredCost != null) return configuredCost;
     const extraLevel = currentLevel - WEAPON_LEVEL_COSTS.length;
     return WEAPON_LEVEL_COSTS.at(-1) + extraLevel * 500 + extraLevel * (extraLevel + 1) * 50;
+  }
+
+  function characterStatUpgradeCost(currentLevel) {
+    const configuredCost = CHARACTER_STAT_COSTS[currentLevel];
+    if (configuredCost != null) return configuredCost;
+    const extraLevel = currentLevel - CHARACTER_STAT_COSTS.length + 1;
+    return CHARACTER_STAT_COSTS.at(-1) + extraLevel * 300 + extraLevel * (extraLevel + 1) * 75;
   }
 
 
@@ -1158,6 +1230,11 @@
     weaponUpgrade("double-reflection", "Double Reflection", "Garden Mirror: place two mirrors and increase capacity to 10", "garden-mirror"),
     weaponUpgrade("ding-dong", "Ding Dong", "Doorbell: each activation emits two sound waves", "doorbell"),
     weaponUpgrade("double-strike", "Double Strike", "Orbital Sprinkler: call a second strike at the same location", "orbital-sprinkler"),
+    weaponUpgrade("rain-thunderstorm", "Thunderstorm", "Rain Cloud: periodically strike an enemy below with lightning", "rain-cloud"),
+    weaponUpgrade("pigeon-flock", "Flock", "Homing Pigeon: launch 2 pigeons", "homing-pigeon"),
+    weaponUpgrade("sprinkler-eight-way", "Eight-Way Sprinkler", "Lawn Sprinkler: fire in 8 directions", "lawn-sprinkler"),
+    weaponUpgrade("plate-chain-reaction", "Chain Reaction", "Pressure Plate: explosions trigger nearby plates", "pressure-plate"),
+    weaponUpgrade("fart-extra-stinky", "Extra Stinky", "Fart Gun: +50% cloud size and damage", "fart-gun"),
   ]);
 
   function upgrade(id, name, rarity, description, options = {}) {
@@ -1264,6 +1341,11 @@
       "double-reflection": () => addWeaponBonus(player, "garden-mirror", { mirrorMaxAdd: 5, projectileCountAdd: 1 }),
       "ding-dong": () => addWeaponBonus(player, "doorbell", { doorbellRingCountAdd: 1 }),
       "double-strike": () => addWeaponBonus(player, "orbital-sprinkler", { orbitalSecondStrike: true }),
+      "rain-thunderstorm": () => addWeaponBonus(player, "rain-cloud", { thunderstorm: true }),
+      "pigeon-flock": () => addWeaponBonus(player, "homing-pigeon", { projectileCountAdd: 1 }),
+      "sprinkler-eight-way": () => addWeaponBonus(player, "lawn-sprinkler", { sprinklerDirectionsAdd: 4 }),
+      "plate-chain-reaction": () => addWeaponBonus(player, "pressure-plate", { chainReaction: true }),
+      "fart-extra-stinky": () => addWeaponBonus(player, "fart-gun", { fertilizerCloudRadiusMultiplier: 1.5, damageMultiplier: 1.25 }),
       "explosive-projectiles": () => { player.rangedExplosion = true; },
       "second-wind": () => {
         player.health = player.maxHealth;
@@ -1339,7 +1421,8 @@
             1,
           )])),
         characterStats: Object.fromEntries(Object.keys(fallback.characterStats)
-          .map((stat) => [stat, clampInteger(characterStats[stat], 0, 10, 0)])),
+          .map((stat) => [stat, clampInteger(characterStats[stat], 0,
+            stat === "regeneration" ? 1 : characterStatMaxLevelForMaps(unlockedMaps), 0)])),
         shieldUnlocked: parsed.shieldUnlocked === true,
         settings: Object.fromEntries(Object.keys(fallback.settings)
           .map((setting) => [setting, typeof settings[setting] === "boolean" ? settings[setting] : fallback.settings[setting]])),
@@ -1668,6 +1751,169 @@
   }
 
 
+  const SUPABASE_URL = "https://iuhdowdkolpazspitnmf.supabase.co";
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_N5v-25TPjipoqs8qT1ZwtQ_9BXI1HMY";
+  const CLOUD_SESSION_KEY = "lawn-enforcement-cloud-session";
+
+  class CloudSaveClient {
+    constructor(game) {
+      this.game = game;
+      this.session = null;
+      this.saveTimer = null;
+      this.modal = document.querySelector("#account-modal");
+      this.status = document.querySelector("#account-status");
+      this.email = document.querySelector("#account-email");
+      this.username = document.querySelector("#account-username");
+      this.password = document.querySelector("#account-password");
+      this.confirmPassword = document.querySelector("#account-password-confirm");
+    }
+
+    async start() {
+      this.bindUi();
+      this.restoreConfirmationSession();
+      this.session = this.readSession();
+      if (this.session && !(await this.ensureSession())) this.clearSession();
+      if (this.session?.access_token && !this.session.user) await this.hydrateUser();
+      else if (this.session?.user && !this.game.developerBuild) await this.syncAfterLogin();
+      this.updateStatus();
+      window.addEventListener("lawn-save", (event) => this.queueSave(event.detail));
+    }
+
+    bindUi() {
+      document.querySelector("#account-button")?.addEventListener("click", () => {
+        this.modal?.showModal(); this.updateStatus();
+      });
+      document.querySelector("#account-close")?.addEventListener("click", () => { this.clearSensitiveInputs(); this.modal?.close(); });
+      document.querySelector("#account-signup")?.addEventListener("click", () => this.signUp());
+      document.querySelector("#account-signin")?.addEventListener("click", () => this.signIn());
+      document.querySelector("#account-signout")?.addEventListener("click", () => this.signOut());
+    }
+
+    async request(path, { method = "GET", body, token = null, prefer = null } = {}) {
+      const headers = { apikey: SUPABASE_PUBLISHABLE_KEY, "Content-Type": "application/json" };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      if (prefer) headers.Prefer = prefer;
+      const response = await fetch(`${SUPABASE_URL}${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
+      const payload = response.status === 204 ? null : await response.json().catch(() => null);
+      if (!response.ok) throw new Error(payload?.msg || payload?.message || payload?.error_description || "Account request failed");
+      return payload;
+    }
+
+    async signUp() {
+      const email = this.email.value.trim(); const username = this.username.value.trim();
+      const password = this.password.value; const confirmation = this.confirmPassword.value;
+      if (!/^\S+@\S+\.\S+$/.test(email)) return this.setStatus("Enter a valid email address.", true);
+      if (!/^[A-Za-z0-9_-]{3,20}$/.test(username)) return this.setStatus("Username must be 3–20 letters, numbers, _ or -.", true);
+      if (password.length < 10) return this.setStatus("Password must be at least 10 characters.", true);
+      if (password !== confirmation) return this.setStatus("Password confirmation does not match.", true);
+      try {
+        const redirect = encodeURIComponent(window.location.href.split("#")[0]);
+        await this.request(`/auth/v1/signup?redirect_to=${redirect}`, {
+          method: "POST",
+          body: { email, password, data: { username } },
+        });
+        this.clearSensitiveInputs();
+        this.setStatus("Confirmation sent. Check your email, then return here to sign in.");
+      } catch (error) { this.setStatus(error.message, true); }
+    }
+
+    async signIn() {
+      if (this.game.developerBuild) return this.setStatus("Cloud sync is disabled on localhost so developer unlocks cannot reach public accounts.", true);
+      const email = this.email.value.trim(); const password = this.password.value;
+      try {
+        const session = await this.request("/auth/v1/token?grant_type=password", { method: "POST", body: { email, password } });
+        this.clearSensitiveInputs(); this.setSession(session); await this.syncAfterLogin(); this.updateStatus();
+      } catch (error) { this.setStatus(error.message, true); }
+    }
+
+    async signOut() {
+      if (this.session?.access_token) {
+        await this.request("/auth/v1/logout", { method: "POST", token: this.session.access_token }).catch(() => {});
+      }
+      this.clearSession(); this.updateStatus();
+    }
+
+    async ensureSession() {
+      if (!this.session?.refresh_token) return false;
+      if ((this.session.expires_at ?? 0) * 1000 > Date.now() + 60_000) return true;
+      try {
+        const refreshed = await this.request("/auth/v1/token?grant_type=refresh_token", { method: "POST", body: { refresh_token: this.session.refresh_token } });
+        this.setSession(refreshed); return true;
+      } catch { return false; }
+    }
+
+    async hydrateUser() {
+      try {
+        const user = await this.request("/auth/v1/user", { token: this.session.access_token });
+        this.session.user = user; localStorage.setItem(CLOUD_SESSION_KEY, JSON.stringify(this.session));
+        await this.syncAfterLogin();
+      } catch { this.clearSession(); }
+    }
+
+    async syncAfterLogin() {
+      if (!await this.ensureSession()) return;
+      const userId = this.session.user.id;
+      const rows = await this.request(`/rest/v1/game_saves?user_id=eq.${encodeURIComponent(userId)}&select=save_data`, { token: this.session.access_token });
+      if (rows?.[0]?.save_data) {
+        this.game.applyCloudProgress(rows[0].save_data);
+        this.setStatus(`Signed in as ${this.session.user.user_metadata?.username || this.session.user.email}. Cloud save loaded.`);
+      } else {
+        await this.saveNow(this.game.progress);
+        this.setStatus(`Signed in as ${this.session.user.user_metadata?.username || this.session.user.email}. Local save uploaded.`);
+      }
+    }
+
+    queueSave(progress) {
+      if (!this.session || this.game.developerBuild) return;
+      clearTimeout(this.saveTimer);
+      this.saveTimer = setTimeout(() => this.saveNow(progress).catch((error) => this.setStatus(`Cloud save failed: ${error.message}`, true)), 700);
+    }
+
+    async saveNow(progress) {
+      if (!this.session || this.game.developerBuild || !await this.ensureSession()) return;
+      await this.request("/rest/v1/game_saves?on_conflict=user_id", {
+        method: "POST", token: this.session.access_token, prefer: "resolution=merge-duplicates,return=minimal",
+        body: { user_id: this.session.user.id, save_data: progress, updated_at: new Date().toISOString() },
+      });
+    }
+
+    restoreConfirmationSession() {
+      const values = new URLSearchParams(window.location.hash.slice(1));
+      if (!values.get("access_token")) return;
+      this.setSession({
+        access_token: values.get("access_token"), refresh_token: values.get("refresh_token"),
+        expires_at: Math.floor(Date.now() / 1000) + Number(values.get("expires_in") || 3600),
+        user: null,
+      });
+      history.replaceState(null, "", `${location.pathname}${location.search}`);
+    }
+
+    setSession(session) {
+      if (!session?.access_token) return;
+      if (!session.expires_at) session.expires_at = Math.floor(Date.now() / 1000) + Number(session.expires_in || 3600);
+      this.session = session; localStorage.setItem(CLOUD_SESSION_KEY, JSON.stringify(session));
+    }
+    readSession() { try { return JSON.parse(localStorage.getItem(CLOUD_SESSION_KEY)); } catch { return null; } }
+    clearSession() { this.session = null; localStorage.removeItem(CLOUD_SESSION_KEY); }
+    clearSensitiveInputs() { this.password.value = ""; this.confirmPassword.value = ""; }
+    setStatus(message, error = false) {
+      if (!this.status) return;
+      this.status.textContent = message;
+      this.status.classList.toggle("is-error", error);
+      this.status.classList.remove("is-confirming");
+      void this.status.offsetWidth;
+      this.status.classList.add("is-confirming");
+    }
+    updateStatus() {
+      const signedIn = Boolean(this.session?.user);
+      document.querySelector("#account-signout")?.toggleAttribute("hidden", !signedIn);
+      document.querySelector("#account-signin")?.toggleAttribute("hidden", signedIn);
+      document.querySelector("#account-signup")?.toggleAttribute("hidden", signedIn);
+      this.setStatus(signedIn ? `Signed in as ${this.session.user.user_metadata?.username || this.session.user.email}` : "Not signed in. Local saves remain on this device.");
+    }
+  }
+
+
 
   function rollChestRarity(random = Math.random) {
     const roll = random() * 1000;
@@ -1721,10 +1967,10 @@
   function upgradeCharacterStat(progress, stat, maxLevel = 5) {
     const level = progress.characterStats[stat] ?? 0;
     const statMaxLevel = stat === "regeneration" ? 1 : maxLevel;
-    if (!(stat in progress.characterStats) || level >= statMaxLevel || level >= CHARACTER_STAT_COSTS.length) return false;
+    if (!(stat in progress.characterStats) || level >= statMaxLevel) return false;
     if (stat === "shield" && !progress.shieldUnlocked) return false;
     if (stat === "regeneration" && !(progress.unlockedMaps ?? []).includes("aquatic-garden")) return false;
-    const cost = CHARACTER_STAT_COSTS[level] * (progress.shieldUnlocked ? 2 : 1);
+    const cost = characterStatUpgradeCost(level) * (progress.shieldUnlocked ? 2 : 1);
     if (progress.coins < cost) return false;
     progress.coins -= cost;
     progress.characterStats[stat] = level + 1;
@@ -1852,6 +2098,10 @@
     }
 
     handleKeyDown(event) {
+      if (isEditableTarget(event.target)) {
+        this.keys.clear();
+        return;
+      }
       if (this.rebindingAction && !event.repeat) {
         event.preventDefault();
         this.keybinds[this.rebindingAction] = event.code;
@@ -2031,6 +2281,11 @@
     }
   }
 
+  function isEditableTarget(target) {
+    const tagName = String(target?.tagName ?? "").toLowerCase();
+    return tagName === "input" || tagName === "textarea" || tagName === "select" || Boolean(target?.isContentEditable);
+  }
+
 
   const HELD_WEAPON_VISUALS = Object.freeze({
     "weedwacker-9000": { kind: "trimmer", primary: "#dcc45f", secondary: "#6e8d4d" },
@@ -2078,6 +2333,11 @@
     "storm-sprinkler": { kind: "minigun", primary: "#78e4ff", secondary: "#547b87" },
     "backyard-flamethrower": { kind: "flamethrower", primary: "#f27a32", secondary: "#7b4540" },
     "plastic-ghost": { kind: "ghost", primary: "#b9f4ed", secondary: "#5c9f9b" },
+    "rain-cloud": { kind: "tech-gun", primary: "#8cb9d2", secondary: "#d9f2ff" },
+    "homing-pigeon": { kind: "pigeon", primary: "#aeb8bd", secondary: "#59666b" },
+    "lawn-sprinkler": { kind: "sprinkler", primary: "#66d4ec", secondary: "#456b72" },
+    "pressure-plate": { kind: "lid", primary: "#d4a64e", secondary: "#6b542d" },
+    "fart-gun": { kind: "small-gun", primary: "#93a94e", secondary: "#526333" },
     "ordinance-undefined": { kind: "glitch-gun", primary: "#e05cff", secondary: "#51f0de" },
   });
 
@@ -2136,6 +2396,8 @@
         if (kind === "bowling-ball") { circle(context, 6, -2, 1.3, secondary); circle(context, 10, -3, 1.3, secondary); } break;
       case "shuriken":
         context.fillStyle = primary; context.beginPath(); for (let index = 0; index < 8; index += 1) { const angle = index * Math.PI / 4; const radius = index % 2 ? 3 : 10; const x = 9 + Math.cos(angle) * radius; const y = Math.sin(angle) * radius; if (index === 0) context.moveTo(x, y); else context.lineTo(x, y); } context.closePath(); context.fill(); circle(context, 9, 0, 2, secondary); break;
+      case "pigeon":
+        context.fillStyle = primary; context.fillRect(2, -6, 20, 12); context.fillStyle = secondary; context.fillRect(17, -10, 9, 9); context.fillRect(6, -12, 9, 7); context.fillStyle = "#e7b24b"; context.fillRect(26, -7, 6, 3); break;
       case "sprinkler": case "orbital":
         context.fillStyle = secondary; context.fillRect(0, -4, 18, 8); circle(context, 17, 0, 8, primary); context.fillStyle = "#e8fbff"; context.fillRect(15, -11, 3, 6); context.fillRect(15, 5, 3, 6); break;
       case "zapper": case "rod":
@@ -2255,7 +2517,10 @@
         && Math.hypot(this.x - obstacle.x, this.y - obstacle.y) <= obstacle.radius);
       const inDirtPile = obstacles.some((obstacle) => obstacle.kind === "temporary-dirt"
         && Math.hypot(this.x - obstacle.x, this.y - obstacle.y) <= obstacle.radius);
-      const movementSpeed = inSlime ? this.speed * 0.4 : inDirtPile ? this.speed * 0.7 : (inSandBunker || inWater) ? this.speed * 0.5 : onRunningTrack ? this.speed * 1.2 : this.speed;
+      const inMatureCorn = obstacles.some((obstacle) => obstacle.kind === "mature-corn"
+        && this.x >= obstacle.x && this.x <= obstacle.x + obstacle.width
+        && this.y >= obstacle.y && this.y <= obstacle.y + obstacle.height);
+      const movementSpeed = inSlime ? this.speed * 0.4 : inDirtPile ? this.speed * 0.7 : (inSandBunker || inWater) ? this.speed * 0.5 : inMatureCorn ? this.speed * 0.7 : onRunningTrack ? this.speed * 1.2 : this.speed;
       if (this.maxShield > 0) this.shield = Math.min(this.maxShield, this.shield + this.shieldRegen * deltaTime);
       if (this.healthRegenAmount > 0 && this.healthRegenInterval > 0) {
         this.healthRegenTimer += deltaTime;
@@ -4643,12 +4908,12 @@
     constructor({ x, y, health, speed, damage, radius, enemyType, coinValue = 2, xpValue = 15 }) {
       Object.assign(this, { x, y, speed, damage, radius, enemyType, coinValue, xpValue });
       this.maxHealth = health; this.health = health; this.shield = 0; this.maxShield = 0;
-      this.hitFlash = 0; this.slowTime = 0; this.speedBuffTime = 0; this.crowShieldActive = false; this.bossMinion = false;
+      this.hitFlash = 0; this.slowTime = 0; this.speedBuffTime = 0; this.bossMinion = false;
     }
     get active() { return this.health > 0; }
     takeDamage(amount) { if (!this.active) return false; let damage=Math.max(0,Number(amount)||0);const blocked=Math.min(this.shield,damage);this.shield-=blocked;damage-=blocked;this.health=Math.max(0,this.health-damage);this.hitFlash=0.12;return this.health===0; }
     chase(target, dt, multiplier = 1) { const dx = target.x - this.x; const dy = target.y - this.y; const d = Math.hypot(dx, dy) || 1; this.x += dx / d * this.speed * multiplier * dt; this.y += dy / d * this.speed * multiplier * dt; }
-    tick(dt) { this.hitFlash = Math.max(0, this.hitFlash - dt); this.speedBuffTime = Math.max(0, this.speedBuffTime - dt);if(this.crowShieldActive&&this.speedBuffTime<=0){this.shield=0;this.maxShield=0;this.crowShieldActive=false;} }
+    tick(dt) { this.hitFlash = Math.max(0, this.hitFlash - dt); this.speedBuffTime = Math.max(0, this.speedBuffTime - dt); }
     bar(c, x, y) { c.fillStyle="#38271e";c.fillRect(x-this.radius,y-this.radius-10,this.radius*2,4);c.fillStyle="#d95b49";c.fillRect(x-this.radius,y-this.radius-10,this.radius*2*this.health/this.maxHealth,4);if(this.shield>0){c.fillStyle="#65d7f2";c.fillRect(x-this.radius,y-this.radius-16,this.radius*2*Math.min(1,this.shield/Math.max(1,this.maxShield)),4);} }
   }
 
@@ -4718,6 +4983,73 @@
       if(this.wingWindup>0&&this.wingTarget){const aim=Math.atan2(this.wingTarget.targetY-this.y,this.wingTarget.targetX-this.x);c.fillStyle="rgba(255,238,180,.2)";c.strokeStyle="rgba(255,224,130,.95)";c.lineWidth=5;c.beginPath();c.moveTo(x,y);c.arc(x,y,290,aim-1.35/2,aim+1.35/2);c.closePath();c.fill();c.stroke();}
       c.save();if(enraged)c.translate((Math.random()-.5)*4,(Math.random()-.5)*4);if(this.wingWindup>0){const flap=Math.sin(this.wingWindup*36)*16;c.fillStyle="#ead9ba";c.fillRect(x-75,y-25-flap,32,54);c.fillRect(x+42,y-25+flap,32,54);}c.fillStyle=this.hitFlash>0?"#fff":enraged?"#f0b174":"#f3ead1";c.fillRect(x-55,y-43,100,83);c.fillRect(x+22,y-68,52,50);c.fillStyle="#d83d35";c.fillRect(x+30,y-82,32,16);c.fillStyle="#efa938";c.fillRect(x+68,y-49,24,12);c.fillStyle="#2a211d";c.fillRect(x+50,y-57,7,7);c.fillStyle="#6c4731";c.fillRect(x-35,y+38,12,22);c.fillRect(x+17,y+38,12,22);c.restore();c.fillStyle="#271f19";c.fillRect(x-70,y-91,140,7);c.fillStyle="#d94739";c.fillRect(x-68,y-89,136*this.health/this.maxHealth,3);
     }
+  }
+
+
+  class CornEnemy {
+    constructor({ x, y, health, speed, damage, radius, enemyType, coinValue, xpValue }) {
+      Object.assign(this, { x, y, maxHealth: health, health, speed, damage, radius, enemyType, coinValue, xpValue });
+      this.hitFlash=0;this.slowTime=0;this.freezeTime=0;this.bossMinion=false;
+    }
+    get active(){return this.health>0;}
+    takeDamage(amount){this.health=Math.max(0,this.health-Math.max(0,Number(amount)||0));this.hitFlash=.12;return this.health===0;}
+    chase(target,dt,m=1){const dx=target.x-this.x,dy=target.y-this.y,d=Math.hypot(dx,dy)||1;this.x+=dx/d*this.speed*m*dt;this.y+=dy/d*this.speed*m*dt;}
+    tick(dt){this.hitFlash=Math.max(0,this.hitFlash-dt);this.slowTime=Math.max(0,this.slowTime-dt);}
+    bar(c,x,y){c.fillStyle="#3b2516";c.fillRect(x-this.radius,y-this.radius-9,this.radius*2,4);c.fillStyle="#e6b342";c.fillRect(x-this.radius,y-this.radius-9,this.radius*2*this.health/this.maxHealth,4);}
+  }
+
+  class AngryCorn extends CornEnemy {
+    constructor({x,y}={}){super({x,y,health:350,speed:72,damage:8,radius:20,enemyType:"angry-corn",coinValue:3,xpValue:25});this.fireTimer=4;this.warning=0;}
+    update(dt,target){this.tick(dt);this.fireTimer-=dt;if(this.warning>0){this.warning-=dt;if(this.warning<=0){this.fireTimer=4;return{cornFan:{targetX:target.x,targetY:target.y,count:3,damage:8,speed:310}};}return{};}if(this.fireTimer<=0){this.warning=.55;return{};}this.chase(target,dt);return{};}
+    render(c,camera){const x=Math.round(this.x-camera.x),y=Math.round(this.y-camera.y);if(this.warning>0){c.strokeStyle="#fff19b";c.lineWidth=3;c.beginPath();c.arc(x,y,28+Math.sin(this.warning*30)*4,0,Math.PI*2);c.stroke();}c.fillStyle=this.hitFlash>0?"#fff":"#d8a52d";c.fillRect(x-13,y-22,26,40);c.fillStyle="#4f8a3d";c.fillRect(x-20,y-4,9,22);c.fillRect(x+11,y-4,9,22);c.fillStyle="#291c15";c.fillRect(x-7,y-12,4,4);c.fillRect(x+4,y-12,4,4);this.bar(c,x,y);}
+  }
+
+  class PopcornEnemy extends CornEnemy {
+    constructor({x,y}={}){super({x,y,health:100,speed:185,damage:6,radius:14,enemyType:"popcorn",coinValue:1,xpValue:12});this.deathAoe={radius:90,damage:12,pushback:150};}
+    update(dt,target){this.tick(dt);this.chase(target,dt);return{};}
+    render(c,camera){const x=Math.round(this.x-camera.x),y=Math.round(this.y-camera.y);c.fillStyle=this.hitFlash>0?"#fff":"#f7e9b5";c.fillRect(x-11,y-9,22,20);c.fillRect(x-7,y-15,8,8);c.fillRect(x+3,y-14,9,8);c.fillStyle="#d65a3a";c.fillRect(x-10,y+7,20,8);this.bar(c,x,y);}
+  }
+
+  class MiniTractor extends CornEnemy {
+    constructor({x,y,world}={}){super({x,y,health:1000,speed:58,damage:28,radius:31,enemyType:"mini-tractor",coinValue:8,xpValue:55});this.world=world;this.chargeTimer=5;this.warning=0;this.chargeTime=0;this.vector={x:1,y:0};}
+    update(dt,target){this.tick(dt);this.chargeTimer-=dt;if(this.warning>0){this.warning-=dt;if(this.warning<=0)this.chargeTime=1.1;return{};}if(this.chargeTime>0){this.chargeTime-=dt;this.x+=this.vector.x*470*dt;this.y+=this.vector.y*470*dt;return{harvest:true};}if(this.chargeTimer<=0){const dx=target.x-this.x,dy=target.y-this.y,d=Math.hypot(dx,dy)||1;this.vector={x:dx/d,y:dy/d};this.warning=.75;this.chargeTimer=5;return{};}this.chase(target,dt);return{};}
+    render(c,camera){const x=Math.round(this.x-camera.x),y=Math.round(this.y-camera.y);if(this.warning>0){c.save();c.translate(x,y);c.rotate(Math.atan2(this.vector.y,this.vector.x));c.fillStyle="rgba(255,214,84,.28)";c.fillRect(0,-18,520,36);c.restore();}c.fillStyle="#232921";c.fillRect(x-31,y-16,62,34);c.fillStyle=this.hitFlash>0?"#fff":"#d2a534";c.fillRect(x-24,y-27,43,20);c.fillStyle="#1d211b";c.fillRect(x-27,y+14,16,12);c.fillRect(x+11,y+14,16,12);this.bar(c,x,y);}
+  }
+
+
+  class CornKernelProjectile {
+    constructor({ x, y, velocityX, velocityY, damage = 10, lifetime = 2.2 }) {
+      Object.assign(this, { x, y, velocityX, velocityY, damage, lifetime });
+      this.radius = 7;
+      this.active = true;
+      this.spawnsWeed = false;
+    }
+
+    update(deltaTime, world) {
+      this.x += this.velocityX * deltaTime;
+      this.y += this.velocityY * deltaTime;
+      this.lifetime -= deltaTime;
+      if (this.lifetime <= 0 || this.x < 8 || this.y < 8 || this.x > world.width - 8 || this.y > world.height - 8) this.active = false;
+    }
+
+    hitPlayer() { this.active = false; }
+
+    render(context, camera) {
+      if (!this.active) return;
+      const x = Math.round(this.x - camera.x); const y = Math.round(this.y - camera.y);
+      context.fillStyle = "#4c3217"; context.fillRect(x - 5, y - 7, 10, 14);
+      context.fillStyle = "#f1c743"; context.fillRect(x - 3, y - 6, 6, 11);
+      context.fillStyle = "#fff09a"; context.fillRect(x - 2, y - 5, 2, 4);
+    }
+  }
+
+
+  class CombineBoss {
+    constructor({x,y,config,world}){this.x=x;this.y=y;this.world=world;this.config=config;this.name=config.name;this.maxHealth=config.health;this.health=config.health;this.radius=62;this.damage=config.damage??50;this.speed=config.speed??52;this.isBoss=true;this.enemyType="combine";this.hitFlash=0;this.slowTime=0;this.freezeTime=0;this.runTimer=7;this.cannonTimer=4;this.dumpTimer=8;this.warning=0;this.chargeTime=0;this.vector={x:1,y:0};this.overdrive=false;}
+    get active(){return this.health>0;}
+    takeDamage(amount){this.health=Math.max(0,this.health-Math.max(0,Number(amount)||0));this.hitFlash=.12;return this.health===0;}
+    update(dt,target){const events={};this.hitFlash=Math.max(0,this.hitFlash-dt);this.overdrive=this.health<5000;this.runTimer-=dt;this.cannonTimer-=dt;this.dumpTimer-=dt;if(this.warning>0){this.warning-=dt;if(this.warning<=0)this.chargeTime=1.55;}else if(this.chargeTime>0){this.chargeTime-=dt;this.x+=this.vector.x*620*dt;this.y+=this.vector.y*620*dt;events.harvest=true;events.runOver=true;}else{const dx=target.x-this.x,dy=target.y-this.y,d=Math.hypot(dx,dy)||1;this.x+=dx/d*this.speed*(this.overdrive?1.3:1)*dt;this.y+=dy/d*this.speed*(this.overdrive?1.3:1)*dt;if(this.runTimer<=0){this.vector={x:dx/d,y:dy/d};this.warning=1;this.runTimer=this.overdrive?5:7;}}if(this.cannonTimer<=0){events.cornFan={targetX:target.x,targetY:target.y,count:this.overdrive?7:5,damage:12,speed:330};this.cannonTimer=4;}if(this.dumpTimer<=0){events.cornDump={x:this.x-this.vector.x*70,y:this.y-this.vector.y*70};this.dumpTimer=8;}return events;}
+    render(c,camera){const x=Math.round(this.x-camera.x),y=Math.round(this.y-camera.y);if(this.warning>0){c.save();c.translate(x,y);c.rotate(Math.atan2(this.vector.y,this.vector.x));c.fillStyle="rgba(255,196,45,.3)";c.fillRect(0,-38,1100,76);c.strokeStyle="#ffe075";c.lineWidth=4;c.strokeRect(0,-38,1100,76);c.restore();}c.save();c.translate(x,y);if(this.overdrive){c.fillStyle="rgba(70,70,65,.55)";for(let i=0;i<4;i++)c.fillRect(-25+i*12,-78-(i%2)*9,10,18);}c.fillStyle="#262b25";c.fillRect(-60,-25,120,58);c.fillStyle=this.hitFlash>0?"#fff":"#d2a32f";c.fillRect(-48,-52,82,34);c.fillStyle="#8b7028";c.fillRect(34,-17,45,30);c.fillStyle="#d9d3a9";for(let i=0;i<6;i++)c.fillRect(65+i*7,-28,4,50);c.fillStyle="#171a16";c.fillRect(-51,28,31,20);c.fillRect(19,28,31,20);c.restore();}
   }
 
 
@@ -5034,6 +5366,12 @@
         context.fillRect(x + 4, y - 7, 2, 7);
         return;
       }
+      if (this.type === "corn") {
+        context.fillStyle = "#4f7c35"; context.fillRect(x - 7, y - 1, 4, 11); context.fillRect(x + 3, y - 1, 4, 11);
+        context.fillStyle = "#f0c83e"; context.fillRect(x - 5, y - 10, 10, 17);
+        context.fillStyle = "#fff09a"; context.fillRect(x - 3, y - 8, 3, 5);
+        return;
+      }
       context.fillStyle = this.type === "xp" ? "#71d98b" : "#edcc4f";
       if (this.type === "xp") {
         context.fillRect(x - 6, y - 6, 12, 12);
@@ -5089,16 +5427,19 @@
       this.fpsElapsed = 0;
       const savedProgress = loadProgress(window.localStorage);
       this.progress = savedProgress;
-      unlockAllWeapons(this.progress);
-      unlockSeasonWeapons(this.progress);
-      unlockAllMaps(this.progress);
+      this.developerBuild = isDeveloperHost(window.location);
+      if (this.developerBuild) {
+        unlockAllWeapons(this.progress);
+        unlockSeasonWeapons(this.progress);
+        unlockAllMaps(this.progress);
+      }
       ensureDailyQuests(this.progress);
       ensureSeasonState(this.progress);
       saveProgress(window.localStorage, this.progress);
       this.input.setKeybinds(savedProgress.keybinds);
       this.bankCoins = this.progress.coins;
       this.questSaveTimer = 0;
-      this.unlockedMaps = new Set(savedProgress.unlockedMaps);
+      this.unlockedMaps = new Set(this.progress.unlockedMaps);
       this.selectedMapId = "backyard";
       this.currentMap = FIRST_MAP;
       this.world = FIRST_MAP.world;
@@ -5114,6 +5455,7 @@
       this.weaponPreview = null;
       this.weaponPreviewReturnState = null;
       this.uiHitTargets = [];
+      this.uiClickEffects = [];
 
       this.resize = this.resize.bind(this);
       this.frame = this.frame.bind(this);
@@ -5151,6 +5493,10 @@
       this.bugZappers = [];
       this.gardenDecoys = [];
       this.fertilizerClouds = [];
+      this.rainClouds = [];
+      this.homingPigeons = [];
+      this.lawnSprinklers = [];
+      this.pressurePlates = [];
       this.pendingBurstShots = [];
       this.leafTornadoes = [];
       this.lightningRods = [];
@@ -5167,6 +5513,10 @@
       this.constructionProjectiles = [];
       this.constructionDebrisTimer = 6 + Math.random() * 4;
       this.lilypads = this.currentMap.id === "aquatic-garden" ? this.createLilyPads() : [];
+      this.cornSections = this.currentMap.id === "corn-farm" ? this.createCornSections() : [];
+      this.cornDumps = [];
+      this.cornDamageBonus = 0;
+      this.cornShotsRemaining = 0;
       this.weaponSlot = 1;
       this.attackCooldown = 0;
       this.attackCooldowns = { 1: 0, 2: 0 };
@@ -5588,6 +5938,7 @@
       deltaTime = this.applyBossIntroSlowdown(deltaTime);
       this.updateTemporaryObstacles(deltaTime);
       this.updateConstructionSite(deltaTime);
+      this.updateCornFarm(deltaTime);
       const river = this.currentMap.obstacles?.find((obstacle) => obstacle.kind === "river");
       if (river) {
         for (const lilyPad of this.lilypads) {
@@ -6113,9 +6464,6 @@
             if ((farmEnemy instanceof Chicken || farmEnemy instanceof Chick) && !farmEnemy.isBoss
               && Math.hypot(farmEnemy.x - enemy.x, farmEnemy.y - enemy.y) <= bossEvents.crow.radius) {
               farmEnemy.speedBuffTime = Math.max(farmEnemy.speedBuffTime ?? 0, bossEvents.crow.duration);
-              farmEnemy.maxShield = Math.max(farmEnemy.maxShield ?? 0, 100);
-              farmEnemy.shield = Math.max(farmEnemy.shield ?? 0, 100);
-              farmEnemy.crowShieldActive = true;
             }
           }
         }
@@ -6124,6 +6472,14 @@
             const x = clamp(target.x, 20, this.world.width - 20);
             const y = clamp(target.y, 20, this.world.height - 20);
             this.thrownGnomes.push(new ThrownGnome({ x: enemy.x, y: enemy.y, targetX: x, targetY: y, speed: 560, enemyType: "chicken-egg" }));
+          }
+        }
+        if (bossEvents.cornFan) this.fireCornFan(enemy, bossEvents.cornFan);
+        if (bossEvents.harvest) this.harvestCornAt(enemy.x, enemy.y, (enemy.radius ?? 30) + 32);
+        if (bossEvents.cornDump) this.cornDumps.push({ ...bossEvents.cornDump, lifetime: 2 });
+        if (enemy instanceof CombineBoss && bossEvents.runOver) {
+          for (const minion of this.enemies) {
+            if (minion !== enemy && minion.active && !minion.isBoss && circlesOverlap(enemy, minion)) this.damageEnemy(minion, Number.POSITIVE_INFINITY);
           }
         }
         if (enemy.isBoss && bossEvents.chickenRush) {
@@ -6379,6 +6735,17 @@
       this.progress.coins = this.bankCoins;
       this.progress.unlockedMaps = [...this.unlockedMaps];
       saveProgress(window.localStorage, this.progress);
+      window.dispatchEvent(new CustomEvent("lawn-save", { detail: this.progress }));
+    }
+
+    applyCloudProgress(cloudProgress) {
+      const memoryStorage = { getItem: () => JSON.stringify(cloudProgress), setItem: () => {} };
+      this.progress = loadProgress(memoryStorage);
+      this.bankCoins = this.progress.coins;
+      this.unlockedMaps = new Set(this.progress.unlockedMaps);
+      this.input.setKeybinds(this.progress.keybinds);
+      saveProgress(window.localStorage, this.progress);
+      this.menuMessage = "Cloud save loaded";
     }
 
     handleShopChoice(choice) {
@@ -6517,6 +6884,10 @@
         this.spawnChickenFarmGroup(forcedAngle);
         return;
       }
+      if (this.currentMap.normalEnemyType === "corn-farm") {
+        this.spawnCornFarmEnemy(forcedAngle);
+        return;
+      }
       this.spawnEnemy(forcedAngle);
     }
 
@@ -6564,6 +6935,28 @@
       const enemy = type === "chick" ? new Chick(options) : type === "egg" ? new ChickenEgg(options)
         : type === "rooster" ? new Rooster(options) : new Chicken(options);
       enemy.bossMinion = bossMinion; this.enemies.push(enemy); return enemy;
+    }
+
+    spawnCornFarmEnemy(forcedAngle = Math.random() * Math.PI * 2) {
+      const distance = Math.max(this.camera.viewWidth, this.camera.viewHeight) * 0.52 + 90;
+      return this.spawnCornFarmEnemyAt(
+        clamp(this.player.x + Math.cos(forcedAngle) * distance, 35, this.world.width - 35),
+        clamp(this.player.y + Math.sin(forcedAngle) * distance, 35, this.world.height - 35),
+      );
+    }
+
+    spawnCornFarmEnemyAt(x, y, forcedType = null, bossMinion = false) {
+      if (this.enemies.filter((enemy) => enemy.active).length >= (this.currentMap.enemyCap ?? 100)) return null;
+      const weights = this.currentMap.cornSpawnWeights ?? { angryCorn: .44, popcorn: .50, miniTractor: .06 };
+      const roll = (this.random ?? Math.random)();
+      const type = forcedType ?? (roll < weights.angryCorn ? "angry-corn"
+        : roll < weights.angryCorn + weights.popcorn ? "popcorn" : "mini-tractor");
+      const options = { x, y, world: this.world };
+      const enemy = type === "popcorn" ? new PopcornEnemy(options)
+        : type === "mini-tractor" ? new MiniTractor(options) : new AngryCorn(options);
+      enemy.bossMinion = bossMinion;
+      this.enemies.push(enemy);
+      return enemy;
     }
 
     spawnSchoolFieldEnemy(forcedAngle = Math.random() * Math.PI * 2, bossMinion = false, forcedType = null) {
@@ -6842,6 +7235,60 @@
       this.separateWeeds();
     }
 
+    createCornSections() {
+      const sections = [];
+      const marginX = 110; const marginY = 135; const sectionWidth = 150; const sectionHeight = 58;
+      const columns = Math.max(5, Math.floor((this.world.width - marginX * 2) / (sectionWidth + 28)));
+      const rows = Math.max(5, Math.floor((this.world.height - marginY * 2) / 150));
+      for (let row = 0; row < rows; row += 1) {
+        for (let column = 0; column < columns; column += 1) {
+          sections.push({ x: marginX + column * (sectionWidth + 28), y: marginY + row * 150, width: sectionWidth, height: sectionHeight, phase: 0, growthTimer: 20 });
+        }
+      }
+      return sections;
+    }
+
+    updateCornFarm(deltaTime) {
+      if (this.currentMap.id !== "corn-farm") return;
+      this.activeObstacles = this.activeObstacles.filter((obstacle) => obstacle.kind !== "mature-corn");
+      for (const section of this.cornSections) {
+        if (section.phase < 3) {
+          section.growthTimer -= deltaTime;
+          if (section.growthTimer <= 0) { section.phase += 1; section.growthTimer += 20; }
+        }
+        if (section.phase === 3) this.activeObstacles.push({ ...section, kind: "mature-corn", solid: false });
+      }
+      for (const dump of this.cornDumps) dump.lifetime -= deltaTime;
+      for (const dump of this.cornDumps.filter((entry) => entry.lifetime <= 0 && !entry.burst)) {
+        dump.burst = true;
+        for (let index = 0; index < 6; index += 1) {
+          const angle = index / 6 * Math.PI * 2;
+          this.spawnCornFarmEnemyAt(dump.x + Math.cos(angle) * 48, dump.y + Math.sin(angle) * 48, "popcorn", true);
+        }
+        this.explosions.push({ x: dump.x, y: dump.y, radius: 65, lifetime: .35, maxLifetime: .35, color: "#f4dda0" });
+      }
+      this.cornDumps = this.cornDumps.filter((entry) => !entry.burst);
+    }
+
+    harvestCornAt(x, y, radius) {
+      for (const section of this.cornSections) {
+        const closestX = clamp(x, section.x, section.x + section.width); const closestY = clamp(y, section.y, section.y + section.height);
+        if (section.phase > 0 && Math.hypot(x - closestX, y - closestY) <= radius) {
+          section.phase = 0; section.growthTimer = 20;
+          this.pickups.push(new Pickup({ x: section.x + section.width / 2, y: section.y + section.height / 2, type: "corn", amount: 1 }));
+        }
+      }
+    }
+
+    fireCornFan(source, event) {
+      const center = Math.atan2(event.targetY - source.y, event.targetX - source.x);
+      const count = event.count ?? 3;
+      for (let index = 0; index < count; index += 1) {
+        const angle = center + (index - (count - 1) / 2) * .18;
+        this.bossProjectiles.push(new CornKernelProjectile({ x: source.x, y: source.y, velocityX: Math.cos(angle) * event.speed, velocityY: Math.sin(angle) * event.speed, damage: event.damage }));
+      }
+    }
+
     spawnBoss() {
       this.bossSpawned = true;
       this.bossNextSpawnTimer = null;
@@ -6858,8 +7305,8 @@
                 : bossConfig.type === "ancient-snail" ? AncientSnailBoss
                   : bossConfig.type === "pe-teacher" ? PeTeacherBoss
                     : bossConfig.type === "ball-launcher" ? BallLauncherBoss
-                      : bossConfig.type === "excavator" ? ExcavatorBoss : Boss;
-      const ResolvedBossType = bossConfig.type === "mother-hen" ? MotherHenBoss : BossType;
+                    : bossConfig.type === "excavator" ? ExcavatorBoss : Boss;
+      const ResolvedBossType = bossConfig.type === "mother-hen" ? MotherHenBoss : bossConfig.type === "combine" ? CombineBoss : BossType;
       const pond = this.currentMap.obstacles?.find((obstacle) => obstacle.kind === "lake");
       this.boss = new ResolvedBossType({
         x: bossConfig.type === "pondfather" && pond ? pond.x + pond.width / 2
@@ -7144,6 +7591,15 @@
         if (enemy.deathAoe && this.currentMap.id === "construction-site") {
           this.applyConstructionAreaDamage(enemy.x, enemy.y, enemy.deathAoe.radius, enemy.deathAoe.damage, 85, enemy);
         }
+        if (enemy instanceof PopcornEnemy && enemy.deathAoe) {
+          const dx = this.player.x - enemy.x; const dy = this.player.y - enemy.y; const distance = Math.hypot(dx, dy) || 1;
+          if (distance <= enemy.deathAoe.radius) {
+            this.damagePlayer(enemy.deathAoe.damage);
+            this.player.x = clamp(this.player.x + dx / distance * enemy.deathAoe.pushback, this.player.radius, this.world.width - this.player.radius);
+            this.player.y = clamp(this.player.y + dy / distance * enemy.deathAoe.pushback, this.player.radius, this.world.height - this.player.radius);
+          }
+          this.explosions.push({ x: enemy.x, y: enemy.y, radius: enemy.deathAoe.radius, lifetime: .3, maxLifetime: .3, color: "#f5e4a8" });
+        }
         this.addScreenShake(enemy.isBoss ? 0.16 : 0.1, enemy.isBoss ? 0.24 : 0.14);
         // A compact pixel burst marks the exact frame an enemy is removed. Use
         // the shared explosion renderer so it remains cheap even in large waves.
@@ -7289,6 +7745,11 @@
       }
       if (pickup.type === "coin") {
         this.runCoins += 1;
+        return;
+      }
+      if (pickup.type === "corn") {
+        this.cornDamageBonus += pickup.amount;
+        this.cornShotsRemaining = 15;
         return;
       }
       this.runXp += pickup.amount;
@@ -7454,6 +7915,27 @@
         this.sprinklerMines.push({ x: this.player.x, y: this.player.y, active: true, warningTime: weapon.mineWarningDuration, triggerRadius: weapon.mineTriggerRadius, explosionRadius: weapon.mineExplosionRadius, damage: weapon.damage * this.player.damageMultiplier, freezeDuration: weapon.freezeDuration, color: weapon.color });
         return;
       }
+      if (weapon.projectileKind === "rain-cloud") {
+        this.rainClouds.push({ x: aimPoint.x, y: aimPoint.y, lifetime: weapon.cloudDuration, radius: weapon.cloudRadius, tick: 0, tickInterval: weapon.cloudTickInterval, damage: weapon.damage * this.player.damageMultiplier, thunderstorm: weapon.thunderstorm, lightningTimer: 1.2, lightningDamage: weapon.lightningDamage * this.player.damageMultiplier, color: weapon.color, active: true });
+        return;
+      }
+      if (weapon.projectileKind === "homing-pigeon") {
+        const count = weapon.projectileCount || 1;
+        for (let index = 0; index < count; index += 1) this.homingPigeons.push({ x: this.player.x, y: this.player.y, speed: weapon.projectileSpeed, damage: weapon.damage * this.player.damageMultiplier, hitsRemaining: weapon.pigeonHits, hitEnemies: new Set(), returning: false, active: true, color: weapon.color });
+        return;
+      }
+      if (weapon.projectileKind === "lawn-sprinkler") {
+        this.lawnSprinklers.push({ x: this.player.x, y: this.player.y, lifetime: weapon.sprinklerDuration, angle: 0, rotationSpeed: weapon.sprinklerRotationSpeed, tick: 0, tickInterval: weapon.sprinklerFireInterval, directions: weapon.sprinklerDirections, speed: weapon.projectileSpeed, projectileLifetime: weapon.projectileLifetime, damage: weapon.damage * this.player.damageMultiplier, color: weapon.color, active: true });
+        return;
+      }
+      if (weapon.projectileKind === "pressure-plate") {
+        this.pressurePlates.push({ x: this.player.x, y: this.player.y, radius: weapon.plateRadius, charge: 0, threshold: weapon.plateChargeThreshold, baseDamage: weapon.damage * this.player.damageMultiplier, maxDamage: weapon.plateMaxStoredDamage * this.player.damageMultiplier, chainReaction: weapon.chainReaction, color: weapon.color, active: true });
+        return;
+      }
+      if (weapon.projectileKind === "fart-gun") {
+        this.createFertilizerCloud(this.player.x + Math.cos(aimAngle) * 45, this.player.y + Math.sin(aimAngle) * 45, { fertilizerCloudRadius: weapon.fertilizerCloudRadius, fertilizerCloudDuration: weapon.fertilizerCloudDuration, fertilizerTickInterval: weapon.fertilizerTickInterval, damage: weapon.damage * this.player.damageMultiplier, color: weapon.color, cloudExpands: weapon.cloudExpands, cloudStartScale: weapon.cloudStartScale, cloudExpansionDuration: weapon.cloudExpansionDuration });
+        return;
+      }
       if (weapon.projectileKind === "bug-zapper") {
         this.bugZappers.push({ x: this.player.x, y: this.player.y, active: true, lifetime: weapon.zapperDuration, cooldown: 0, zapCooldown: weapon.zapCooldown, range: weapon.zapperRange, damage: weapon.damage * this.player.damageMultiplier, chainCount: weapon.chainCount, chainDamageMultiplier: weapon.chainDamageMultiplier, color: weapon.color });
         return;
@@ -7616,7 +8098,7 @@
           y: weapon.projectileKind === "gravity-portal" ? aimPoint.y : this.player.y - 8,
           velocityX: weapon.projectileKind === "gravity-portal" ? 0 : Math.cos(angle) * weapon.projectileSpeed,
           velocityY: weapon.projectileKind === "gravity-portal" ? 0 : Math.sin(angle) * weapon.projectileSpeed,
-          damage: Math.round(weapon.damage * this.player.damageMultiplier),
+          damage: Math.round(weapon.damage * this.player.damageMultiplier + this.consumeCornProjectileBonus()),
           lifetime: weapon.projectileLifetime,
           kind: weapon.projectileKind,
           color: weaponId === "party-hat" ? `hsl(${(index * 53 + Date.now() / 18) % 360} 90% 60%)` : weapon.color,
@@ -7655,20 +8137,73 @@
         shot.delay -= deltaTime;
         if (shot.delay <= 0 && !shot.fired) {
           shot.fired = true;
-          this.projectiles.push(new Projectile(shot.projectileOptions ?? {
+          const options = shot.projectileOptions ?? {
             x: this.player.x, y: this.player.y - 8,
             velocityX: Math.cos(shot.angle) * shot.weapon.projectileSpeed,
             velocityY: Math.sin(shot.angle) * shot.weapon.projectileSpeed,
             damage: shot.damage, lifetime: shot.weapon.projectileLifetime,
             kind: shot.weapon.projectileKind, color: shot.weapon.color, radius: shot.weapon.projectileRadius,
             weaponId: shot.weapon.id,
-          }));
+          };
+          options.damage = (options.damage ?? 0) + this.consumeCornProjectileBonus();
+          this.projectiles.push(new Projectile(options));
         }
       }
       this.pendingBurstShots = this.pendingBurstShots.filter((shot) => !shot.fired);
     }
 
+    consumeCornProjectileBonus() {
+      if (this.cornShotsRemaining <= 0 || this.cornDamageBonus <= 0) return 0;
+      const bonus = this.cornDamageBonus;
+      this.cornShotsRemaining -= 1;
+      if (this.cornShotsRemaining <= 0) { this.cornShotsRemaining = 0; this.cornDamageBonus = 0; }
+      return bonus;
+    }
+
     updateWeaponDeployables(deltaTime) {
+      const aimPoint = this.camera.screenToWorld(this.input.pointer);
+      for (const cloud of this.rainClouds) {
+        cloud.lifetime -= deltaTime; cloud.tick -= deltaTime; cloud.lightningTimer -= deltaTime;
+        cloud.x += (aimPoint.x - cloud.x) * Math.min(1, deltaTime * 9); cloud.y += (aimPoint.y - cloud.y) * Math.min(1, deltaTime * 9);
+        if (cloud.tick <= 0) {
+          for (const enemy of this.enemies) if (enemy.active && Math.hypot(enemy.x - cloud.x, enemy.y - cloud.y) <= cloud.radius) this.damageEnemy(enemy, cloud.damage, 0, "rain-cloud");
+          cloud.tick = cloud.tickInterval;
+        }
+        if (cloud.thunderstorm && cloud.lightningTimer <= 0) {
+          const target = this.enemies.find((enemy) => enemy.active && Math.hypot(enemy.x - cloud.x, enemy.y - cloud.y) <= cloud.radius);
+          if (target) { this.damageEnemy(target, cloud.lightningDamage, 0, "rain-cloud"); this.lightningArcs.push({ x1: cloud.x, y1: cloud.y - 35, x2: target.x, y2: target.y, lifetime: .2, color: "#fff28a" }); }
+          cloud.lightningTimer = 1.2;
+        }
+        if (cloud.lifetime <= 0) cloud.active = false;
+      }
+      this.rainClouds = this.rainClouds.filter((cloud) => cloud.active);
+      for (const pigeon of this.homingPigeons) {
+        const candidates = this.enemies.filter((enemy) => enemy.active && enemy.targetable !== false && !pigeon.hitEnemies.has(enemy));
+        const target = pigeon.returning || candidates.length === 0 ? this.player : candidates.sort((a, b) => Math.hypot(a.x - pigeon.x, a.y - pigeon.y) - Math.hypot(b.x - pigeon.x, b.y - pigeon.y))[0];
+        if (!target) { pigeon.active = false; continue; }
+        const dx = target.x - pigeon.x; const dy = target.y - pigeon.y; const distance = Math.hypot(dx, dy) || 1;
+        pigeon.x += dx / distance * Math.min(distance, pigeon.speed * deltaTime); pigeon.y += dy / distance * Math.min(distance, pigeon.speed * deltaTime);
+        if (distance <= (target.radius ?? 18) + 8) {
+          if (target === this.player) pigeon.active = false;
+          else { this.damageEnemy(target, pigeon.damage, 0, "homing-pigeon"); pigeon.hitEnemies.add(target); pigeon.hitsRemaining -= 1; if (pigeon.hitsRemaining <= 0) pigeon.returning = true; }
+        }
+      }
+      this.homingPigeons = this.homingPigeons.filter((pigeon) => pigeon.active);
+      for (const sprinkler of this.lawnSprinklers) {
+        sprinkler.lifetime -= deltaTime; sprinkler.tick -= deltaTime; sprinkler.angle += sprinkler.rotationSpeed * deltaTime;
+        if (sprinkler.tick <= 0) {
+          for (let index = 0; index < sprinkler.directions; index += 1) { const angle = sprinkler.angle + index / sprinkler.directions * Math.PI * 2; this.projectiles.push(new Projectile({ x: sprinkler.x, y: sprinkler.y, velocityX: Math.cos(angle) * sprinkler.speed, velocityY: Math.sin(angle) * sprinkler.speed, damage: sprinkler.damage, lifetime: sprinkler.projectileLifetime, kind: "water", color: sprinkler.color, radius: 5, weaponId: "lawn-sprinkler" })); }
+          sprinkler.tick = sprinkler.tickInterval;
+        }
+        if (sprinkler.lifetime <= 0) sprinkler.active = false;
+      }
+      this.lawnSprinklers = this.lawnSprinklers.filter((sprinkler) => sprinkler.active);
+      for (const plate of this.pressurePlates) {
+        const occupants = this.enemies.filter((enemy) => enemy.active && Math.hypot(enemy.x - plate.x, enemy.y - plate.y) <= plate.radius + enemy.radius);
+        plate.charge += occupants.reduce((sum, enemy) => sum + (enemy.damage ?? 5) * deltaTime * 4, 0);
+        if (plate.charge >= plate.threshold) this.detonatePressurePlate(plate);
+      }
+      this.pressurePlates = this.pressurePlates.filter((plate) => plate.active);
       for (const tornado of this.leafTornadoes) {
         if (!tornado.active) continue;
         tornado.x += tornado.velocityX * deltaTime; tornado.y += tornado.velocityY * deltaTime;
@@ -7811,6 +8346,9 @@
       for (const cloud of this.fertilizerClouds) {
         if (!cloud.active) continue;
         cloud.lifetime -= deltaTime; cloud.tick -= deltaTime;
+        if (cloud.expands && cloud.radius < cloud.targetRadius) {
+          cloud.radius = Math.min(cloud.targetRadius, cloud.radius + cloud.expansionSpeed * deltaTime);
+        }
         if (cloud.tick <= 0) {
           for (const enemy of this.enemies) if (enemy.active && Math.hypot(enemy.x - cloud.x, enemy.y - cloud.y) <= cloud.radius) this.damageEnemy(enemy, cloud.damage);
           cloud.tick = cloud.tickInterval;
@@ -7818,6 +8356,16 @@
         if (cloud.lifetime <= 0) cloud.active = false;
       }
       this.fertilizerClouds = this.fertilizerClouds.filter((cloud) => cloud.active);
+    }
+
+    detonatePressurePlate(plate) {
+      if (!plate.active) return;
+      plate.active = false;
+      const damage = Math.min(plate.maxDamage, plate.baseDamage + plate.charge);
+      const radius = plate.radius * 2.5;
+      this.explosions.push({ x: plate.x, y: plate.y, lifetime: .35, maxLifetime: .35, radius, color: plate.color });
+      for (const enemy of this.enemies) if (enemy.active && Math.hypot(enemy.x - plate.x, enemy.y - plate.y) <= radius) this.damageEnemy(enemy, damage, 0, "pressure-plate");
+      if (plate.chainReaction) for (const other of this.pressurePlates) if (other.active && Math.hypot(other.x - plate.x, other.y - plate.y) <= radius * 1.5) this.detonatePressurePlate(other);
     }
 
     strikeLightningRod(rod) {
@@ -7865,8 +8413,18 @@
     }
 
     createFertilizerCloud(x, y, projectile) {
-      this.explosions.push({ x, y, lifetime: 0.25, radius: projectile.fertilizerCloudRadius, color: projectile.color, ring: true });
-      this.fertilizerClouds.push({ x, y, radius: projectile.fertilizerCloudRadius, lifetime: projectile.fertilizerCloudDuration, tick: 0, tickInterval: projectile.fertilizerTickInterval, damage: projectile.damage, color: projectile.color, active: true });
+      const targetRadius = projectile.fertilizerCloudRadius;
+      const startScale = projectile.cloudExpands ? (projectile.cloudStartScale ?? .5) : 1;
+      const expansionDuration = Math.max(.1, projectile.cloudExpansionDuration ?? 1);
+      this.explosions.push({ x, y, lifetime: 0.25, radius: targetRadius * startScale, color: projectile.color, ring: true });
+      this.fertilizerClouds.push({
+        x, y, radius: targetRadius * startScale, targetRadius,
+        expands: projectile.cloudExpands === true,
+        expansionSpeed: targetRadius * (1 - startScale) / expansionDuration,
+        lifetime: projectile.fertilizerCloudDuration, tick: 0,
+        tickInterval: projectile.fertilizerTickInterval, damage: projectile.damage,
+        color: projectile.color, active: true,
+      });
     }
 
     updatePassiveAbilities(deltaTime) {
@@ -8099,6 +8657,7 @@
       if (!point) return null;
       const target = this.uiHitTargets.find((entry) => point.x >= entry.x && point.x <= entry.x + entry.width
         && point.y >= entry.y && point.y <= entry.y + entry.height);
+      if (target?.action != null) this.uiClickEffects.push({ x: point.x, y: point.y, startedAt: performance.now() });
       return target?.action ?? null;
     }
 
@@ -8106,17 +8665,36 @@
       const hovered = this.input.pointer.inside
         && this.input.pointer.x >= x && this.input.pointer.x <= x + width
         && this.input.pointer.y >= y && this.input.pointer.y <= y + height;
+      const pressed = hovered && this.input.pointer.down;
       if (hovered && action !== null) this.canvas.style.cursor = "pointer";
-      context.fillStyle = hovered ? (options.hoverFill ?? "#c8b452") : (options.fill ?? "#343621");
-      context.fillRect(x, y, width, height);
+      context.save();
+      if (hovered) { context.shadowColor = "rgba(234, 215, 123, 0.72)"; context.shadowBlur = pressed ? 5 : 12; }
+      context.fillStyle = pressed ? (options.pressedFill ?? "#eee09b") : hovered ? (options.hoverFill ?? "#c8b452") : (options.fill ?? "#343621");
+      context.fillRect(x, y + (pressed ? 2 : 0), width, height - (pressed ? 2 : 0));
       context.strokeStyle = options.border ?? "#9a9256";
-      context.lineWidth = options.lineWidth ?? 3;
-      context.strokeRect(x, y, width, height);
+      context.lineWidth = pressed ? 4 : (options.lineWidth ?? 3);
+      context.strokeRect(x, y + (pressed ? 2 : 0), width, height - (pressed ? 2 : 0));
       context.fillStyle = hovered ? (options.hoverText ?? "#242116") : (options.text ?? "#f3e7bd");
       context.font = options.font ?? "bold 13px 'Courier New', monospace";
       context.textAlign = "center";
-      context.fillText(label, x + width / 2, options.textY ?? y + height / 2 + 5);
+      context.fillText(label, x + width / 2, (options.textY ?? y + height / 2 + 5) + (pressed ? 2 : 0));
+      context.restore();
       this.uiHitTargets.push({ x, y, width, height, action });
+    }
+
+    renderUiClickEffects(context) {
+      const now = performance.now();
+      this.uiClickEffects = this.uiClickEffects.filter((effect) => now - effect.startedAt < 420);
+      for (const effect of this.uiClickEffects) {
+        const progress = (now - effect.startedAt) / 420;
+        context.save();
+        context.globalAlpha = 1 - progress;
+        context.strokeStyle = "#fff1a6";
+        context.lineWidth = 5 - progress * 3;
+        context.beginPath(); context.arc(effect.x, effect.y, 8 + progress * 34, 0, Math.PI * 2); context.stroke();
+        context.fillStyle = "#fff6c7"; context.fillRect(effect.x - 3, effect.y - 3, 6, 6);
+        context.restore();
+      }
     }
 
     updateFps(elapsed) {
@@ -8130,6 +8708,50 @@
     }
 
     renderWeaponDeployables(context) {
+      const renderTime = performance.now() / 1000;
+      for (const cloud of this.rainClouds) {
+        const x = Math.round(cloud.x - this.camera.x); const y = Math.round(cloud.y - this.camera.y - 42);
+        context.save();
+        context.globalAlpha = Math.min(1, cloud.lifetime / 0.5);
+        context.fillStyle = "rgba(84,128,158,0.16)"; context.beginPath(); context.ellipse(x, y + 42, cloud.radius, cloud.radius * 0.48, 0, 0, Math.PI * 2); context.fill();
+        context.fillStyle = "#657784";
+        context.fillRect(x - 27, y - 4, 54, 17); context.fillRect(x - 18, y - 13, 24, 24); context.fillRect(x + 5, y - 9, 19, 20);
+        context.fillStyle = "#91a6b2"; context.fillRect(x - 14, y - 10, 18, 5); context.fillRect(x + 7, y - 6, 12, 4);
+        context.strokeStyle = cloud.color; context.lineWidth = 2;
+        for (let drop = 0; drop < 8; drop += 1) {
+          const dropX = x - cloud.radius * 0.7 + (drop / 7) * cloud.radius * 1.4;
+          const dropY = y + 20 + ((renderTime * 105 + drop * 19) % Math.max(24, cloud.radius * 0.75));
+          context.beginPath(); context.moveTo(dropX, dropY); context.lineTo(dropX - 3, dropY + 9); context.stroke();
+        }
+        context.restore();
+      }
+      for (const pigeon of this.homingPigeons) {
+        const x = Math.round(pigeon.x - this.camera.x); const y = Math.round(pigeon.y - this.camera.y);
+        const flap = Math.sin(renderTime * 22 + pigeon.x * 0.03) > 0 ? -5 : 1;
+        context.save(); context.fillStyle = "#37444c"; context.fillRect(x - 9, y - 5, 18, 11);
+        context.fillStyle = pigeon.color; context.fillRect(x - 5, y - 9, 13, 14); context.fillRect(x - 11, y + flap, 9, 5);
+        context.fillStyle = "#dce6e8"; context.fillRect(x - 2, y - 7, 7, 4);
+        context.fillStyle = "#e5a044"; context.fillRect(x + 8, y - 5, 5, 3);
+        context.fillStyle = "#15191b"; context.fillRect(x + 4, y - 7, 2, 2); context.restore();
+      }
+      for (const sprinkler of this.lawnSprinklers) {
+        const x = Math.round(sprinkler.x - this.camera.x); const y = Math.round(sprinkler.y - this.camera.y);
+        context.save(); context.fillStyle = "#315a68"; context.fillRect(x - 10, y + 5, 20, 8); context.fillStyle = sprinkler.color; context.fillRect(x - 4, y - 7, 8, 15);
+        context.strokeStyle = sprinkler.color; context.lineWidth = 4;
+        for (let direction = 0; direction < sprinkler.directions; direction += 1) {
+          const angle = sprinkler.angle + direction / sprinkler.directions * Math.PI * 2;
+          context.beginPath(); context.moveTo(x, y - 3); context.lineTo(x + Math.cos(angle) * 23, y - 3 + Math.sin(angle) * 23); context.stroke();
+        }
+        context.restore();
+      }
+      for (const plate of this.pressurePlates) {
+        const x = Math.round(plate.x - this.camera.x); const y = Math.round(plate.y - this.camera.y);
+        const charge = Math.min(1, plate.charge / plate.threshold);
+        context.save(); context.fillStyle = "rgba(212,166,78,0.12)"; context.beginPath(); context.arc(x, y, plate.radius, 0, Math.PI * 2); context.fill();
+        context.fillStyle = "#514a3e"; context.fillRect(x - 25, y - 8 + charge * 5, 50, 12 - charge * 5);
+        context.fillStyle = plate.color; context.fillRect(x - 20, y - 12 + charge * 8, 40, 8);
+        context.fillStyle = charge > 0.75 ? "#ff694f" : "#ffe178"; context.fillRect(x - 20, y + 8, 40 * charge, 3); context.restore();
+      }
       for (const tornado of this.leafTornadoes) {
         const x = Math.round(tornado.x - this.camera.x); const y = Math.round(tornado.y - this.camera.y);
         context.save(); context.globalAlpha = Math.max(0.18, Math.min(1, tornado.lifetime / 0.8));
@@ -8204,7 +8826,12 @@
       }
       for (const cloud of this.fertilizerClouds) {
         const x = Math.round(cloud.x - this.camera.x); const y = Math.round(cloud.y - this.camera.y);
-        context.fillStyle = "rgba(159,120,61,0.25)"; context.beginPath(); context.arc(x, y, cloud.radius, 0, Math.PI * 2); context.fill();
+        const isGas = cloud.color === "#93a94e";
+        context.fillStyle = isGas ? "rgba(129,158,67,0.32)" : "rgba(159,120,61,0.25)"; context.beginPath(); context.arc(x, y, cloud.radius, 0, Math.PI * 2); context.fill();
+        if (isGas) {
+          context.fillStyle = "rgba(190,211,91,0.32)";
+          for (let puff = 0; puff < 6; puff += 1) { const angle = renderTime * 0.8 + puff * Math.PI / 3; context.beginPath(); context.arc(x + Math.cos(angle) * cloud.radius * 0.42, y + Math.sin(angle) * cloud.radius * 0.3, cloud.radius * 0.17, 0, Math.PI * 2); context.fill(); }
+        }
         context.strokeStyle = cloud.color; context.lineWidth = 3; context.stroke();
       }
     }
@@ -8232,6 +8859,7 @@
       }
       this.renderLawn(context, width, height);
       this.renderGardenBeds(context);
+      this.renderCornFarm(context);
       this.renderFence(context);
       this.renderLandmarks(context);
       this.renderConstructionEffects(context);
@@ -8246,6 +8874,12 @@
       this.renderDeathEffects(context);
       for (const thrownGnome of this.thrownGnomes) thrownGnome.render(context, this.camera);
       for (const spore of this.bossProjectiles) spore.render(context, this.camera);
+      for (const dump of this.cornDumps ?? []) {
+        const x = Math.round(dump.x - this.camera.x); const y = Math.round(dump.y - this.camera.y);
+        context.fillStyle = "#8c6531"; context.fillRect(x - 22, y - 13, 44, 26);
+        context.fillStyle = "#f2d367"; context.fillRect(x - 15, y - 18, 10, 10); context.fillRect(x + 4, y - 17, 11, 9);
+        context.strokeStyle = "#fff0a0"; context.beginPath(); context.arc(x, y, 30 + Math.sin(dump.lifetime * 16) * 5, 0, Math.PI * 2); context.stroke();
+      }
       for (const splat of this.syrupSplats) {
         const x = Math.round(splat.x - this.camera.x);
         const y = Math.round(splat.y - this.camera.y);
@@ -8330,6 +8964,7 @@
       } else if (this.screenState === "victory") {
         this.renderVictoryOverlay(context, width, height);
       }
+      this.renderUiClickEffects(context);
       context.restore();
     }
 
@@ -8592,6 +9227,10 @@
       context.fillText(`COINS ${this.runCoins}`, width - 147, 42);
       context.fillText(`XP ${this.runXp}`, width - 240, 57);
       context.fillText(`LEVEL ${this.runLevel}`, width - 240, 75);
+      if (this.cornShotsRemaining > 0) {
+        context.fillStyle = "#ffe27a";
+        context.fillText(`CORN +${this.cornDamageBonus} DMG · ${this.cornShotsRemaining} SHOTS`, width - 360, 108);
+      }
       context.fillStyle = "#29291d";
       context.fillRect(width - 240, 81, 202, 5);
       context.fillStyle = "#78a84a";
@@ -8937,17 +9576,17 @@
       const offset = clamp(this.weaponSelectionScroll[slot], 0, maxOffset);
       this.weaponSelectionScroll[slot] = offset;
       const listTop = Math.max(155, height / 2 - 145);
-      const weaponRowHeight = 54;
+      const weaponRowHeight = 56;
       const listBottom = listTop + visibleCount * weaponRowHeight;
-      const descriptionY = Math.min(height - 170, listBottom + 38);
+      const descriptionY = Math.min(height - 190, listBottom + 34);
       context.textAlign = "center";
       context.fillStyle = "#ead77b";
-      context.font = "bold 34px 'Courier New', monospace";
+      context.font = "bold 40px 'Courier New', monospace";
       context.fillText(`CHOOSE LOADOUT ${slot === "melee" ? "1" : "2"} WEAPON`, width / 2, listTop - 82);
-      this.renderButton(context, width / 2 - 245, listTop - 58, 400, 28,
+      this.renderButton(context, width / 2 - 245, listTop - 62, 400, 36,
         `SEARCH: ${this.weaponSearch[slot] || "type to filter"}`,
-        { type: "weapon-search-focus" }, { font: "11px 'Courier New', monospace", text: this.weaponSearch[slot] ? "#f3e7bd" : "#a9a27d" });
-      this.renderButton(context, width / 2 + 165, listTop - 58, 80, 28, "CLEAR", { type: "weapon-search-clear" }, { font: "11px 'Courier New', monospace" });
+        { type: "weapon-search-focus" }, { font: "bold 14px 'Courier New', monospace", text: this.weaponSearch[slot] ? "#f3e7bd" : "#a9a27d" });
+      this.renderButton(context, width / 2 + 165, listTop - 62, 80, 36, "CLEAR", { type: "weapon-search-clear" }, { font: "bold 14px 'Courier New', monospace" });
       context.fillStyle = "#f3e7bd";
       context.font = "14px 'Courier New', monospace";
       weapons.slice(offset, offset + visibleCount).forEach((weapon, visibleIndex) => {
@@ -8959,12 +9598,12 @@
         );
         const synergy = effectiveLevel > this.progress.weaponLevels[weapon.id] ? " · PAIR +1" : "";
         const rowY = listTop + visibleIndex * weaponRowHeight;
-        this.renderButton(context, width / 2 - 245, rowY, 490, 49,
+        this.renderButton(context, width / 2 - 245, rowY, 490, 52,
           "",
           { type: "choice", value: visibleIndex + 1 },
           { fill: selected ? "#5a5530" : "#343621", font: "12px 'Courier New', monospace", textY: rowY + 15 });
-        renderWeaponMenuEntry(context, weapon, width / 2 - 213, rowY + 28, width / 2 - 155, rowY + 18,
-          `${visibleIndex + 1}. ${selected ? "> " : ""}${weapon.name} · LV ${effectiveLevel}${synergy}`, 375, 0.78);
+        renderWeaponMenuEntry(context, weapon, width / 2 - 210, rowY + 29, width / 2 - 151, rowY + 19,
+          `${visibleIndex + 1}. ${selected ? "> " : ""}${weapon.name} · LV ${effectiveLevel}${synergy}`, 370, 0.9, 1.28);
       });
       if (weapons.length === 0) {
         context.fillStyle = "#c9b95f";
@@ -8980,15 +9619,16 @@
       }
       const equipped = weaponById(equippedId);
       context.fillStyle = "#9fcf71";
-      context.font = "12px 'Courier New', monospace";
-      context.fillText(equipped?.description ?? "", width / 2, descriptionY);
+      context.font = "bold 15px 'Courier New', monospace";
+      wrapCenteredText(context, equipped?.description ?? "", width / 2, descriptionY, Math.min(720, width - 120), 18, 2);
       context.fillStyle = "#c9b95f";
-      context.fillText(`LV 10: ${equipped?.levelTenFeature ?? ""}`, width / 2, descriptionY + 21);
-      this.renderButton(context, width / 2 - 155, descriptionY + 39, 310, 36,
-        slot === "melee" ? "CONTINUE TO RANGED" : "BEGIN RUN", "confirm");
+      context.font = "bold 14px 'Courier New', monospace";
+      wrapCenteredText(context, `LV 10: ${equipped?.levelTenFeature ?? ""}`, width / 2, descriptionY + 39, Math.min(720, width - 120), 17, 2);
+      this.renderButton(context, width / 2 - 180, descriptionY + 76, 360, 46,
+        slot === "melee" ? "CONTINUE TO LOADOUT 2" : "BEGIN RUN", "confirm", { font: "bold 16px 'Courier New', monospace" });
       context.fillStyle = "#d8d0ae";
-      context.font = "11px 'Courier New', monospace";
-      context.fillText("Type to search · Click a weapon · Wheel/arrows move one item · Escape returns", width / 2, descriptionY + 94);
+      context.font = "13px 'Courier New', monospace";
+      context.fillText("Type to search · Click a weapon · Wheel/arrows move one item · Escape returns", width / 2, descriptionY + 142);
       context.textAlign = "start";
     }
 
@@ -9297,7 +9937,7 @@
           || (stat === "regeneration" && !this.unlockedMaps.has("aquatic-garden"));
         const statMaxLevel = stat === "regeneration" ? 1 : statCap;
         const unlockLabel = stat === "regeneration" ? "BEAT GOLF COURSE" : "UNLOCK REDWOOD TRAIL BOSS";
-        const cost = unavailable ? unlockLabel : level >= statMaxLevel ? "MAX" : `${CHARACTER_STAT_COSTS[level] * (this.progress.shieldUnlocked ? 2 : 1)} coins`;
+        const cost = unavailable ? unlockLabel : level >= statMaxLevel ? "MAX" : `${characterStatUpgradeCost(level) * (this.progress.shieldUnlocked ? 2 : 1)} coins`;
         this.renderButton(context, width / 2 - 225, height / 2 - 185 + index * 27, 450, 24,
           `${stat.toUpperCase()} LV ${level} → ${cost}`, { type: "choice", value: index + 3 },
           { font: "12px 'Courier New', monospace" });
@@ -9477,7 +10117,7 @@
     }
 
     renderLandmarks(context) {
-      if (this.currentMap.id === "garden") return;
+      if (this.currentMap.id === "garden" || this.currentMap.id === "corn-farm") return;
       if (this.currentMap.id === "redwood-trail") {
         this.renderRedwoodLandmarks(context);
         return;
@@ -9520,8 +10160,6 @@
         : [
             { x: this.world.width / 2 - 220, y: this.world.height - 360, width: 440, height: 320, color: "#6d5140" },
             { x: this.world.width / 2 - 75, y: this.world.height - 900, width: 150, height: 540, color: "#aaa08b" },
-            { x: 280, y: 300, width: 240, height: 150, color: "#7891a0" },
-            { x: this.world.width - 580, y: 280, width: 300, height: 180, color: "#9d7b54" },
           ];
 
       for (const landmark of landmarks) {
@@ -9820,6 +10458,25 @@
       }
     }
 
+    renderCornFarm(context) {
+      if (this.currentMap.id !== "corn-farm") return;
+      for (const section of this.cornSections ?? []) {
+        const x = Math.round(section.x - this.camera.x); const y = Math.round(section.y - this.camera.y);
+        if (x > this.camera.viewWidth || y > this.camera.viewHeight || x + section.width < 0 || y + section.height < 0) continue;
+        context.fillStyle = "#5b3c20"; context.fillRect(x, y, section.width, section.height);
+        context.fillStyle = "#795329"; context.fillRect(x + 3, y + 5, section.width - 6, section.height - 10);
+        if (section.phase === 0) continue;
+        const stalkHeight = section.phase === 1 ? 11 : section.phase === 2 ? 24 : 42;
+        for (let plant = 12; plant < section.width - 5; plant += 18) {
+          context.fillStyle = section.phase === 3 ? "#35602c" : "#62823d";
+          context.fillRect(x + plant, y + section.height - stalkHeight - 5, 4, stalkHeight);
+          context.fillRect(x + plant - 5, y + section.height - stalkHeight / 2, 7, 4);
+          context.fillStyle = section.phase === 3 ? "#e2b832" : "#9caf4e";
+          context.fillRect(x + plant + 3, y + section.height - stalkHeight + 7, 6, 13);
+        }
+      }
+    }
+
     renderAim(context) {
       if (!this.input.pointer.inside) {
         return;
@@ -9892,6 +10549,11 @@
   function renderDarkOverlay(context, width, height) {
     context.fillStyle = "rgba(20, 18, 12, 0.82)";
     context.fillRect(0, 0, width, height);
+  }
+
+  function isDeveloperHost(locationLike) {
+    const hostname = String(locationLike?.hostname ?? "").toLowerCase();
+    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname === "[::1]";
   }
 
   function randomDropOffset(random = Math.random) {
@@ -10128,7 +10790,7 @@
     context.fillText(`LV ${level} · ${weapon.rarity}${weapon.limited ? " · LIMITED" : ""}`, x + 7, y + 21);
   }
 
-  function renderWeaponMenuEntry(context, weapon, iconX, iconY, textX, topY, topText, maxTextWidth, scale = 0.72) {
+  function renderWeaponMenuEntry(context, weapon, iconX, iconY, textX, topY, topText, maxTextWidth, scale = 0.72, textScale = 1) {
     context.save();
     context.translate(iconX, iconY);
     context.scale(scale, scale);
@@ -10136,17 +10798,17 @@
     context.restore();
     context.save();
     context.fillStyle = "#f3e7bd";
-    context.font = "bold 11px 'Courier New', monospace";
+    context.font = `bold ${Math.round(11 * textScale)}px 'Courier New', monospace`;
     context.textAlign = "left";
     context.fillText(topText, textX, topY, maxTextWidth);
     context.fillStyle = rarityColor(weapon.rarity);
-    context.font = "bold 10px 'Courier New', monospace";
-    context.fillText(weapon.rarity.toUpperCase(), textX, topY + 17);
+    context.font = `bold ${Math.round(10 * textScale)}px 'Courier New', monospace`;
+    context.fillText(weapon.rarity.toUpperCase(), textX, topY + 19);
     if (weapon.limited) {
       const hue = typeof performance === "undefined" ? 0 : performance.now() / 12 % 360;
       const rarityWidth = context.measureText(weapon.rarity.toUpperCase()).width;
       context.fillStyle = `hsl(${hue} 90% 65%)`;
-      context.fillText(" · LIMITED", textX + rarityWidth, topY + 17);
+      context.fillText(" · LIMITED", textX + rarityWidth, topY + 19);
     }
     context.restore();
   }
@@ -10265,6 +10927,10 @@
     else if (enemyId === "chick") enemy = new Chick(common);
     else if (enemyId === "rooster") enemy = new Rooster(common);
     else if (enemyId === "mother-hen") enemy = new MotherHenBoss({ ...common, config: { ...bossConfig, health: 15000, speed: 88, name: "Mother Hen" }, world: PREVIEW_WORLD });
+    else if (enemyId === "angry-corn") enemy = new AngryCorn(common);
+    else if (enemyId === "popcorn") enemy = new PopcornEnemy(common);
+    else if (enemyId === "mini-tractor") enemy = new MiniTractor({ ...common, world: PREVIEW_WORLD });
+    else if (enemyId === "combine") enemy = new CombineBoss({ ...common, config: { ...bossConfig, health: 18000, speed: 52, name: "The Combine" }, world: PREVIEW_WORLD });
     if (!enemy) return null;
     enemy.x = 0;
     enemy.y = 0;
@@ -10476,5 +11142,7 @@
 
   const game = new Game(canvas, debugOutput);
   game.start();
+  const cloudSave = new CloudSaveClient(game);
+  cloudSave.start();
 
 })();
