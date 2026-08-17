@@ -6,7 +6,7 @@ import { HELD_WEAPON_VISUALS } from "../src/entities/held-weapon.js";
 import { Gnome } from "../src/entities/gnome.js";
 import { Player } from "../src/entities/player.js";
 import { Projectile } from "../src/entities/projectile.js";
-import { Game, rangedFireFeedback } from "../src/core/game.js";
+import { Game, rangedFireFeedback, weaponPopupStats, weaponStatsWithPermanentProgress } from "../src/core/game.js";
 import { applyFire, applyFreeze, applyKnockback, nearestBounceTarget, totalContactDamage, updateEnemyStatus } from "../src/systems/combat.js";
 
 test("weapon slots resolve to melee and ranged loadout entries", () => {
@@ -46,7 +46,7 @@ test("every permanent weapon level improves damage and attack speed", () => {
 test("weapon roster has unique playable designs in both slots", () => {
   assert.equal(new Set(WEAPON_DEFINITIONS.map((weapon) => weapon.id)).size, WEAPON_DEFINITIONS.length);
   assert.equal(WEAPON_DEFINITIONS.filter((weapon) => weapon.slot === "melee").length, 9);
-  assert.equal(WEAPON_DEFINITIONS.filter((weapon) => weapon.slot === "ranged").length, 35);
+  assert.equal(WEAPON_DEFINITIONS.filter((weapon) => weapon.slot === "ranged").length, 37);
   for (const weapon of WEAPON_DEFINITIONS) {
     assert.ok(weapon.description.length > 10);
     assert.ok(weapon.levelTenFeature.length > 10);
@@ -62,6 +62,26 @@ test("Limited weapons stay out of the Collection until owned", () => {
   assert.equal(weaponsVisibleInCollection(["apples"]).some((weapon) => weapon.id === "rainbow-apples"), false);
   assert.equal(weaponsVisibleInCollection(["apples"]).some((weapon) => weapon.id === "party-hat"), false);
   assert.equal(weaponsVisibleInCollection(["apples", "rainbow-apples"]).some((weapon) => weapon.id === "rainbow-apples"), true);
+});
+
+test("seasonal Rainbow Horseshoe and Piñata keep their distinct mechanics", () => {
+  const horseshoe = weaponById("rainbow-horseshoe");
+  const regularHorseshoe = weaponById("horseshoe");
+  const pinata = weaponById("pinata");
+  const gardenGnome = weaponById("garden-gnome");
+  assert.equal(horseshoe.rarity, "Epic");
+  assert.equal(horseshoe.limited, true);
+  assert.ok(Math.abs(horseshoe.projectileLifetime - regularHorseshoe.projectileLifetime * 3) < 1e-9);
+  assert.equal(horseshoe.horseshoeOrbitCount, 3);
+  assert.ok(horseshoe.horseshoeRange > regularHorseshoe.horseshoeRange);
+  assert.equal(pinata.rarity, "Legendary");
+  assert.equal(pinata.limited, true);
+  assert.equal(pinata.decoyHealth, 50);
+  assert.ok(pinata.decoyExplosionDamage > 0);
+  assert.equal(pinata.pinataConfettiCount, 8);
+  assert.ok(pinata.pinataConfettiLifetime < weaponById("party-hat").projectileLifetime);
+  assert.equal(gardenGnome.decoyExplosionDamage, 0);
+  assert.equal(gardenGnome.decoyExplosionRadius, 0);
 });
 
 test("Party Hat is a Mythical Limited confetti cone", () => {
@@ -142,6 +162,37 @@ test("Ordinance Undefined is a Developer weapon with doubled damage", () => {
   assert.equal(ordinance.damage, 8.88832);
   assert.equal(ordinance.burstRounds, 2);
   assert.ok(ordinance.burstInterval <= 0.05);
+  assert.equal(ordinance.fireDamagePerSecond, 15);
+  assert.equal(ordinance.fireDuration, 5);
+  assert.equal(ordinance.freezeDuration, 2);
+});
+
+test("weapon preview creates a movable three-dummy firing range with respawning 500-health targets", () => {
+  const game = Object.create(Game.prototype);
+  game.progress = { weaponLevels: { apples: 1 } };
+  game.input = { pointer: { x: 300, y: 145, down: true }, movementVector: () => ({ x: 1, y: 0 }) };
+  game.openWeaponPreview("apples", "shop");
+  assert.equal(game.screenState, "weapon-preview");
+  assert.equal(game.weaponPreview.dummies.length, 3);
+  assert.deepEqual(game.weaponPreview.dummies.map(({ x, y }) => [x, y]), [[238, 76], [292, 128], [238, 180]]);
+  assert.deepEqual(game.weaponPreview.dummies.map(({ health }) => health), [500, 500, 500]);
+  const originalPlayerX = game.weaponPreview.player.x;
+  game.input.pointer.down = true;
+  game.updateWeaponPreview(1 / 60);
+  assert.ok(game.weaponPreview.player.x > originalPlayerX);
+  assert.ok(game.weaponPreview.projectiles.length > 0);
+  game.weaponPreview.dummies[0].health = 0;
+  game.weaponPreview.dummies[0].resetTimer = 0;
+  game.updateWeaponPreview(1 / 60, false);
+  assert.equal(game.weaponPreview.dummies[0].health, 500);
+});
+
+test("Limited weapon metadata records its original season", () => {
+  for (const weaponId of ["rainbow-apples", "party-hat"]) {
+    const weapon = weaponById(weaponId);
+    assert.equal(weapon.limited, true);
+    assert.equal(weapon.season, "Lawn Enforcement");
+  }
 });
 
 test("Pebble Shooter fires its burst with very short spacing", () => {
@@ -243,7 +294,7 @@ test("apple projectile moves at its configured velocity and expires", () => {
   assert.equal(projectile.active, false);
 });
 
-test("projectiles support fire and freeze payloads while only the flamethrower uses fire", () => {
+test("projectiles support the configured fire and freeze weapon payloads", () => {
   const projectile = new Projectile({
     x: 0, y: 0, velocityX: 1, velocityY: 0, damage: 1, lifetime: 1,
     fireDamagePerSecond: 5, fireDuration: 10, freezeDuration: 2,
@@ -253,8 +304,8 @@ test("projectiles support fire and freeze payloads while only the flamethrower u
   assert.equal(projectile.fireMaxStacks, 1);
   assert.equal(projectile.freezeDuration, 2);
   for (const weapon of WEAPON_DEFINITIONS.filter((entry) => entry.slot === "ranged")) {
-    assert.equal(weapon.fireDuration > 0, ["backyard-flamethrower", "firecracker"].includes(weapon.id));
-    assert.equal(weapon.freezeDuration, weapon.id === "sprinkler-mine" ? 2 : (["gravity-freezer", "slushie", "polarity-gun"].includes(weapon.id) ? 1 : 0), `${weapon.id} freeze duration`);
+    assert.equal(weapon.fireDuration > 0, ["backyard-flamethrower", "firecracker", "ordinance-undefined"].includes(weapon.id));
+    assert.equal(weapon.freezeDuration, ["sprinkler-mine", "ordinance-undefined"].includes(weapon.id) ? 2 : (["gravity-freezer", "slushie", "polarity-gun"].includes(weapon.id) ? 1 : 0), `${weapon.id} freeze duration`);
   }
 });
 
@@ -333,10 +384,14 @@ test("Plastic Ghost is a broad Secret sustain stream with one pierce", () => {
   assert.equal(weaponStatsAtLevel(ghost, 10).lifesteal, 0.0075);
 });
 
+test("Trash Can Lid has maximum pierce", () => {
+  assert.equal(weaponById("trash-can-lid").pierces, Number.MAX_SAFE_INTEGER);
+});
+
 test("Shurikens start with three working pierces", () => {
   const shurikens = weaponById("shurikens");
   assert.equal(shurikens.damage, 14);
-  assert.equal(shurikens.cooldown, 0.42);
+  assert.equal(shurikens.cooldown, 0.24);
   assert.equal(shurikens.pierces, 3);
   assert.equal(weaponStatsAtLevel(shurikens, 10).pierces, 3);
   const projectile = new Projectile({
@@ -346,6 +401,22 @@ test("Shurikens start with three working pierces", () => {
   for (let hit = 0; hit < 3; hit += 1) projectile.piercesRemaining -= 1;
   assert.equal(projectile.piercesRemaining, 0);
   assert.equal(projectile.active, true);
+});
+
+test("weapon popup stats include maximum DPS for every weapon", () => {
+  for (const weapon of WEAPON_DEFINITIONS) {
+    assert.ok(weaponPopupStats(weapon).some((stat) => stat.text.startsWith("MAX DPS:")), weapon.id);
+  }
+});
+
+test("weapon popup calculations include weapon level and permanent upgrades", () => {
+  const base = weaponById("apples");
+  const upgraded = weaponStatsWithPermanentProgress(base, 5, { damage: 3, attackSpeed: 2, accuracy: 4 });
+  assert.equal(upgraded.level, 5);
+  assert.ok(upgraded.damage > weaponStatsAtLevel(base, 5).damage);
+  assert.ok(upgraded.cooldown < weaponStatsAtLevel(base, 5).cooldown);
+  assert.ok(upgraded.spread <= weaponStatsAtLevel(base, 5).spread);
+  assert.ok(weaponPopupStats(upgraded).some((stat) => stat.text === "LEVEL: 5"));
 });
 
 test("Vampire Fang is a fast Secret lifesteal arc and pairs with Plastic Ghost", () => {
@@ -398,6 +469,9 @@ test("Plastic Ghost lifesteal accumulates fractional healing across enemies", ()
   game.damageEnemy(makeEnemy(), 8, 0.05);
   assert.equal(game.player.health, 51);
   assert.ok(Math.abs(game.player.lifestealAccumulator - 0.1) < 1e-9);
+  assert.ok(game.hitEffects.every((effect) => effect.particles.length === 8));
+  assert.ok(game.hitEffects.every((effect) => effect.particles.every((particle) => particle.size >= 5)));
+  assert.ok(game.hitEffects.every((effect) => effect.particles.every((particle) => particle.velocityY < 0)));
 });
 
 test("Rock Salt Blaster pellets speed up initially and slow near the end of flight", () => {
@@ -544,4 +618,18 @@ test("invalid contact damage cannot make player health NaN", () => {
   assert.equal(player.takeDamage(50), true);
   assert.equal(player.health, player.maxHealth - 50);
   assert.equal(Number.isNaN(player.health), false);
+});
+
+test("player damage creates a red floating damage number", () => {
+  const game = Object.create(Game.prototype);
+  game.random = () => 0.5;
+  game.floatingDamageNumbers = [];
+  game.player = {
+    x: 100, y: 120, radius: 18, health: 80, shield: 0,
+    takeDamage(amount) { this.health -= amount; return true; },
+  };
+  assert.equal(game.damagePlayer(12), true);
+  assert.equal(game.floatingDamageNumbers.length, 1);
+  assert.equal(game.floatingDamageNumbers[0].text, "-12");
+  assert.equal(game.floatingDamageNumbers[0].color, "#ff4b45");
 });

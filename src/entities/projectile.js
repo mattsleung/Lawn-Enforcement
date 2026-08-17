@@ -10,7 +10,7 @@ export class Projectile {
     boomerang = false, boomerangRange = 0, returnSpeed = 0, returnDamageMultiplier = 1,
     fertilizerCloudRadius = 0, fertilizerCloudDuration = 0, fertilizerTickInterval = 0.5,
     polarity = "pull", polarityRadius = 0, polarityForce = 0, bossDamageMultiplier = 1,
-    horseshoe = false, horseshoeRange = 0, horseshoeArc = 0, weaponId = null,
+    horseshoe = false, horseshoeRange = 0, horseshoeArc = 0, horseshoeOrbitCount = 1, weaponId = null,
   }) {
     this.x = x;
     this.y = y;
@@ -30,6 +30,7 @@ export class Projectile {
     this.boomerang = boomerang; this.boomerangRange = boomerangRange; this.returnSpeed = returnSpeed;
     this.returnDamageMultiplier = returnDamageMultiplier; this.returning = false;
     this.horseshoe = horseshoe; this.horseshoeRange = horseshoeRange; this.horseshoeArc = horseshoeArc;
+    this.horseshoeOrbitCount = horseshoeOrbitCount;
     this.weaponId = weaponId;
     this.polarity = polarity; this.polarityRadius = polarityRadius; this.polarityForce = polarityForce;
     this.bossDamageMultiplier = bossDamageMultiplier;
@@ -158,7 +159,9 @@ function renderProjectileShape(context, projectile) {
     context.fillStyle = "#241d32"; context.fillRect(-3, -3, 6, 6); return;
   }
   if (projectile.kind === "horseshoe") {
-    context.strokeStyle = projectile.color; context.lineWidth = 6; context.beginPath();
+    const hue = typeof performance === "undefined" ? 0 : performance.now() / 12 % 360;
+    context.strokeStyle = projectile.weaponId === "rainbow-horseshoe" ? `hsl(${hue} 90% 62%)` : projectile.color;
+    context.lineWidth = 6; context.beginPath();
     context.arc(0, 0, 10, Math.PI * 0.18, Math.PI * 1.82); context.stroke(); return;
   }
   if (projectile.kind === "orbital-water") {

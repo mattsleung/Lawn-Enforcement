@@ -15,6 +15,8 @@ export const HELD_WEAPON_VISUALS = Object.freeze({
   apples: { kind: "apple", primary: "#b83b32", secondary: "#5f8d3e" },
   "rainbow-apples": { kind: "apple", primary: "#ff5f74", secondary: "#7ff06c", rainbow: true },
   "party-hat": { kind: "party-hat", primary: "#ff5f74", secondary: "#65d9ff", rainbow: true },
+  "rainbow-horseshoe": { kind: "horseshoe", primary: "#ff5f74", secondary: "#65d9ff", rainbow: true },
+  pinata: { kind: "pinata", primary: "#ee5f76", secondary: "#63d6e8" },
   "pebble-shooter": { kind: "small-gun", primary: "#b6a98d", secondary: "#5d5141" },
   "sprinkler-mine": { kind: "sprinkler", primary: "#62c7d2", secondary: "#456b72" },
   "bug-zapper": { kind: "zapper", primary: "#f4df63", secondary: "#6259a7" },
@@ -108,6 +110,13 @@ export function renderHeldWeaponVisual(context, weapon) {
       circle(context, 10, 0, 11, primary); context.strokeStyle = secondary; context.beginPath(); context.arc(10, 0, 7, 0, Math.PI * 2); context.stroke(); break;
     case "gnome":
       context.fillStyle = secondary; context.fillRect(2, -1, 12, 12); context.fillStyle = primary; context.beginPath(); context.moveTo(1, -1); context.lineTo(8, -17); context.lineTo(15, -1); context.closePath(); context.fill(); circle(context, 8, -2, 5, "#e8b995"); break;
+    case "pinata":
+      context.fillStyle = "#ffcf4b"; context.fillRect(1, -9, 18, 18);
+      context.fillStyle = "#ee5f76"; context.fillRect(1, -9, 18, 4);
+      context.fillStyle = "#62d4e8"; context.fillRect(1, -1, 18, 4);
+      context.fillStyle = "#8fd65a"; context.fillRect(1, 7, 18, 3);
+      context.fillStyle = "#7c58b8"; context.fillRect(4, 10, 4, 6); context.fillRect(13, 10, 4, 6);
+      context.fillStyle = "#f2a04a"; context.fillRect(18, -5, 5, 5); break;
     case "bag":
       context.fillStyle = primary; context.fillRect(0, -8, 19, 17); context.fillStyle = secondary; context.fillRect(4, -11, 11, 4); context.fillRect(5, -2, 9, 4); break;
     case "leaf-fan":

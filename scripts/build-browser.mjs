@@ -47,11 +47,34 @@ const sourceFiles = [
   "src/entities/school-ball-projectile.js",
   "src/entities/pe-teacher-boss.js",
   "src/entities/ball-launcher-boss.js",
+  "src/entities/construction-enemies.js",
+  "src/entities/excavator-boss.js",
+  "src/entities/chicken-farm-enemies.js",
+  "src/entities/mother-hen-boss.js",
   "src/entities/projectile.js",
   "src/entities/pickup.js",
   "src/core/game.js",
   "src/main.js",
 ];
+
+// The browser build is intentionally dependency-free and concatenates source
+// files in a controlled order. Fail loudly when a newly imported local module
+// is missing from that list instead of producing a bundle that crashes only
+// when the new feature is first used.
+const bundledFiles = new Set(sourceFiles);
+for (const relativePath of sourceFiles) {
+  const source = await readFile(path.join(projectRoot, relativePath), "utf8");
+  const importPattern = /from\s+["'](\.{1,2}\/[^"']+)["']/g;
+  for (const match of source.matchAll(importPattern)) {
+    const importedPath = path.relative(
+      projectRoot,
+      path.resolve(projectRoot, path.dirname(relativePath), match[1]),
+    );
+    if (!bundledFiles.has(importedPath)) {
+      throw new Error(`${relativePath} imports ${importedPath}, but it is missing from the browser bundle source list.`);
+    }
+  }
+}
 
 const sourceParts = await Promise.all(
   sourceFiles.map(async (relativePath) => {

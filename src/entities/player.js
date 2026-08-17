@@ -69,7 +69,9 @@ export class Player {
       && this.y >= obstacle.y && this.y <= obstacle.y + obstacle.height);
     const inSlime = obstacles.some((obstacle) => obstacle.kind === "slime"
       && Math.hypot(this.x - obstacle.x, this.y - obstacle.y) <= obstacle.radius);
-    const movementSpeed = inSlime ? this.speed * 0.4 : (inSandBunker || inWater) ? this.speed * 0.5 : onRunningTrack ? this.speed * 1.2 : this.speed;
+    const inDirtPile = obstacles.some((obstacle) => obstacle.kind === "temporary-dirt"
+      && Math.hypot(this.x - obstacle.x, this.y - obstacle.y) <= obstacle.radius);
+    const movementSpeed = inSlime ? this.speed * 0.4 : inDirtPile ? this.speed * 0.7 : (inSandBunker || inWater) ? this.speed * 0.5 : onRunningTrack ? this.speed * 1.2 : this.speed;
     if (this.maxShield > 0) this.shield = Math.min(this.maxShield, this.shield + this.shieldRegen * deltaTime);
     if (this.healthRegenAmount > 0 && this.healthRegenInterval > 0) {
       this.healthRegenTimer += deltaTime;
@@ -120,7 +122,6 @@ export class Player {
   render(context, camera, heldWeapon = null) {
     const x = Math.round(this.x - camera.x);
     const y = Math.round(this.y - camera.y);
-    const direction = Math.cos(this.facing) >= 0 ? 1 : -1;
     const walkPhase = this.isMoving
       ? Math.floor(this.walkTime * WALK_FRAMES_PER_SECOND) % 4
       : 0;
@@ -128,82 +129,37 @@ export class Player {
 
     context.save();
     context.translate(x, y + bobOffset);
+    context.globalAlpha = this.hitFlash > 0 ? 0.5 : 1;
 
-    const walkFrame = this.isMoving ? walkPhase % 2 : 0;
-    const sprite = this.walkSprites[walkFrame];
-    if (sprite?.complete && sprite.naturalWidth > 0) {
-      const previousSmoothing = context.imageSmoothingEnabled;
-      context.imageSmoothingEnabled = true;
-      context.globalAlpha = this.hitFlash > 0 ? 0.45 : 1;
-      context.drawImage(sprite, -24, -36, 48, 48);
-      context.globalAlpha = 1;
-      context.imageSmoothingEnabled = previousSmoothing;
-      context.fillStyle = "#241d18";
-      context.fillRect(-15, -45, 32, 6);
-      context.fillStyle = "#9e342b";
-      context.fillRect(-13, -43, 28, 2);
-      this.renderHeldWeapon(context, heldWeapon);
-      context.restore();
-      return;
-    }
-
-    // Coded fallback shown only while the bitmap sprite loads.
-    context.scale(direction, 1);
-    context.fillStyle = "#28251d";
-    context.fillRect(-15, -25, 32, 32);
-    context.fillRect(-13, -45, 27, 24);
-    context.fillRect(-14, 1, 30, 25);
-
-    // Back leg and shoe.
-    context.fillStyle = "#26364d";
-    context.fillRect(-12, 4, 10, 19);
-    context.fillStyle = "#24231f";
-    context.fillRect(-15, 19, 15, 7);
-
-    // Front leg and shoe.
-    context.fillStyle = COLORS.playerPants;
-    context.fillRect(1, 3, 11, 20);
-    context.fillStyle = "#34312a";
-    context.fillRect(0, 19, 17, 7);
-    context.fillRect(11, 16, 8, 7);
-
-    // Shirt, belt, and suburban belly.
-    context.fillStyle = "#5e794c";
-    context.fillRect(-13, -22, 22, 27);
-    context.fillRect(5, -17, 10, 20);
-    context.fillStyle = COLORS.playerShirt;
-    context.fillRect(-9, -25, 19, 25);
-    context.fillRect(7, -17, 8, 16);
-    context.fillStyle = "#3b3024";
-    context.fillRect(-12, -1, 27, 5);
-    context.fillStyle = "#d9b64c";
-    context.fillRect(2, -1, 5, 5);
-
-    // Head in side profile, including nose, hair, and moustache.
+    // Keep the same simple, front-facing block character used in the test range.
     context.fillStyle = COLORS.playerSkin;
-    context.fillRect(-7, -42, 18, 19);
-    context.fillRect(8, -36, 8, 9);
-    context.fillRect(13, -33, 6, 5);
+    context.fillRect(-12, -20, 24, 25);
     context.fillStyle = "#554235";
-    context.fillRect(-9, -45, 17, 6);
-    context.fillRect(-11, -42, 6, 12);
-    context.fillStyle = "#f3e8c8";
-    context.fillRect(7, -37, 4, 4);
+    context.fillRect(-12, -20, 24, 5);
     context.fillStyle = "#25231f";
-    context.fillRect(9, -36, 3, 3);
-    context.fillRect(11, -28, 8, 3);
+    context.fillRect(-7, -10, 3, 3);
+    context.fillRect(4, -10, 3, 3);
+    context.fillRect(-4, -3, 8, 2);
+    context.fillStyle = COLORS.playerShirt;
+    context.fillRect(-13, 5, 26, 20);
+
+    const step = this.isMoving && !this.reducedMotion ? (walkPhase % 2 === 0 ? 3 : -3) : 0;
+    context.fillStyle = COLORS.playerPants;
+    context.fillRect(-12, 25, 10, 15 + step);
+    context.fillRect(2, 25, 10, 15 - step);
+    context.fillStyle = "#25231f";
+    context.fillRect(-14, 36 + step, 12, 5);
+    context.fillRect(2, 36 - step, 12, 5);
+    context.globalAlpha = 1;
 
     // Compact health bar keeps the character readable during busy combat.
     context.fillStyle = "#241d18";
     context.fillRect(-18, -55, 38, 7);
     context.fillStyle = "#9e342b";
-    context.fillRect(-16, -53, 34, 3);
+    const healthRatio = Math.max(0, Math.min(1, this.health / Math.max(1, this.maxHealth)));
+    context.fillRect(-16, -53, 34 * healthRatio, 3);
 
-    // Undo the fallback body's mirror before drawing the cursor-facing arm.
-    context.save();
-    context.scale(direction, 1);
     this.renderHeldWeapon(context, heldWeapon);
-    context.restore();
 
     context.restore();
   }

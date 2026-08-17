@@ -276,7 +276,7 @@ export const SCHOOL_FIELD_MAP = Object.freeze({
   nextBossSpawnDelay: 60,
   victoryCoinBonus: 5000,
   bossThrownEnemy: null,
-  unlocks: null,
+  unlocks: "construction-site",
   obstacles: Object.freeze([
     Object.freeze({ x: 0, y: 0, width: VIEWPORT.designWidth * 1.8, height: 110, kind: "running-track", solid: false, speedMultiplier: 1.2 }),
     Object.freeze({ x: 0, y: VIEWPORT.designHeight * 1.5 - 110, width: VIEWPORT.designWidth * 1.8, height: 110, kind: "running-track", solid: false, speedMultiplier: 1.2 }),
@@ -294,7 +294,58 @@ export const SCHOOL_FIELD_MAP = Object.freeze({
   boss: Object.freeze({ type: "pe-teacher", name: "The PE Teacher", health: 8000, speed: 340, dodgeballCooldown: 2, dodgeballSpeed: 520, dodgeballDamage: 28, dodgeballKnockback: 55, whistleCooldown: 3, whistleDamage: 35, whistleRadius: 240, whistleKnockback: 130, lapCooldown: 8 }),
 });
 
-export const MAP_SLOTS = Object.freeze([FIRST_MAP, FRONTYARD_MAP, GARDEN_MAP, PUBLIC_PARK_MAP, LAKE_ELIZABETH_MAP, GOLF_COURSE_MAP, AQUATIC_GARDEN_MAP, REDWOOD_TRAIL_MAP, SCHOOL_FIELD_MAP]);
+export const CONSTRUCTION_SITE_MAP = Object.freeze({
+  id: "construction-site",
+  name: "Construction Site",
+  world: Object.freeze({ width: VIEWPORT.designWidth * 1.8, height: VIEWPORT.designHeight * 1.6, gridSize: 96 }),
+  lawnColors: Object.freeze({ primary: "#896d47", secondary: "#7d6240" }),
+  houseSide: null,
+  normalEnemyType: "construction-site",
+  enemyCap: 100,
+  bossSpawnTime: 120,
+  victoryCoinBonus: 5500,
+  bossThrownEnemy: null,
+  unlocks: "chicken-farm",
+  debrisMinCooldown: 6,
+  debrisMaxCooldown: 10,
+  // Requested relative weights total 110 (20/30/15/15/30), so store their
+  // normalized probabilities while preserving that exact ratio.
+  constructionSpawnWeights: Object.freeze({ worker: 1.5 / 11, cone: 3 / 11, tire: 1.5 / 11, brickCarrier: 1 / 11, safetyVest: 4 / 11 }),
+  obstacles: Object.freeze([
+    Object.freeze({ x: 180, y: 190, width: 120, height: 60, kind: "dirt-pile", solid: false }),
+    Object.freeze({ x: 710, y: 270, width: 150, height: 55, kind: "pipes", solid: false }),
+    Object.freeze({ x: 1330, y: 210, width: 130, height: 65, kind: "pallets", solid: false }),
+    Object.freeze({ x: 390, y: 760, width: 180, height: 35, kind: "barrier", solid: false }),
+    Object.freeze({ x: 1120, y: 820, width: 190, height: 35, kind: "barrier", solid: false }),
+  ]),
+  boss: Object.freeze({ type: "excavator", name: "The Excavator", health: 12000, speed: 52, damage: 35 }),
+});
+
+export const CHICKEN_FARM_MAP = Object.freeze({
+  id: "chicken-farm",
+  name: "Chicken Farm",
+  world: Object.freeze({ width: VIEWPORT.designWidth * 1.7, height: VIEWPORT.designHeight * 1.6, gridSize: 96 }),
+  lawnColors: Object.freeze({ primary: "#7e9d4a", secondary: "#967544" }),
+  houseSide: null,
+  normalEnemyType: "chicken-farm",
+  enemyCap: 150,
+  chickenEggDeathChance: 0.5,
+  bossSpawnTime: 120,
+  victoryCoinBonus: 6000,
+  bossThrownEnemy: null,
+  unlocks: null,
+  obstacles: Object.freeze([
+    Object.freeze({ x: 80, y: 90, width: 260, height: 150, kind: "barn", solid: true }),
+    Object.freeze({ x: 1640, y: 120, width: 190, height: 115, kind: "chicken-coop", solid: true }),
+    Object.freeze({ x: 180, y: 850, width: 130, height: 80, kind: "hay-bales", solid: true }),
+    Object.freeze({ x: 1500, y: 800, width: 150, height: 90, kind: "hay-bales", solid: true }),
+    Object.freeze({ x: 850, y: 130, width: 150, height: 55, kind: "feeding-area", solid: false }),
+    Object.freeze({ x: 850, y: 930, width: 150, height: 55, kind: "feeding-area", solid: false }),
+  ]),
+  boss: Object.freeze({ type: "mother-hen", name: "Mother Hen", health: 15000, speed: 88, damage: 35 }),
+});
+
+export const MAP_SLOTS = Object.freeze([FIRST_MAP, FRONTYARD_MAP, GARDEN_MAP, PUBLIC_PARK_MAP, LAKE_ELIZABETH_MAP, GOLF_COURSE_MAP, AQUATIC_GARDEN_MAP, REDWOOD_TRAIL_MAP, SCHOOL_FIELD_MAP, CONSTRUCTION_SITE_MAP, CHICKEN_FARM_MAP]);
 export const MAPS_BY_ID = Object.freeze(Object.fromEntries(MAP_SLOTS.map((map) => [map.id, map])));
 
 export function mapById(id) {

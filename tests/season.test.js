@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { buySeasonWeapon, claimCompletedSeasonQuests, ensureSeasonState, exchangeSeasonCoin, PARTY_HAT_COST, RAINBOW_APPLE_COST, SEASON_COIN_EXCHANGE_VALUE, updateSeasonQuestProgress } from "../src/systems/season.js";
+import { buySeasonWeapon, claimCompletedSeasonQuests, ensureSeasonState, exchangeSeasonCoin, PARTY_HAT_COST, PINATA_COST, RAINBOW_APPLE_COST, RAINBOW_HORSESHOE_COST, SEASON_COIN_EXCHANGE_VALUE, updateSeasonQuestProgress } from "../src/systems/season.js";
 import { defaultProgress, loadProgress, saveProgress, unlockAllWeapons, unlockSeasonWeapons } from "../src/systems/progression.js";
 
 test("season quests fill three eligible slots and do not refresh automatically", () => {
@@ -59,6 +59,17 @@ test("Party Hat costs 25 Season Coins", () => {
   assert.equal(buySeasonWeapon(progress, "party-hat"), true);
   assert.equal(progress.ownedWeapons.includes("party-hat"), true);
   assert.equal(state.coins, 0);
+});
+
+test("new Lawn Enforcement limited weapons use Season Coins", () => {
+  const progress = defaultProgress();
+  const state = ensureSeasonState(progress, 1000);
+  state.coins = RAINBOW_HORSESHOE_COST + PINATA_COST;
+  assert.equal(buySeasonWeapon(progress, "rainbow-horseshoe"), true);
+  assert.equal(buySeasonWeapon(progress, "pinata"), true);
+  assert.equal(state.coins, 0);
+  assert.equal(progress.ownedWeapons.includes("rainbow-horseshoe"), true);
+  assert.equal(progress.ownedWeapons.includes("pinata"), true);
 });
 
 test("one Season Coin exchanges for 800 regular Coins", () => {
