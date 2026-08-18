@@ -14,6 +14,8 @@ const sourceFiles = [
   "src/systems/daily-quests.js",
   "src/systems/season.js",
   "src/systems/cloud-save.js",
+  "src/systems/weapon-value.js",
+  "src/systems/trading-post.js",
   "src/systems/economy.js",
   "src/core/camera.js",
   "src/core/input.js",

@@ -50,6 +50,7 @@ import { applyRunUpgrade, chooseRunUpgrades, loadProgress, REPEATABLE_GOLD_UPGRA
 import { dailyQuestTimeRemaining, ensureDailyQuests, formatQuestTimer, updateDailyQuestProgress } from "../systems/daily-quests.js";
 import { buySeasonWeapon, claimCompletedSeasonQuests, ensureSeasonState, exchangeSeasonCoin, PARTY_HAT_COST, PINATA_COST, RAINBOW_APPLE_COST, RAINBOW_HORSESHOE_COST, SEASON_ACTIVE, SEASON_COIN_EXCHANGE_VALUE, SEASON_DAILY_CLAIM_LIMIT, updateSeasonQuestProgress } from "../systems/season.js";
 import { buyWeapon, chestCost, openChest, shopWeaponPrice, upgradeCharacterStat, upgradeWeapon } from "../systems/economy.js";
+import { estimateWeaponValue, formatMoney } from "../systems/weapon-value.js";
 
 const FIXED_STEP = 1 / 60;
 const MAX_FRAME_TIME = 0.1;
@@ -1496,7 +1497,7 @@ export class Game {
     }
     this.bankCoins = this.progress.coins;
     this.menuMessage = result.duplicate
-      ? `${result.rarity} duplicate: +${result.coinsReturned} coins`
+      ? `${result.rarity} duplicate auto-sold: +$${result.moneyReturned}`
       : `${result.rarity}: ${result.weapon.name} unlocked`;
     this.savePermanentProgress();
   }
@@ -4552,7 +4553,9 @@ export class Game {
     fitCenteredText(context, weapon.name.toUpperCase(), detailX + detailWidth / 2, 58, detailWidth - 32, 25, 14, true);
     context.fillStyle = rarityColor(weapon.rarity); context.font="bold 14px 'Courier New', monospace";
     context.fillText(`${weapon.rarity.toUpperCase()}${weapon.limited ? " · LIMITED" : ""}`, detailX + detailWidth / 2, 84);
-    if (weapon.limited) { context.fillStyle="#f2b6ff";context.font="bold 11px 'Courier New', monospace";context.fillText(`SEASON: ${(weapon.season ?? "Unknown").toUpperCase()}`, detailX + detailWidth / 2, 104); }
+    context.fillStyle="#72d8a2"; context.font="bold 12px 'Courier New', monospace";
+    context.fillText(`EST. VALUE ${formatMoney(estimateWeaponValue(weapon))}`, detailX + detailWidth / 2, 103);
+    if (weapon.limited) { context.fillStyle="#f2b6ff";context.font="bold 11px 'Courier New', monospace";context.fillText(`SEASON: ${(weapon.season ?? "Unknown").toUpperCase()}`, detailX + detailWidth / 2, 119); }
     context.save();context.translate(detailX + detailWidth / 2 - 25,132);context.scale(1.65,1.65);renderHeldWeaponVisual(context,weapon);context.restore();
     context.fillStyle="#d8d0ae";context.font="12px 'Courier New', monospace";
     wrapCenteredText(context, weapon.description, detailX + detailWidth / 2, 172, detailWidth - 42, 16, 3);

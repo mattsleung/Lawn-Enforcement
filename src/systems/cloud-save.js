@@ -107,6 +107,11 @@ export class CloudSaveClient {
       await this.saveNow(this.game.progress);
       this.setStatus(`Signed in as ${this.session.user.user_metadata?.username || this.session.user.email}. Local save uploaded.`);
     }
+    const username = this.session.user.user_metadata?.username;
+    if (username) {
+      await this.request("/rest/v1/rpc/register_market_profile", { method: "POST", token: this.session.access_token, body: { p_username: username } });
+      await this.request("/rest/v1/rpc/sync_market_inventory", { method: "POST", token: this.session.access_token, body: { p_weapons: this.game.progress.ownedWeapons, p_levels: this.game.progress.weaponLevels } });
+    }
   }
 
   queueSave(progress) {

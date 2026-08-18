@@ -129,6 +129,17 @@ kbd {
 
 .account-button:hover, .account-button:focus-visible { background: #4b4d28; box-shadow: 0 0 18px rgb(234 215 123 / 55%); outline: none; }
 .account-button:active { transform: translateY(3px) scale(0.97); background: #d4bd5a; color: #211f12; }
+.trading-button { top: 78px; }
+.trading-modal { width: min(980px, calc(100vw - 32px)); max-height: 88vh; }
+.trading-content { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; max-height: 62vh; overflow: auto; }
+.trading-content section { border: 2px solid #5e633d; padding: 14px; background: #151a11; }
+.trading-content h3 { margin: 0 0 10px; color: #ead77b; }
+.trading-content input { box-sizing: border-box; width: 100%; margin: 4px 0; border: 2px solid #656945; padding: 9px; background: #0c110b; color: #f3e7bd; }
+.trading-content button { margin-top: 7px; border: 2px solid #8d874f; padding: 8px; background: #343621; color: #f3e7bd; cursor: pointer; }
+.market-card { margin: 7px 0; border: 1px solid #5e633d; padding: 9px; background: #232919; }
+.market-card summary { cursor: pointer; color: #9fcf71; font-weight: bold; }
+.market-card code,.market-card small { color: #aaa985; }
+@media (max-width: 760px) { .trading-content { grid-template-columns: 1fr; } }
 
 .account-modal {
   width: min(560px, calc(100vw - 32px));

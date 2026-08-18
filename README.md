@@ -111,6 +111,8 @@ The public build supports email-confirmed Supabase accounts. Usernames are priva
 
 Before enabling cloud saves, open the Supabase project's SQL Editor and run [`supabase/schema.sql`](supabase/schema.sql) once. Keep the service-role/secret key out of this repository and out of all browser assets. The publishable key in the browser bundle is intentionally public and has no access outside the RLS policies.
 
+The same schema also installs the Trading Post tables, public username profiles, protected inventories, multi-weapon/Money offers, atomic trade acceptance, trade history, and admin giveaways. Re-run the complete schema after Trading Post updates. Grant administrators only from the private Supabase SQL Editor by updating `player_profiles.is_admin`; never hardcode an administrator email or service-role key in browser code. Apple and Weedwacker are permanent starter tools and cannot be sold or traded.
+
 Developer unlocks run only on `localhost`, `127.0.0.1`, and IPv6 loopback. Cloud synchronization is disabled on those hosts so an all-unlocked developer save cannot be uploaded into a public player account.
 
 ## Commit and Push Later

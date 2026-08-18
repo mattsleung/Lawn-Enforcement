@@ -1,5 +1,6 @@
 import { Game } from "./core/game.js";
 import { CloudSaveClient } from "./systems/cloud-save.js";
+import { TradingPostClient } from "./systems/trading-post.js";
 
 const canvas = document.querySelector("#game");
 const debugOutput = document.querySelector("#debug");
@@ -12,3 +13,4 @@ const game = new Game(canvas, debugOutput);
 game.start();
 const cloudSave = new CloudSaveClient(game);
 cloudSave.start();
+new TradingPostClient(cloudSave);
