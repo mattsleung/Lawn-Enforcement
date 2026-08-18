@@ -69,6 +69,10 @@ export const RUN_UPGRADES = Object.freeze([
   weaponUpgrade("sprinkler-eight-way", "Eight-Way Sprinkler", "Lawn Sprinkler: fire in 8 directions", "lawn-sprinkler"),
   weaponUpgrade("plate-chain-reaction", "Chain Reaction", "Pressure Plate: explosions trigger nearby plates", "pressure-plate"),
   weaponUpgrade("fart-extra-stinky", "Extra Stinky", "Fart Gun: +50% cloud size and damage", "fart-gun"),
+  weaponUpgrade("surveyor-critical", "Critical Survey", "Surveyor: every third shot deals double damage", "surveyor"),
+  weaponUpgrade("rc-two-pack", "Two-Pack", "Remote-Control Car: deploy 2 cars", "remote-control-car"),
+  weaponUpgrade("umbrella-return", "Return to Sender", "Garden Umbrella: reflect blocked projectiles at enemies", "garden-umbrella"),
+  weaponUpgrade("vacuum-cannonball", "Human Cannonball", "Vacuum Cleaner: launched enemies damage other enemies", "vacuum-cleaner"),
 ]);
 
 function upgrade(id, name, rarity, description, options = {}) {
@@ -180,6 +184,10 @@ export function applyRunUpgrade(player, upgradeId) {
     "sprinkler-eight-way": () => addWeaponBonus(player, "lawn-sprinkler", { sprinklerDirectionsAdd: 4 }),
     "plate-chain-reaction": () => addWeaponBonus(player, "pressure-plate", { chainReaction: true }),
     "fart-extra-stinky": () => addWeaponBonus(player, "fart-gun", { fertilizerCloudRadiusMultiplier: 1.5, damageMultiplier: 1.25 }),
+    "surveyor-critical": () => addWeaponBonus(player, "surveyor", { criticalMultiplier: 2 }),
+    "rc-two-pack": () => addWeaponBonus(player, "remote-control-car", { rcCountAdd: 1 }),
+    "umbrella-return": () => addWeaponBonus(player, "garden-umbrella", { reflectProjectiles: true }),
+    "vacuum-cannonball": () => addWeaponBonus(player, "vacuum-cleaner", { humanCannonball: true }),
     "explosive-projectiles": () => { player.rangedExplosion = true; },
     "second-wind": () => {
       player.health = player.maxHealth;

@@ -51,7 +51,6 @@ export class CloudSaveClient {
     const password = this.password.value; const confirmation = this.confirmPassword.value;
     if (!/^\S+@\S+\.\S+$/.test(email)) return this.setStatus("Enter a valid email address.", true);
     if (!/^[A-Za-z0-9_-]{3,20}$/.test(username)) return this.setStatus("Username must be 3–20 letters, numbers, _ or -.", true);
-    if (password.length < 10) return this.setStatus("Password must be at least 10 characters.", true);
     if (password !== confirmation) return this.setStatus("Password confirmation does not match.", true);
     try {
       const redirect = encodeURIComponent(window.location.href.split("#")[0]);
