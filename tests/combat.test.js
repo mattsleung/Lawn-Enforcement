@@ -45,12 +45,27 @@ test("every permanent weapon level improves damage and attack speed", () => {
 
 test("weapon roster has unique playable designs in both slots", () => {
   assert.equal(new Set(WEAPON_DEFINITIONS.map((weapon) => weapon.id)).size, WEAPON_DEFINITIONS.length);
-  assert.equal(WEAPON_DEFINITIONS.filter((weapon) => weapon.slot === "melee").length, 9);
-  assert.equal(WEAPON_DEFINITIONS.filter((weapon) => weapon.slot === "ranged").length, 42);
+  assert.equal(WEAPON_DEFINITIONS.filter((weapon) => weapon.slot === "melee").length, 10);
+  assert.equal(WEAPON_DEFINITIONS.filter((weapon) => weapon.slot === "ranged").length, 45);
   for (const weapon of WEAPON_DEFINITIONS) {
     assert.ok(weapon.description.length > 10);
     assert.ok(weapon.levelTenFeature.length > 10);
   }
+});
+
+test("Surveyor, RC Car, Garden Umbrella, and Vacuum Cleaner keep their distinct mechanics", () => {
+  const surveyor = weaponById("surveyor");
+  const car = weaponById("remote-control-car");
+  const umbrella = weaponById("garden-umbrella");
+  const vacuum = weaponById("vacuum-cleaner");
+  assert.equal(surveyor.damage, 300);
+  assert.equal(surveyor.perfectAccuracy, true);
+  assert.equal(surveyor.pierces, 0);
+  assert.ok(weaponStatsAtLevel(surveyor, 10).movementDeviation < surveyor.movementDeviation);
+  assert.equal(car.rcDuration, 4);
+  assert.equal(weaponStatsAtLevel(car, 10).rcDuration, 6);
+  assert.ok(weaponStatsAtLevel(umbrella, 10).range > umbrella.range);
+  assert.ok(weaponStatsAtLevel(vacuum, 10).vacuumRange > vacuum.vacuumRange);
 });
 
 test("new deployable weapons expose their distinct level-ten mechanics", () => {
@@ -139,7 +154,7 @@ test("melee damage is reduced by thirty percent while rapid air and water weapon
     assert.equal(weaponById(weaponId).damage, expected);
   }
   assert.equal(weaponById("leaf-blower").damage, 4);
-  assert.equal(weaponById("storm-sprinkler").damage, 6);
+  assert.equal(weaponById("storm-sprinkler").damage, 9);
 });
 
 test("slower ranged weapons get brighter, longer firing feedback", () => {
@@ -378,7 +393,7 @@ test("new shotgun and nail-gun ranged designs expose their signatures", () => {
   assert.equal(salt.rarity, "Epic");
   assert.equal(salt.damage, 32);
   assert.equal(weaponStatsAtLevel(salt, 10).rounds, 2);
-  assert.equal(weaponStatsAtLevel(salt, 10).damage, Number((salt.damage * 2.08 * 0.75).toFixed(2)));
+  assert.equal(weaponStatsAtLevel(salt, 10).damage, Number((salt.damage * 1.05 * 2.08 * 0.75).toFixed(2)));
   assert.equal(nails.recoil, 0);
   assert.equal(nails.damage, 14);
   assert.equal(nails.perfectAccuracy, true);
@@ -453,22 +468,20 @@ test("Vampire Fang is a fast Secret lifesteal arc and pairs with Plastic Ghost",
 test("all Secret weapons receive the global damage and attack-speed buff", () => {
   for (const weapon of WEAPON_DEFINITIONS.filter((entry) => entry.rarity === "Secret")) {
     const stats = weaponStatsAtLevel(weapon, 1);
-    assert.equal(stats.damage, Number((weapon.damage * 1.2 * 1.1).toFixed(2)), `${weapon.name} damage should be buffed`);
+    assert.equal(stats.damage, Number((weapon.damage * 1.2 * 1.1 * 1.05).toFixed(2)), `${weapon.name} damage should be buffed`);
     assert.equal(stats.cooldown, weapon.cooldown * 0.85, `${weapon.name} should attack faster`);
   }
   const developerWeapon = weaponById("ordinance-undefined");
-  assert.equal(weaponStatsAtLevel(developerWeapon, 1).damage, Number((developerWeapon.damage * 1.1).toFixed(2)));
+  assert.equal(weaponStatsAtLevel(developerWeapon, 1).damage, Number((developerWeapon.damage * 1.1 * 1.05).toFixed(2)));
   assert.equal(weaponStatsAtLevel(developerWeapon, 1).cooldown, developerWeapon.cooldown);
 });
 
-test("all weapons get a modest damage buff except Rock Salt Blaster", () => {
+test("all weapons get the latest modest damage buff", () => {
   for (const weapon of WEAPON_DEFINITIONS) {
     const stats = weaponStatsAtLevel(weapon, 1);
-    if (weapon.id === "rock-salt-blaster") assert.equal(stats.damage, weapon.damage);
-    else {
-      const secretMultiplier = weapon.rarity === "Secret" ? 1.2 : 1;
-      assert.equal(stats.damage, Number((weapon.damage * secretMultiplier * 1.1).toFixed(2)));
-    }
+    const previousGeneralMultiplier = weapon.id === "rock-salt-blaster" ? 1 : 1.1;
+    const secretMultiplier = weapon.rarity === "Secret" ? 1.2 : 1;
+    assert.equal(stats.damage, Number((weapon.damage * previousGeneralMultiplier * secretMultiplier * 1.05).toFixed(2)));
   }
 });
 

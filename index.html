@@ -35,10 +35,10 @@
         <h2>PLAYER ACCOUNT</h2>
         <p id="account-status" class="account-status" aria-live="polite">Not signed in.</p>
         <label>EMAIL<input id="account-email" type="email" autocomplete="email" maxlength="254"></label>
-        <label>PRIVATE USERNAME<input id="account-username" type="text" autocomplete="username" minlength="3" maxlength="20"></label>
-        <label>PASSWORD<input id="account-password" type="password" autocomplete="current-password" minlength="10"></label>
-        <label>CONFIRM PASSWORD<input id="account-password-confirm" type="password" autocomplete="new-password" minlength="10"></label>
-        <p class="account-note">Email confirmation is required. Passwords are handled by Supabase and are never stored in the game save.</p>
+        <label>USERNAME<input id="account-username" type="text" autocomplete="username" minlength="3" maxlength="20"></label>
+        <label>PASSWORD<input id="account-password" type="password" autocomplete="current-password"></label>
+        <label>CONFIRM PASSWORD<input id="account-password-confirm" type="password" autocomplete="new-password"></label>
+        <p class="account-note">Usernames are private for now, but may become public when social features are added. Emails and passwords will remain private; passwords are handled by Supabase and never stored in the game save.</p>
         <div class="account-actions">
           <button id="account-signin" type="button">SIGN IN</button>
           <button id="account-signup" type="button">CREATE ACCOUNT</button>

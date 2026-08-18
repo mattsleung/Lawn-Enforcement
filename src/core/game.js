@@ -161,6 +161,12 @@ export class Game {
     this.homingPigeons = [];
     this.lawnSprinklers = [];
     this.pressurePlates = [];
+    this.rcCars = [];
+    this.laserEffects = [];
+    this.umbrellaGuard = null;
+    this.vacuumEffect = null;
+    this.vacuumWasHeld = false;
+    this.surveyorShots = 0;
     this.pendingBurstShots = [];
     this.leafTornadoes = [];
     this.lightningRods = [];
@@ -623,6 +629,18 @@ export class Game {
     this.camera.follow(this.player, deltaTime);
     aimPoint = this.camera.screenToWorld(this.input.pointer);
     this.player.updateRecoil(deltaTime, this.input.pointer.down);
+    if (this.umbrellaGuard) {
+      this.umbrellaGuard.lifetime -= deltaTime;
+      if (this.umbrellaGuard.lifetime <= 0) this.umbrellaGuard = null;
+    }
+    if (this.vacuumEffect) {
+      this.vacuumEffect.lifetime -= deltaTime;
+      if (this.vacuumEffect.lifetime <= 0) this.vacuumEffect = null;
+    }
+    const activeWeaponId = this.progress.equippedWeapons[this.weaponSlot === 1 ? "melee" : "ranged"];
+    const vacuumHeld = activeWeaponId === "vacuum-cleaner" && this.input.pointer.down;
+    if (this.vacuumWasHeld && !vacuumHeld) this.releaseVacuum(aimPoint);
+    this.vacuumWasHeld = vacuumHeld;
 
     this.attackCooldowns[1] = Math.max(0, this.attackCooldowns[1] - deltaTime);
     this.attackCooldowns[2] = Math.max(0, this.attackCooldowns[2] - deltaTime);
@@ -981,6 +999,7 @@ export class Game {
 
     for (const spore of this.bossProjectiles) {
       spore.update(deltaTime, this.world, this.player);
+      if (this.blockWithUmbrella(spore)) continue;
       if (spore instanceof SnailSpitProjectile && spore.active) {
         for (const tree of this.activeObstacles.filter((obstacle) => obstacle.kind === "redwood-trunk" && obstacle.solid !== false)) {
           const closestX = clamp(spore.x, tree.x, tree.x + tree.width);
@@ -1052,12 +1071,14 @@ export class Game {
         const dx = event.x - enemy.x;
         const dy = event.y - enemy.y;
         const distance = Math.hypot(dx, dy) || 1;
-        this.bossProjectiles.push(new AcornProjectile({
+        const acorn = new AcornProjectile({
           x: enemy.x,
           y: enemy.y,
           velocityX: dx / distance * event.speed,
           velocityY: dy / distance * event.speed,
-        }));
+        });
+        acorn.blockable = !enemy.isBoss;
+        this.bossProjectiles.push(acorn);
       }
       if (enemy.isBoss && bossEvents.throwMinions) {
         for (const thrown of bossEvents.throwMinions) {
@@ -1230,6 +1251,11 @@ export class Game {
         && !(enemy instanceof SchoolBasketball && enemy.bounceHeight > 4)) {
         touchingEnemies.push(enemy);
       }
+      if ((enemy.vacuumCollisionTime ?? 0) > 0) {
+        enemy.vacuumCollisionTime -= deltaTime;
+        const collided = this.enemies.find((other) => other !== enemy && other.active && circlesOverlap(enemy, other));
+        if (collided) { this.damageEnemy(collided, enemy.vacuumCollisionDamage, 0, "vacuum-cleaner"); enemy.vacuumCollisionTime = 0; }
+      }
     }
     if (this.enemies.some((enemy) => enemy instanceof CommonWeed && enemy.active)) {
       this.separateWeeds();
@@ -1266,7 +1292,7 @@ export class Game {
       velocityX: dx / distance * event.speed, velocityY: dy / distance * event.speed,
       damage: event.damage, enemyDamage: event.enemyDamage ?? (type === "brick" ? 50 : 0),
       radius: type === "brick" ? 58 : 75, collisionRadius: type === "brick" ? 15 : 12,
-      source: event.source ?? null, active: true,
+      source: event.source ?? null, active: true, blockable: true,
     });
   }
 
@@ -1287,6 +1313,7 @@ export class Game {
     for (const projectile of [...this.constructionProjectiles]) {
       if (!projectile.active) continue;
       projectile.x += projectile.velocityX * deltaTime; projectile.y += projectile.velocityY * deltaTime;
+      if (this.blockWithUmbrella(projectile)) continue;
       if (projectile.type === "brick") {
         const struckEnemy = this.enemies.find((enemy) => enemy.active && enemy !== projectile.source
           && Math.hypot(projectile.x - enemy.x, projectile.y - enemy.y) <= projectile.collisionRadius + enemy.radius);
@@ -2561,6 +2588,11 @@ export class Game {
           }
         }
       };
+      if (weapon.id === "garden-umbrella") {
+        this.umbrellaGuard = { angle: this.player.facing, range: weapon.range * this.player.meleeRangeMultiplier, arc: Math.PI, lifetime: weapon.umbrellaGuardDuration, reflect: weapon.reflectProjectiles, color: weapon.color };
+        performMeleeStrike();
+        return;
+      }
       performMeleeStrike();
       if (weapon.extraAttackChance > 0 && Math.random() < weapon.extraAttackChance) {
         this.meleePulse = 0.16;
@@ -2574,6 +2606,19 @@ export class Game {
     const holdMultiplier = 1 + Math.min(1, this.player.attackHoldTime * 0.35);
     this.applyWeaponKickback(weapon, aimAngle, holdMultiplier);
     const shotRecoil = weapon.perfectAccuracy ? 0 : (weapon.recoil + this.player.recoil) / this.player.accuracy;
+    if (weapon.projectileKind === "surveyor") {
+      this.fireSurveyor(weapon, aimPoint);
+      return;
+    }
+    if (weapon.projectileKind === "rc-car") {
+      const count = weapon.rcCount ?? 1;
+      for (let index = 0; index < count; index += 1) this.rcCars.push({ x: this.player.x + (index - (count - 1) / 2) * 22, y: this.player.y, angle: aimAngle, speed: weapon.projectileSpeed, lifetime: weapon.rcDuration, damage: weapon.damage * this.player.damageMultiplier, explosionDamage: weapon.rcExplosionDamage * this.player.damageMultiplier, explosionRadius: weapon.rcExplosionRadius, radius: weapon.projectileRadius, color: weapon.color, hitEnemies: new Set(), wheelSpin: 0, active: true });
+      return;
+    }
+    if (weapon.projectileKind === "vacuum") {
+      this.applyVacuumSuction(weapon, aimAngle);
+      return;
+    }
     if (weapon.projectileKind === "sprinkler-mine") {
       if (this.sprinklerMines.length >= weapon.maxMines) this.sprinklerMines.shift();
       this.sprinklerMines.push({ x: this.player.x, y: this.player.y, active: true, warningTime: weapon.mineWarningDuration, triggerRadius: weapon.mineTriggerRadius, explosionRadius: weapon.mineExplosionRadius, damage: weapon.damage * this.player.damageMultiplier, freezeDuration: weapon.freezeDuration, color: weapon.color });
@@ -2824,8 +2869,98 @@ export class Game {
     return bonus;
   }
 
+  fireSurveyor(weapon, aimPoint) {
+    let angle = Math.atan2(aimPoint.y - this.player.y, aimPoint.x - this.player.x);
+    if (this.player.isMoving) angle += ((this.random ?? Math.random)() - .5) * weapon.movementDeviation * 2;
+    const range = weapon.projectileSpeed * weapon.projectileLifetime;
+    const directionX = Math.cos(angle); const directionY = Math.sin(angle);
+    let target = null; let targetDistance = range;
+    for (const enemy of this.enemies) {
+      if (!enemy.active || enemy.targetable === false) continue;
+      const dx = enemy.x - this.player.x; const dy = enemy.y - this.player.y;
+      const along = dx * directionX + dy * directionY;
+      if (along <= 0 || along >= targetDistance) continue;
+      const sideways = Math.abs(dx * directionY - dy * directionX);
+      if (sideways <= (enemy.radius ?? 18) + 3) { target = enemy; targetDistance = along; }
+    }
+    this.surveyorShots += 1;
+    const critical = weapon.criticalMultiplier > 1 && this.surveyorShots % weapon.criticalEvery === 0;
+    if (target) this.damageEnemy(target, weapon.damage * this.player.damageMultiplier * (critical ? weapon.criticalMultiplier : 1), 0, weapon.id);
+    this.laserEffects.push({ x1: this.player.x, y1: this.player.y - 8, x2: this.player.x + directionX * targetDistance, y2: this.player.y - 8 + directionY * targetDistance, lifetime: .14, maxLifetime: .14, color: critical ? "#fff2a2" : weapon.color });
+  }
+
+  applyVacuumSuction(weapon, angle) {
+    const range = weapon.vacuumRange; const halfArc = weapon.vacuumArc / 2;
+    this.vacuumEffect = { mode: "pull", angle, range, arc: weapon.vacuumArc, lifetime: .22, color: weapon.color };
+    for (const enemy of this.enemies) {
+      if (!enemy.active || enemy.targetable === false) continue;
+      const dx = enemy.x - this.player.x; const dy = enemy.y - this.player.y; const distance = Math.hypot(dx, dy) || 1;
+      const difference = Math.atan2(Math.sin(Math.atan2(dy, dx) - angle), Math.cos(Math.atan2(dy, dx) - angle));
+      if (distance > range || Math.abs(difference) > halfArc) continue;
+      this.damageEnemy(enemy, weapon.damage * this.player.damageMultiplier, 0, weapon.id);
+      if (!enemy.isBoss) { const pull = weapon.vacuumPull * .16 * (1 - distance / range * .4); enemy.x -= dx / distance * pull; enemy.y -= dy / distance * pull; }
+    }
+  }
+
+  releaseVacuum(aimPoint) {
+    const baseWeapon = weaponById("vacuum-cleaner");
+    if (!baseWeapon) return;
+    const level = weaponLevelWithLoadoutBonus(baseWeapon.id, this.progress.weaponLevels[baseWeapon.id], this.progress.equippedWeapons);
+    const weapon = applyRunWeaponBonuses(weaponStatsAtLevel(baseWeapon, level), this.player);
+    const angle = Math.atan2(aimPoint.y - this.player.y, aimPoint.x - this.player.x);
+    this.vacuumEffect = { mode: "release", angle, range: weapon.vacuumRange, arc: weapon.vacuumArc, lifetime: .3, color: "#e7f7f7" };
+    for (const enemy of this.enemies) {
+      if (!enemy.active || enemy.targetable === false) continue;
+      const dx = enemy.x - this.player.x; const dy = enemy.y - this.player.y; const distance = Math.hypot(dx, dy) || 1;
+      const difference = Math.atan2(Math.sin(Math.atan2(dy, dx) - angle), Math.cos(Math.atan2(dy, dx) - angle));
+      if (distance > weapon.vacuumRange || Math.abs(difference) > weapon.vacuumArc / 2) continue;
+      this.damageEnemy(enemy, weapon.vacuumReleaseDamage * this.player.damageMultiplier, 0, weapon.id);
+      if (!enemy.isBoss) {
+        enemy.x = clamp(enemy.x + dx / distance * weapon.vacuumReleaseKnockback, enemy.radius, this.world.width - enemy.radius);
+        enemy.y = clamp(enemy.y + dy / distance * weapon.vacuumReleaseKnockback, enemy.radius, this.world.height - enemy.radius);
+        if (weapon.humanCannonball) { enemy.vacuumCollisionDamage = weapon.vacuumCollisionDamage * this.player.damageMultiplier; enemy.vacuumCollisionTime = .45; }
+      }
+    }
+  }
+
+  isInsideUmbrella(projectile) {
+    const guard = this.umbrellaGuard;
+    if (!guard || projectile.blockable !== true) return false;
+    const dx = projectile.x - this.player.x; const dy = projectile.y - this.player.y; const distance = Math.hypot(dx, dy);
+    const difference = Math.atan2(Math.sin(Math.atan2(dy, dx) - guard.angle), Math.cos(Math.atan2(dy, dx) - guard.angle));
+    return distance <= guard.range + (projectile.radius ?? 5) && Math.abs(difference) <= guard.arc / 2;
+  }
+
+  blockWithUmbrella(projectile) {
+    if (!this.isInsideUmbrella(projectile)) return false;
+    projectile.active = false;
+    if (this.umbrellaGuard.reflect) {
+      const target = nearestActiveEnemy(this.player, this.enemies);
+      if (target) {
+        const dx = target.x - this.player.x; const dy = target.y - this.player.y; const distance = Math.hypot(dx, dy) || 1;
+        this.projectiles.push(new Projectile({ x: this.player.x, y: this.player.y, velocityX: dx / distance * 720, velocityY: dy / distance * 720, damage: projectile.damage ?? 10, lifetime: 1.2, kind: "umbrella-return", color: "#f7d8d8", radius: 7, weaponId: "garden-umbrella" }));
+      }
+    }
+    return true;
+  }
+
   updateWeaponDeployables(deltaTime) {
     const aimPoint = this.camera.screenToWorld(this.input.pointer);
+    for (const car of this.rcCars) {
+      car.lifetime -= deltaTime; car.wheelSpin += car.speed * deltaTime;
+      const desired = Math.atan2(aimPoint.y - car.y, aimPoint.x - car.x);
+      const difference = Math.atan2(Math.sin(desired - car.angle), Math.cos(desired - car.angle));
+      car.angle += clamp(difference, -4 * deltaTime, 4 * deltaTime);
+      car.x = clamp(car.x + Math.cos(car.angle) * car.speed * deltaTime, car.radius, this.world.width - car.radius);
+      car.y = clamp(car.y + Math.sin(car.angle) * car.speed * deltaTime, car.radius, this.world.height - car.radius);
+      for (const enemy of this.enemies) if (enemy.active && !car.hitEnemies.has(enemy) && Math.hypot(enemy.x - car.x, enemy.y - car.y) <= enemy.radius + car.radius) { car.hitEnemies.add(enemy); this.damageEnemy(enemy, car.damage, 0, "remote-control-car"); }
+      if (car.lifetime <= 0) {
+        car.active = false; this.explosions.push({ x: car.x, y: car.y, lifetime: .35, radius: car.explosionRadius, color: car.color });
+        for (const enemy of this.enemies) if (enemy.active && Math.hypot(enemy.x - car.x, enemy.y - car.y) <= car.explosionRadius) this.damageEnemy(enemy, car.explosionDamage, 0, "remote-control-car");
+      }
+    }
+    this.rcCars = this.rcCars.filter((car) => car.active);
+    this.laserEffects = this.laserEffects.filter((laser) => (laser.lifetime -= deltaTime) > 0);
     for (const cloud of this.rainClouds) {
       cloud.lifetime -= deltaTime; cloud.tick -= deltaTime; cloud.lightningTimer -= deltaTime;
       cloud.x += (aimPoint.x - cloud.x) * Math.min(1, deltaTime * 9); cloud.y += (aimPoint.y - cloud.y) * Math.min(1, deltaTime * 9);
@@ -3373,6 +3508,32 @@ export class Game {
 
   renderWeaponDeployables(context) {
     const renderTime = performance.now() / 1000;
+    for (const laser of this.laserEffects) {
+      context.save(); context.globalAlpha = laser.lifetime / laser.maxLifetime; context.strokeStyle = laser.color; context.lineWidth = 2;
+      context.beginPath(); context.moveTo(laser.x1 - this.camera.x, laser.y1 - this.camera.y); context.lineTo(laser.x2 - this.camera.x, laser.y2 - this.camera.y); context.stroke();
+      context.strokeStyle = "rgba(255,255,255,.8)"; context.lineWidth = 1; context.stroke(); context.restore();
+    }
+    for (const car of this.rcCars) {
+      const x = Math.round(car.x - this.camera.x); const y = Math.round(car.y - this.camera.y);
+      context.save(); context.translate(x, y); context.rotate(car.angle);
+      context.fillStyle = "#24282a"; context.fillRect(-13, -11, 8, 5); context.fillRect(5, -11, 8, 5); context.fillRect(-13, 6, 8, 5); context.fillRect(5, 6, 8, 5);
+      context.fillStyle = car.color; context.fillRect(-15, -8, 30, 16); context.fillStyle = "#bde8ef"; context.fillRect(1, -6, 9, 12); context.fillStyle = "#ffe87b"; context.fillRect(12, -5, 4, 4); context.fillRect(12, 2, 4, 4); context.restore();
+    }
+    if (this.umbrellaGuard) {
+      const x = this.player.x - this.camera.x; const y = this.player.y - this.camera.y;
+      context.save(); context.translate(x, y); context.rotate(this.umbrellaGuard.angle); context.globalAlpha = .65;
+      context.fillStyle = "rgba(231,117,117,.32)"; context.beginPath(); context.moveTo(0, 0); context.arc(0, 0, this.umbrellaGuard.range, -Math.PI / 2, Math.PI / 2); context.closePath(); context.fill();
+      context.strokeStyle = this.umbrellaGuard.color; context.lineWidth = 5; context.beginPath(); context.arc(0, 0, this.umbrellaGuard.range, -Math.PI / 2, Math.PI / 2); context.stroke(); context.restore();
+    }
+    if (this.vacuumEffect) {
+      const effect = this.vacuumEffect; const x = this.player.x - this.camera.x; const y = this.player.y - this.camera.y;
+      context.save(); context.translate(x, y); context.rotate(effect.angle); context.globalAlpha = Math.min(1, effect.lifetime / .16);
+      context.fillStyle = effect.mode === "pull" ? "rgba(140,182,189,.16)" : "rgba(231,247,247,.28)";
+      context.beginPath(); context.moveTo(15, 0); context.arc(0, 0, effect.range, -effect.arc / 2, effect.arc / 2); context.closePath(); context.fill();
+      context.strokeStyle = effect.color; context.lineWidth = 2;
+      for (let particle = 0; particle < 8; particle += 1) { const phase = (renderTime * (effect.mode === "pull" ? -150 : 220) + particle * 31) % effect.range; const distance = Math.abs(phase); const angle = (particle / 7 - .5) * effect.arc * .8; context.beginPath(); context.moveTo(Math.cos(angle) * distance, Math.sin(angle) * distance); context.lineTo(Math.cos(angle) * (distance + 10), Math.sin(angle) * (distance + 10)); context.stroke(); }
+      context.restore();
+    }
     for (const cloud of this.rainClouds) {
       const x = Math.round(cloud.x - this.camera.x); const y = Math.round(cloud.y - this.camera.y - 42);
       context.save();

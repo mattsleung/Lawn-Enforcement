@@ -107,7 +107,7 @@ Before the first deployment, open the repository's **Settings → Pages** and se
 
 ## Accounts and cloud saves
 
-The public build supports email-confirmed Supabase accounts. Passwords are handled by Supabase Auth and never enter the repository or saved game JSON. Player saves are stored in `game_saves` with Row Level Security limiting every request to the signed-in user's own row.
+The public build supports email-confirmed Supabase accounts. Usernames are private account metadata for now, but may become publicly visible when social features are introduced. Emails remain private, and passwords are handled by Supabase Auth and never enter the repository or saved game JSON. Player saves are stored in `game_saves` with Row Level Security limiting every request to the signed-in user's own row.
 
 Before enabling cloud saves, open the Supabase project's SQL Editor and run [`supabase/schema.sql`](supabase/schema.sql) once. Keep the service-role/secret key out of this repository and out of all browser assets. The publishable key in the browser bundle is intentionally public and has no access outside the RLS policies.
 

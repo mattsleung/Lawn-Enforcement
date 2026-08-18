@@ -49,6 +49,10 @@ export const HELD_WEAPON_VISUALS = Object.freeze({
   "lawn-sprinkler": { kind: "sprinkler", primary: "#66d4ec", secondary: "#456b72" },
   "pressure-plate": { kind: "lid", primary: "#d4a64e", secondary: "#6b542d" },
   "fart-gun": { kind: "small-gun", primary: "#93a94e", secondary: "#526333" },
+  surveyor: { kind: "tech-gun", primary: "#e2c84f", secondary: "#ff5a55" },
+  "remote-control-car": { kind: "rc-car", primary: "#e75b3f", secondary: "#30363a" },
+  "garden-umbrella": { kind: "umbrella", primary: "#e77575", secondary: "#72514c" },
+  "vacuum-cleaner": { kind: "vacuum", primary: "#8cb6bd", secondary: "#4d6368" },
   "ordinance-undefined": { kind: "glitch-gun", primary: "#e05cff", secondary: "#51f0de" },
 });
 
@@ -115,6 +119,12 @@ export function renderHeldWeaponVisual(context, weapon) {
       context.fillStyle = secondary; context.fillRect(0, -4, 8, 8); context.fillStyle = primary; context.fillRect(7, -3, 25, 6); context.fillStyle = "#ffffff"; context.fillRect(15, -5, 3, 10); break;
     case "lid":
       circle(context, 10, 0, 11, primary); context.strokeStyle = secondary; context.beginPath(); context.arc(10, 0, 7, 0, Math.PI * 2); context.stroke(); break;
+    case "rc-car":
+      context.fillStyle = primary; context.fillRect(5, -7, 27, 14); context.fillStyle = secondary; circle(context, 11, 8, 5, secondary); circle(context, 27, 8, 5, secondary); break;
+    case "umbrella":
+      context.fillStyle = secondary; context.fillRect(0, -2, 30, 4); context.fillStyle = primary; context.beginPath(); context.arc(32, 0, 18, Math.PI, Math.PI * 2); context.fill(); break;
+    case "vacuum":
+      context.fillStyle = secondary; context.fillRect(0, -5, 25, 10); context.fillStyle = primary; context.fillRect(20, -9, 20, 18); context.fillStyle = "#252b2d"; circle(context, 24, 11, 5, "#252b2d"); break;
     case "gnome":
       context.fillStyle = secondary; context.fillRect(2, -1, 12, 12); context.fillStyle = primary; context.beginPath(); context.moveTo(1, -1); context.lineTo(8, -17); context.lineTo(15, -1); context.closePath(); context.fill(); circle(context, 8, -2, 5, "#e8b995"); break;
     case "pinata":

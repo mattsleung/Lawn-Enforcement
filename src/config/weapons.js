@@ -1,6 +1,7 @@
 const MELEE = "melee";
 const RANGED = "ranged";
 const GENERAL_DAMAGE_MULTIPLIER = 1.1;
+const UNIVERSAL_DAMAGE_MULTIPLIER = 1.05;
 const SECRET_DAMAGE_MULTIPLIER = 1.2;
 const SECRET_COOLDOWN_MULTIPLIER = 0.85;
 
@@ -62,6 +63,14 @@ export const WEAPON_DEFINITIONS = Object.freeze([
     shape: "arc", color: "#d8e85f", knockback: 8,
     description: "Fast sword-like forehand swing with a focused cutting arc.",
     levelTenFeature: "Match winner: +25% swing range", levelTenRangeMultiplier: 1.25,
+  }),
+  meleeWeapon({
+    id: "garden-umbrella", name: "Garden Umbrella", rarity: "Uncommon", price: null,
+    duplicateValue: 90, damage: 22, cooldown: .55, range: 112, arc: Math.PI, width: 112,
+    shape: "arc", color: "#e77575", knockback: 48, umbrellaGuardDuration: .42,
+    description: "Opens a forward umbrella that shoves enemies and blocks ordinary projectiles.",
+    levelTenFeature: "Patio Size: +30% umbrella width and range",
+    levelTenModifiers: { range: 146, width: 146 },
   }),
   rangedWeapon({
     id: "gravity-freezer", name: "Gravity Freezer", rarity: "Epic", price: 4200,
@@ -325,7 +334,7 @@ export const WEAPON_DEFINITIONS = Object.freeze([
   }),
   rangedWeapon({
     id: "storm-sprinkler", name: "Storm Sprinkler", rarity: "Mythical", price: null,
-    duplicateValue: 800, damage: 6, cooldown: 0.052, projectileSpeed: 1120,
+    duplicateValue: 800, damage: 9, cooldown: 0.052, projectileSpeed: 1120,
     projectileLifetime: 0.72, projectileKind: "storm-water", color: "#78e4ff", spread: 0.18,
     recoil: 0.018, description: "Inaccurate water minigun with extreme fire rate.", levelTenFeature: "Cloudburst: fires two water bolts", levelTenModifiers: { projectileCount: 2 },
   }),
@@ -354,6 +363,34 @@ export const WEAPON_DEFINITIONS = Object.freeze([
     description: "Summons a cursor-following cloud that repeatedly rains on enemies below.",
     levelTenFeature: "Downpour: +30% rain radius and attack rate",
     levelTenModifiers: { cloudRadius: 137, cloudTickInterval: .23 },
+  }),
+  rangedWeapon({
+    id: "surveyor", name: "Surveyor", rarity: "Rare", price: null, duplicateValue: 170,
+    damage: 300, cooldown: 2.8, projectileSpeed: 2600, projectileLifetime: .72,
+    projectileKind: "surveyor", color: "#ff5a55", projectileRadius: 2, perfectAccuracy: true,
+    movementDeviation: .035, criticalEvery: 3, criticalMultiplier: 1,
+    description: "An extreme-range surveying laser that stops at the first enemy in its path.",
+    levelTenFeature: "Steady Hands: greatly reduces movement aim deviation",
+    levelTenModifiers: { movementDeviation: .01 },
+  }),
+  rangedWeapon({
+    id: "remote-control-car", name: "Remote-Control Car", rarity: "Rare", price: null, duplicateValue: 170,
+    damage: 32, cooldown: 4.5, projectileSpeed: 310, projectileLifetime: 0,
+    projectileKind: "rc-car", color: "#e75b3f", projectileRadius: 13, rcDuration: 4,
+    rcExplosionDamage: 85, rcExplosionRadius: 82,
+    description: "Deploys a cursor-steered RC car that hits enemies and explodes when its battery expires.",
+    levelTenFeature: "Extended Battery: RC Car lasts 2 seconds longer",
+    levelTenModifiers: { rcDuration: 6 },
+  }),
+  rangedWeapon({
+    id: "vacuum-cleaner", name: "Vacuum Cleaner", rarity: "Uncommon", price: null, duplicateValue: 90,
+    damage: 5, cooldown: .16, projectileSpeed: 0, projectileLifetime: 0,
+    projectileKind: "vacuum", color: "#8cb6bd", projectileRadius: 8,
+    vacuumRange: 170, vacuumArc: Math.PI * .48, vacuumPull: 150, vacuumReleaseDamage: 45,
+    vacuumReleaseKnockback: 155, vacuumCollisionDamage: 12,
+    description: "Hold to pull and damage nearby minions, then release to blast them away.",
+    levelTenFeature: "Industrial Vacuum: +30% suction width and length",
+    levelTenModifiers: { vacuumRange: 221, vacuumArc: Math.PI * .624 },
   }),
   rangedWeapon({
     id: "homing-pigeon", name: "Homing Pigeon", rarity: "Rare", price: null, duplicateValue: 170,
@@ -451,7 +488,7 @@ export function weaponStatsAtLevel(weapon, level) {
   const stats = {
     ...weapon,
     level: safeLevel,
-    damage: Number((weapon.damage * generalDamageMultiplier * secretDamageMultiplier * (1 + weapon.damagePerLevel * steps)).toFixed(2)),
+    damage: Number((weapon.damage * generalDamageMultiplier * UNIVERSAL_DAMAGE_MULTIPLIER * secretDamageMultiplier * (1 + weapon.damagePerLevel * steps)).toFixed(2)),
     cooldown: weapon.cooldown * secretCooldownMultiplier * (1 - weapon.cooldownPerLevel * steps),
     range: weapon.range ? weapon.range * (1 + weapon.rangePerLevel * steps) : weapon.range,
     levelTenActive: safeLevel >= 10,
@@ -499,6 +536,10 @@ export function applyRunWeaponBonuses(weapon, player) {
     thunderstorm: weapon.thunderstorm || Boolean(bonus.thunderstorm),
     sprinklerDirections: (weapon.sprinklerDirections ?? 0) + (bonus.sprinklerDirectionsAdd ?? 0),
     chainReaction: weapon.chainReaction || Boolean(bonus.chainReaction),
+    criticalMultiplier: (weapon.criticalMultiplier ?? 1) * (bonus.criticalMultiplier ?? 1),
+    rcCount: (weapon.rcCount ?? 1) + (bonus.rcCountAdd ?? 0),
+    reflectProjectiles: weapon.reflectProjectiles || Boolean(bonus.reflectProjectiles),
+    humanCannonball: weapon.humanCannonball || Boolean(bonus.humanCannonball),
     tornadoPullRadius: (weapon.tornadoPullRadius ?? 0) * (bonus.tornadoPullRadiusMultiplier ?? 1),
     tornadoPullForce: (weapon.tornadoPullForce ?? 0) * (bonus.tornadoPullForceMultiplier ?? 1),
     polarityRadius: (weapon.polarityRadius ?? 0) * (bonus.polarityRadiusMultiplier ?? 1),

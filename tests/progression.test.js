@@ -240,8 +240,8 @@ test("all weapon-specific Gold upgrades modify final weapon stats", () => {
 
 test("the full upgrade catalog has one weapon-specific Gold upgrade per weapon", () => {
   const weaponUpgrades = RUN_UPGRADES.filter((upgrade) => upgrade.weaponId);
-  assert.equal(weaponUpgrades.length, 51);
-  assert.equal(new Set(weaponUpgrades.map((upgrade) => upgrade.weaponId)).size, 51);
+  assert.equal(weaponUpgrades.length, 55);
+  assert.equal(new Set(weaponUpgrades.map((upgrade) => upgrade.weaponId)).size, 55);
 });
 
 test("new deployable weapon Gold upgrades alter their runtime behavior", () => {
@@ -261,6 +261,20 @@ test("new deployable weapon Gold upgrades alter their runtime behavior", () => {
   const fartGun = applyRunWeaponBonuses(weaponById("fart-gun"), player);
   assert.equal(fartGun.fertilizerCloudRadius, 78 * 1.5);
   assert.equal(fartGun.damage, 9 * 1.25);
+});
+
+test("new precision and control weapon Gold upgrades alter runtime behavior", () => {
+  const cases = [
+    ["surveyor-critical", "surveyor", "criticalMultiplier", 2],
+    ["rc-two-pack", "remote-control-car", "rcCount", 2],
+    ["umbrella-return", "garden-umbrella", "reflectProjectiles", true],
+    ["vacuum-cannonball", "vacuum-cleaner", "humanCannonball", true],
+  ];
+  for (const [upgradeId, weaponId, property, expected] of cases) {
+    const player = new Player();
+    assert.equal(applyRunUpgrade(player, upgradeId), true);
+    assert.equal(applyRunWeaponBonuses(weaponById(weaponId), player)[property], expected);
+  }
 });
 
 test("banked coins save, load, and reject malformed data", () => {
