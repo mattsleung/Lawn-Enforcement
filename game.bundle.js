@@ -1432,6 +1432,7 @@
     try {
       const parsed = JSON.parse(storage.getItem("lawn-enforcement-save-v1") ?? "{}");
       const coins = Number.isFinite(parsed.coins) && parsed.coins >= 0 ? Math.floor(parsed.coins) : 0;
+      const money = Number.isFinite(parsed.money) && parsed.money >= 0 ? Math.floor(parsed.money) : 0;
       const unlockedMaps = Array.isArray(parsed.unlockedMaps)
         ? [...new Set(["backyard", ...parsed.unlockedMaps
             .filter((id) => typeof id === "string")
@@ -1459,6 +1460,7 @@
       return {
         version: 2,
         coins,
+        money,
         chestPurchases: clampInteger(parsed.chestPurchases, 0, Number.MAX_SAFE_INTEGER, 0),
         unlockedMaps,
         ownedWeapons,
@@ -1519,6 +1521,7 @@
       storage.setItem("lawn-enforcement-save-v1", JSON.stringify({
         version: 2,
         coins: Math.max(0, Math.floor(progress.coins)),
+        money: Math.max(0, Math.floor(progress.money ?? 0)),
         chestPurchases: Math.max(0, Math.floor(progress.chestPurchases ?? 0)),
         unlockedMaps: [...new Set(progress.unlockedMaps ?? ["backyard"])],
         ownedWeapons: [...new Set(progress.ownedWeapons ?? ["weedwacker-9000", "apples"])],
@@ -1542,6 +1545,7 @@
     return {
       version: 2,
       coins: 0,
+      money: 0,
       chestPurchases: 0,
       unlockedMaps: ["backyard"],
       ownedWeapons: ["weedwacker-9000", "apples"],
@@ -1909,6 +1913,11 @@
         await this.saveNow(this.game.progress);
         this.setStatus(`Signed in as ${this.session.user.user_metadata?.username || this.session.user.email}. Local save uploaded.`);
       }
+      const username = this.session.user.user_metadata?.username;
+      if (username) {
+        await this.request("/rest/v1/rpc/register_market_profile", { method: "POST", token: this.session.access_token, body: { p_username: username } });
+        await this.request("/rest/v1/rpc/sync_market_inventory", { method: "POST", token: this.session.access_token, body: { p_weapons: this.game.progress.ownedWeapons, p_levels: this.game.progress.weaponLevels } });
+      }
     }
 
     queueSave(progress) {
@@ -1960,6 +1969,125 @@
       this.setStatus(signedIn ? `Signed in as ${this.session.user.user_metadata?.username || this.session.user.email}` : "Not signed in. Local saves remain on this device.");
     }
   }
+
+
+
+  const UNTRADEABLE_WEAPONS = new Set(["weedwacker-9000", "apples"]);
+  const SYSTEM_SELL_RATE = 0.75;
+  const RARITY_BASE = { Common: 250, Uncommon: 500, Rare: 1000, Epic: 2500, Legendary: 6000, Mythical: 14000, Secret: 35000, Developer: 0 };
+  const SEASON_ENDS = { "Lawn Enforcement": Date.UTC(2026, 9, 1) };
+
+  function identityFactor(id) {
+    let hash = 2166136261;
+    for (const character of id) hash = Math.imul(hash ^ character.charCodeAt(0), 16777619);
+    return 0.9 + ((hash >>> 0) % 31) / 100;
+  }
+
+  function estimateWeaponValue(weaponOrId, market = {}, now = Date.now()) {
+    const weapon = typeof weaponOrId === "string" ? weaponById(weaponOrId) : weaponOrId;
+    if (!weapon || weapon.developerOnly) return 0;
+    const base = RARITY_BASE[weapon.rarity] ?? 250;
+    const circulation = Math.max(1, Number(market.circulation) || 1000);
+    const scarcity = Math.max(0.72, Math.min(2.8, Math.sqrt(1000 / circulation)));
+    const trades = Math.max(0, Number(market.tradeCount) || 0);
+    const marketAverage = Math.max(0, Number(market.averageTradePrice) || 0);
+    const demand = Math.max(0.8, Math.min(1.8, 1 + (Number(market.recentOffers) || 0) / Math.max(20, circulation)));
+    let limited = 1;
+    if (weapon.limited) {
+      const end = SEASON_ENDS[weapon.season] ?? now;
+      const monthsAway = Math.max(0, now - end) / 2_629_800_000;
+      limited = now < end ? 1 : Math.min(4, 1.15 + monthsAway * 0.12);
+    }
+    const modeled = base * identityFactor(weapon.id) * scarcity * demand * limited;
+    const blended = trades > 2 && marketAverage > 0
+      ? modeled * Math.max(0.25, 1 - Math.min(0.75, trades / 40)) + marketAverage * Math.min(0.75, trades / 40)
+      : modeled;
+    return Math.max(25, Math.round(blended / 5) * 5);
+  }
+
+  function systemSellValue(weaponOrId, market = {}, now = Date.now()) {
+    const weapon = typeof weaponOrId === "string" ? weaponById(weaponOrId) : weaponOrId;
+    if (!weapon || UNTRADEABLE_WEAPONS.has(weapon.id) || weapon.developerOnly) return 0;
+    return Math.floor(estimateWeaponValue(weapon, market, now) * SYSTEM_SELL_RATE);
+  }
+
+  function formatMoney(value) {
+    return `$${Math.max(0, Math.floor(Number(value) || 0)).toLocaleString("en-US")}`;
+  }
+
+
+
+  class TradingPostClient {
+    constructor(cloud) {
+      this.cloud = cloud;
+      this.modal = document.querySelector("#trading-modal");
+      this.content = document.querySelector("#trading-content");
+      this.status = document.querySelector("#trading-status");
+      document.querySelector("#trading-button")?.addEventListener("click", () => this.open());
+      document.querySelector("#trading-close")?.addEventListener("click", () => this.modal?.close());
+    }
+
+    async open() {
+      this.modal?.showModal();
+      if (!this.cloud.session?.user) return this.setStatus("Sign in to use the Trading Post.", true);
+      this.setStatus("Loading market…");
+      try { await this.renderMarket(); } catch (error) { this.setStatus(error.message, true); }
+    }
+
+    async renderMarket() {
+      const token = this.cloud.session.access_token;
+      const [profiles, inventory, history, offers] = await Promise.all([
+        this.cloud.request("/rest/v1/player_profiles?select=user_id,username,money,is_admin,last_seen", { token }),
+        this.cloud.request("/rest/v1/player_inventory?select=owner_id,weapon_id,level,acquired_at", { token }),
+        this.cloud.request("/rest/v1/weapon_trade_history?select=weapon_id,implied_value,traded_at", { token }),
+        this.cloud.request("/rest/v1/trade_offers?select=id,proposer_id,recipient_id,offered_money,requested_money,status,created_at&status=eq.pending", { token }),
+      ]);
+      const market = buildMarketMetrics(inventory, history);
+      const ranked = profiles.map((profile) => {
+        const weapons = inventory.filter((item) => item.owner_id === profile.user_id);
+        return { ...profile, weapons, worth: weapons.reduce((sum, item) => sum + estimateWeaponValue(item.weapon_id, market[item.weapon_id]), 0) };
+      }).sort((a, b) => b.worth - a.worth);
+      const me = ranked.find((profile) => profile.user_id === this.cloud.session.user.id);
+      this.content.innerHTML = `
+        <section><h3>TOP 10 BY WEAPON WORTH</h3>${ranked.slice(0, 10).map((p, i) => profileRow(p, i + 1, market)).join("") || "<p>No public profiles yet.</p>"}</section>
+        <section><h3>ONLINE PLAYERS</h3>${ranked.filter((p) => Date.now() - Date.parse(p.last_seen) < 300000).map((p) => profileRow(p, null, market)).join("") || "<p>No other players online.</p>"}</section>
+        <section><h3>PENDING OFFERS</h3>${offers.map((o) => `<div class="market-card">#${o.id} · ${formatMoney(o.offered_money)} offered / ${formatMoney(o.requested_money)} requested ${o.recipient_id === me?.user_id ? `<button data-accept="${o.id}">ACCEPT</button>` : ""}</div>`).join("") || "<p>No pending offers.</p>"}</section>
+        <section><h3>CREATE TRADE REQUEST</h3><p>Use weapon IDs shown on player cards. Separate multiple weapons with commas.</p>
+          <input id="trade-recipient" placeholder="Player UUID"><input id="trade-offered" placeholder="Your weapon IDs"><input id="trade-requested" placeholder="Their weapon IDs">
+          <input id="trade-offered-money" type="number" min="0" placeholder="Money offered"><input id="trade-requested-money" type="number" min="0" placeholder="Money requested"><button id="trade-create">SEND OFFER</button></section>
+        ${me?.is_admin ? `<section><h3>ADMIN GIVEAWAY</h3><input id="giveaway-recipient" placeholder="Player UUID"><input id="giveaway-weapon" placeholder="Weapon ID (optional)"><input id="giveaway-money" type="number" min="0" placeholder="Money"><button id="giveaway-send">GIVE</button></section>` : ""}`;
+      this.content.querySelectorAll("[data-accept]").forEach((button) => button.addEventListener("click", () => this.acceptOffer(Number(button.dataset.accept))));
+      this.content.querySelector("#trade-create")?.addEventListener("click", () => this.createOffer());
+      this.content.querySelector("#giveaway-send")?.addEventListener("click", () => this.giveaway());
+      this.setStatus(`Money ${formatMoney(me?.money)} · Weapon worth ${formatMoney(me?.worth)}`);
+    }
+
+    async rpc(name, body) { return this.cloud.request(`/rest/v1/rpc/${name}`, { method: "POST", body, token: this.cloud.session.access_token }); }
+    async acceptOffer(id) { try { await this.rpc("accept_trade_offer", { p_offer_id: id }); await this.renderMarket(); } catch (e) { this.setStatus(e.message, true); } }
+    async createOffer() {
+      const split = (id) => document.querySelector(id).value.split(",").map((v) => v.trim()).filter(Boolean);
+      try {
+        await this.rpc("create_trade_offer", { p_recipient: document.querySelector("#trade-recipient").value.trim(), p_offered: split("#trade-offered"), p_requested: split("#trade-requested"), p_offered_money: Number(document.querySelector("#trade-offered-money").value) || 0, p_requested_money: Number(document.querySelector("#trade-requested-money").value) || 0 });
+        await this.renderMarket();
+      } catch (e) { this.setStatus(e.message, true); }
+    }
+    async giveaway() { try { await this.rpc("admin_giveaway", { p_recipient: document.querySelector("#giveaway-recipient").value.trim(), p_weapon_id: document.querySelector("#giveaway-weapon").value.trim() || null, p_money: Number(document.querySelector("#giveaway-money").value) || 0 }); await this.renderMarket(); } catch (e) { this.setStatus(e.message, true); } }
+    setStatus(text, error = false) { this.status.textContent = text; this.status.classList.toggle("is-error", error); }
+  }
+
+  function buildMarketMetrics(inventory, history) {
+    const result = {};
+    for (const item of inventory) (result[item.weapon_id] ??= { circulation: 0, tradeCount: 0, tradeTotal: 0 }).circulation += 1;
+    for (const trade of history) { const metric = result[trade.weapon_id] ??= { circulation: 0, tradeCount: 0, tradeTotal: 0 }; metric.tradeCount += 1; metric.tradeTotal += Number(trade.implied_value) || 0; }
+    for (const metric of Object.values(result)) metric.averageTradePrice = metric.tradeCount ? metric.tradeTotal / metric.tradeCount : 0;
+    return result;
+  }
+
+  function profileRow(profile, rank, market) {
+    const items = profile.weapons.map((item) => { const weapon = weaponById(item.weapon_id); return `<li>${weapon?.name ?? item.weapon_id} <code>${item.weapon_id}</code> · LV ${item.level} · ${formatMoney(estimateWeaponValue(item.weapon_id, market[item.weapon_id]))}</li>`; }).join("");
+    return `<details class="market-card"><summary>${rank ? `#${rank} ` : ""}${escapeHtml(profile.username)} · ${formatMoney(profile.worth)}</summary><small>${profile.user_id}</small><ul>${items || "<li>No tradable weapons</li>"}</ul></details>`;
+  }
+  function escapeHtml(value) { const node = document.createElement("span"); node.textContent = value; return node.innerHTML; }
 
 
 
@@ -2034,8 +2162,9 @@
     const candidates = PERMANENT_WEAPONS.filter((weapon) => weapon.rarity === rarity && !weapon.developerOnly && !weapon.limited);
     const weapon = candidates[Math.floor(random() * candidates.length)];
     if (progress.ownedWeapons.includes(weapon.id)) {
-      progress.coins += weapon.duplicateValue;
-      return { weapon, rarity, duplicate: true, coinsReturned: weapon.duplicateValue };
+      const moneyReturned = systemSellValue(weapon);
+      progress.money = Math.max(0, progress.money ?? 0) + moneyReturned;
+      return { weapon, rarity, duplicate: true, coinsReturned: 0, moneyReturned };
     }
     progress.ownedWeapons.push(weapon.id);
     progress.weaponLevels[weapon.id] = 1;
@@ -6890,7 +7019,7 @@
       }
       this.bankCoins = this.progress.coins;
       this.menuMessage = result.duplicate
-        ? `${result.rarity} duplicate: +${result.coinsReturned} coins`
+        ? `${result.rarity} duplicate auto-sold: +$${result.moneyReturned}`
         : `${result.rarity}: ${result.weapon.name} unlocked`;
       this.savePermanentProgress();
     }
@@ -9946,7 +10075,9 @@
       fitCenteredText(context, weapon.name.toUpperCase(), detailX + detailWidth / 2, 58, detailWidth - 32, 25, 14, true);
       context.fillStyle = rarityColor(weapon.rarity); context.font="bold 14px 'Courier New', monospace";
       context.fillText(`${weapon.rarity.toUpperCase()}${weapon.limited ? " · LIMITED" : ""}`, detailX + detailWidth / 2, 84);
-      if (weapon.limited) { context.fillStyle="#f2b6ff";context.font="bold 11px 'Courier New', monospace";context.fillText(`SEASON: ${(weapon.season ?? "Unknown").toUpperCase()}`, detailX + detailWidth / 2, 104); }
+      context.fillStyle="#72d8a2"; context.font="bold 12px 'Courier New', monospace";
+      context.fillText(`EST. VALUE ${formatMoney(estimateWeaponValue(weapon))}`, detailX + detailWidth / 2, 103);
+      if (weapon.limited) { context.fillStyle="#f2b6ff";context.font="bold 11px 'Courier New', monospace";context.fillText(`SEASON: ${(weapon.season ?? "Unknown").toUpperCase()}`, detailX + detailWidth / 2, 119); }
       context.save();context.translate(detailX + detailWidth / 2 - 25,132);context.scale(1.65,1.65);renderHeldWeaponVisual(context,weapon);context.restore();
       context.fillStyle="#d8d0ae";context.font="12px 'Courier New', monospace";
       wrapCenteredText(context, weapon.description, detailX + detailWidth / 2, 172, detailWidth - 42, 16, 3);
@@ -11363,5 +11494,6 @@
   game.start();
   const cloudSave = new CloudSaveClient(game);
   cloudSave.start();
+  new TradingPostClient(cloudSave);
 
 })();

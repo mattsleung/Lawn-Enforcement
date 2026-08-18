@@ -5,6 +5,7 @@ import { CHEST_COST, CHEST_ODDS, PERMANENT_WEAPONS, characterStatMaxLevelForMaps
 import { buyWeapon, chestCost, openChest, rollChestRarity, shopWeaponPrice, upgradeCharacterStat, upgradeWeapon } from "../src/systems/economy.js";
 import { defaultProgress } from "../src/systems/progression.js";
 import { WEAPON_DEFINITIONS } from "../src/config/weapons.js";
+import { estimateWeaponValue, systemSellValue, UNTRADEABLE_WEAPONS } from "../src/systems/weapon-value.js";
 
 test("chest rarity boundaries match the configured odds", () => {
   const cases = [
@@ -115,15 +116,27 @@ test("Limited weapons cannot be obtained from chests", () => {
   }
 });
 
-test("duplicate chest weapons convert to their configured coin value", () => {
+test("duplicate chest weapons auto-sell for Money at 75% estimated value", () => {
   const progress = defaultProgress();
   progress.coins = 2000;
   progress.ownedWeapons.push(...WEAPON_DEFINITIONS.filter((weapon) => weapon.rarity === "Rare").map((weapon) => weapon.id));
   const randomValues = [0.6, 0.7];
   const result = openChest(progress, () => randomValues.shift());
   assert.equal(result.duplicate, true);
-  assert.equal(result.duplicate, true);
-  assert.equal(progress.coins, result.weapon.duplicateValue);
+  assert.equal(result.moneyReturned, systemSellValue(result.weapon));
+  assert.equal(progress.money, result.moneyReturned);
+  assert.equal(progress.coins, 0);
+});
+
+test("weapon estimates are distinct and respond to scarcity, trades, and Limited age", () => {
+  const values = WEAPON_DEFINITIONS.filter((weapon) => !weapon.developerOnly).map((weapon) => estimateWeaponValue(weapon));
+  assert.ok(new Set(values).size > WEAPON_DEFINITIONS.length * 0.75);
+  const pebble = WEAPON_DEFINITIONS.find((weapon) => weapon.id === "pebble-shooter");
+  assert.ok(estimateWeaponValue(pebble, { circulation: 20 }) > estimateWeaponValue(pebble, { circulation: 2000 }));
+  assert.ok(estimateWeaponValue(pebble, { tradeCount: 20, averageTradePrice: 5000 }) > estimateWeaponValue(pebble));
+  const rainbow = WEAPON_DEFINITIONS.find((weapon) => weapon.id === "rainbow-apples");
+  assert.ok(estimateWeaponValue(rainbow, {}, Date.UTC(2027, 9, 1)) > estimateWeaponValue(rainbow, {}, Date.UTC(2026, 8, 1)));
+  assert.deepEqual([...UNTRADEABLE_WEAPONS].sort(), ["apples", "weedwacker-9000"]);
 });
 
 test("weapon upgrade costs increase by progressively larger amounts", () => {

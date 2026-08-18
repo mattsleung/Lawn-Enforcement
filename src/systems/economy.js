@@ -1,4 +1,5 @@
 import { characterStatUpgradeCost, CHEST_COST, CHEST_COST_INCREASE, CHEST_ODDS, MAX_CHEST_COST, PERMANENT_WEAPONS, SHOP_RARITY_PRICES, weaponMaxLevelForMaps, weaponUpgradeCost } from "../config/economy-config.js";
+import { systemSellValue } from "./weapon-value.js";
 
 export function rollChestRarity(random = Math.random) {
   const roll = random() * 1000;
@@ -71,8 +72,9 @@ export function openChest(progress, random = Math.random) {
   const candidates = PERMANENT_WEAPONS.filter((weapon) => weapon.rarity === rarity && !weapon.developerOnly && !weapon.limited);
   const weapon = candidates[Math.floor(random() * candidates.length)];
   if (progress.ownedWeapons.includes(weapon.id)) {
-    progress.coins += weapon.duplicateValue;
-    return { weapon, rarity, duplicate: true, coinsReturned: weapon.duplicateValue };
+    const moneyReturned = systemSellValue(weapon);
+    progress.money = Math.max(0, progress.money ?? 0) + moneyReturned;
+    return { weapon, rarity, duplicate: true, coinsReturned: 0, moneyReturned };
   }
   progress.ownedWeapons.push(weapon.id);
   progress.weaponLevels[weapon.id] = 1;

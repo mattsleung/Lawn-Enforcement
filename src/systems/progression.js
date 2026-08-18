@@ -225,6 +225,7 @@ export function loadProgress(storage) {
   try {
     const parsed = JSON.parse(storage.getItem("lawn-enforcement-save-v1") ?? "{}");
     const coins = Number.isFinite(parsed.coins) && parsed.coins >= 0 ? Math.floor(parsed.coins) : 0;
+    const money = Number.isFinite(parsed.money) && parsed.money >= 0 ? Math.floor(parsed.money) : 0;
     const unlockedMaps = Array.isArray(parsed.unlockedMaps)
       ? [...new Set(["backyard", ...parsed.unlockedMaps
           .filter((id) => typeof id === "string")
@@ -252,6 +253,7 @@ export function loadProgress(storage) {
     return {
       version: 2,
       coins,
+      money,
       chestPurchases: clampInteger(parsed.chestPurchases, 0, Number.MAX_SAFE_INTEGER, 0),
       unlockedMaps,
       ownedWeapons,
@@ -312,6 +314,7 @@ export function saveProgress(storage, progress) {
     storage.setItem("lawn-enforcement-save-v1", JSON.stringify({
       version: 2,
       coins: Math.max(0, Math.floor(progress.coins)),
+      money: Math.max(0, Math.floor(progress.money ?? 0)),
       chestPurchases: Math.max(0, Math.floor(progress.chestPurchases ?? 0)),
       unlockedMaps: [...new Set(progress.unlockedMaps ?? ["backyard"])],
       ownedWeapons: [...new Set(progress.ownedWeapons ?? ["weedwacker-9000", "apples"])],
@@ -335,6 +338,7 @@ export function defaultProgress() {
   return {
     version: 2,
     coins: 0,
+    money: 0,
     chestPurchases: 0,
     unlockedMaps: ["backyard"],
     ownedWeapons: ["weedwacker-9000", "apples"],
