@@ -225,7 +225,8 @@ export const REDWOOD_TRAIL_MAP = Object.freeze({
   bossSpawnTime: 120,
   victoryCoinBonus: 4000,
   bossThrownEnemy: null,
-  unlocks: "school-field",
+  unlocks: "chicken-farm",
+  spawnIntervalMultiplier: 1.25,
   obstacles: Object.freeze([
     Object.freeze({ x: 300, y: 260, width: 150, height: 220, kind: "redwood-trunk", solid: true }),
     Object.freeze({ x: 840, y: 180, width: 170, height: 220, kind: "redwood-trunk", solid: true }),
@@ -305,7 +306,7 @@ export const CONSTRUCTION_SITE_MAP = Object.freeze({
   bossSpawnTime: 120,
   victoryCoinBonus: 5500,
   bossThrownEnemy: null,
-  unlocks: "chicken-farm",
+  unlocks: null,
   debrisMinCooldown: 6,
   debrisMaxCooldown: 10,
   // Requested relative weights total 110 (20/30/15/15/30), so store their
@@ -356,7 +357,7 @@ export const CORN_FARM_MAP = Object.freeze({
   bossSpawnTime: 120,
   victoryCoinBonus: 6500,
   bossThrownEnemy: null,
-  unlocks: null,
+  unlocks: "school-field",
   cornSpawnWeights: Object.freeze({ angryCorn: 0.44, popcorn: 0.50, miniTractor: 0.06 }),
   boss: Object.freeze({
     type: "combine", name: "The Combine", health: 18000, damage: 50, speed: 52,
@@ -364,7 +365,7 @@ export const CORN_FARM_MAP = Object.freeze({
   }),
 });
 
-export const MAP_SLOTS = Object.freeze([FIRST_MAP, FRONTYARD_MAP, GARDEN_MAP, PUBLIC_PARK_MAP, LAKE_ELIZABETH_MAP, GOLF_COURSE_MAP, AQUATIC_GARDEN_MAP, REDWOOD_TRAIL_MAP, SCHOOL_FIELD_MAP, CONSTRUCTION_SITE_MAP, CHICKEN_FARM_MAP, CORN_FARM_MAP]);
+export const MAP_SLOTS = Object.freeze([FIRST_MAP, FRONTYARD_MAP, GARDEN_MAP, PUBLIC_PARK_MAP, LAKE_ELIZABETH_MAP, GOLF_COURSE_MAP, AQUATIC_GARDEN_MAP, REDWOOD_TRAIL_MAP, CHICKEN_FARM_MAP, CORN_FARM_MAP, SCHOOL_FIELD_MAP, CONSTRUCTION_SITE_MAP]);
 export const MAPS_BY_ID = Object.freeze(Object.fromEntries(MAP_SLOTS.map((map) => [map.id, map])));
 
 export function mapById(id) {

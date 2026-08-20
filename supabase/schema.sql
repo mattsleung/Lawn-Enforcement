@@ -36,6 +36,14 @@ create table if not exists public.player_profiles (
   created_at timestamptz not null default now()
 );
 alter table public.player_profiles add column if not exists last_seen timestamptz not null default now();
+create unique index if not exists player_profiles_username_casefold_unique on public.player_profiles (lower(username));
+
+create table if not exists public.market_action_log (
+  id bigint generated always as identity primary key,
+  actor_id uuid not null references public.player_profiles(user_id) on delete cascade,
+  action_kind text not null check (action_kind in ('trade_request','admin_giveaway')),
+  created_at timestamptz not null default now()
+);
 
 create table if not exists public.player_inventory (
   owner_id uuid not null references public.player_profiles(user_id) on delete cascade,
@@ -85,11 +93,13 @@ alter table public.player_weapon_claims enable row level security;
 alter table public.trade_offers enable row level security;
 alter table public.trade_offer_items enable row level security;
 alter table public.weapon_trade_history enable row level security;
+alter table public.market_action_log enable row level security;
 
 grant select on public.player_profiles, public.player_inventory, public.weapon_trade_history to authenticated;
 grant select on public.trade_offers, public.trade_offer_items to authenticated;
 revoke insert, update, delete on public.player_profiles, public.player_inventory, public.trade_offers, public.trade_offer_items, public.weapon_trade_history from authenticated, anon;
 revoke all on public.player_weapon_claims from authenticated, anon;
+revoke all on public.market_action_log from authenticated, anon;
 
 drop policy if exists "Public signed-in profiles" on public.player_profiles;
 create policy "Public signed-in profiles" on public.player_profiles for select to authenticated using (true);
@@ -108,6 +118,7 @@ create or replace function public.register_market_profile(p_username text)
 returns void language plpgsql security definer set search_path = public as $$
 begin
   if p_username !~ '^[A-Za-z0-9_-]{3,20}$' then raise exception 'Invalid username'; end if;
+  if exists(select 1 from player_profiles where lower(username)=lower(p_username) and user_id<>auth.uid()) then raise exception 'Username already taken'; end if;
   insert into player_profiles(user_id, username) values (auth.uid(), p_username)
   on conflict (user_id) do update set username = excluded.username, last_seen = now();
 end $$;
@@ -133,14 +144,17 @@ declare v_id bigint;
 begin
   if auth.uid() is null or auth.uid() = p_recipient then raise exception 'Invalid participants'; end if;
   if p_offered_money < 0 or p_requested_money < 0 then raise exception 'Invalid Money amount'; end if;
-  if array_length(p_offered,1) is null and p_offered_money = 0 then raise exception 'Offer cannot be empty'; end if;
-  if exists (select 1 from unnest(p_offered) w where w in ('weedwacker-9000','apples','ordinance-undefined')) then raise exception 'Untradeable weapon'; end if;
-  if exists (select 1 from unnest(p_requested) w where w in ('weedwacker-9000','apples','ordinance-undefined')) then raise exception 'Untradeable weapon'; end if;
+  if coalesce(array_length(p_offered,1),0)=0 and coalesce(array_length(p_requested,1),0)=0 and p_offered_money=0 and p_requested_money=0 then raise exception 'Trade cannot be empty'; end if;
+  if exists (select 1 from unnest(coalesce(p_offered,'{}')) w where w in ('weedwacker-9000','apples','ordinance-undefined')) then raise exception 'Untradeable weapon'; end if;
+  if exists (select 1 from unnest(coalesce(p_requested,'{}')) w where w in ('weedwacker-9000','apples','ordinance-undefined')) then raise exception 'Untradeable weapon'; end if;
   if (select money from player_profiles where user_id = auth.uid()) < p_offered_money then raise exception 'Insufficient Money'; end if;
-  if exists (select 1 from unnest(p_offered) w where not exists (select 1 from player_inventory i where i.owner_id=auth.uid() and i.weapon_id=w)) then raise exception 'Weapon not owned'; end if;
-  if exists (select 1 from unnest(p_requested) w where not exists (select 1 from player_inventory i where i.owner_id=p_recipient and i.weapon_id=w)) then raise exception 'Requested weapon not owned'; end if;
-  if exists (select 1 from unnest(p_offered) w where exists (select 1 from player_inventory i where i.owner_id=p_recipient and i.weapon_id=w)) then raise exception 'Recipient already owns offered weapon'; end if;
-  if exists (select 1 from unnest(p_requested) w where exists (select 1 from player_inventory i where i.owner_id=auth.uid() and i.weapon_id=w)) then raise exception 'Proposer already owns requested weapon'; end if;
+  if exists (select 1 from unnest(coalesce(p_offered,'{}')) w where not exists (select 1 from player_inventory i where i.owner_id=auth.uid() and i.weapon_id=w)) then raise exception 'Weapon not owned'; end if;
+  if exists (select 1 from unnest(coalesce(p_requested,'{}')) w where not exists (select 1 from player_inventory i where i.owner_id=p_recipient and i.weapon_id=w)) then raise exception 'Requested weapon not owned'; end if;
+  if exists (select 1 from unnest(coalesce(p_offered,'{}')) w where exists (select 1 from player_inventory i where i.owner_id=p_recipient and i.weapon_id=w)) then raise exception 'Recipient already owns offered weapon'; end if;
+  if exists (select 1 from unnest(coalesce(p_requested,'{}')) w where exists (select 1 from player_inventory i where i.owner_id=auth.uid() and i.weapon_id=w)) then raise exception 'Proposer already owns requested weapon'; end if;
+  if exists(select 1 from market_action_log where actor_id=auth.uid() and action_kind='trade_request' and created_at>now()-interval '1 minute') then raise exception 'Wait one minute before sending another trade request'; end if;
+  if (select count(*) from market_action_log where actor_id=auth.uid() and action_kind='trade_request' and created_at>now()-interval '1 hour') >= 15 then raise exception 'Hourly trade-request limit reached'; end if;
+  insert into market_action_log(actor_id,action_kind) values(auth.uid(),'trade_request');
   insert into trade_offers(proposer_id,recipient_id,offered_money,requested_money)
     values(auth.uid(),p_recipient,p_offered_money,p_requested_money) returning id into v_id;
   insert into trade_offer_items select v_id,'offered',w from unnest(coalesce(p_offered,'{}')) w;
@@ -175,6 +189,10 @@ returns void language plpgsql security definer set search_path = public as $$
 begin
   if not exists(select 1 from player_profiles where user_id=auth.uid() and is_admin) then raise exception 'Admin only'; end if;
   if p_money < 0 then raise exception 'Invalid Money'; end if;
+  if p_weapon_id is null and p_money=0 then raise exception 'Giveaway cannot be empty'; end if;
+  if exists(select 1 from market_action_log where actor_id=auth.uid() and action_kind='admin_giveaway' and created_at>now()-interval '1 minute') then raise exception 'Wait one minute before another giveaway'; end if;
+  if (select count(*) from market_action_log where actor_id=auth.uid() and action_kind='admin_giveaway' and created_at>now()-interval '1 hour') >= 15 then raise exception 'Hourly giveaway limit reached'; end if;
+  insert into market_action_log(actor_id,action_kind) values(auth.uid(),'admin_giveaway');
   update player_profiles set money=money+p_money where user_id=p_recipient;
   if p_weapon_id is not null and p_weapon_id not in ('weedwacker-9000','apples','ordinance-undefined') then
     insert into player_inventory(owner_id,weapon_id) values(p_recipient,p_weapon_id) on conflict do nothing;

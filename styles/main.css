@@ -134,11 +134,28 @@ kbd {
 .trading-content { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; max-height: 62vh; overflow: auto; }
 .trading-content section { border: 2px solid #5e633d; padding: 14px; background: #151a11; }
 .trading-content h3 { margin: 0 0 10px; color: #ead77b; }
-.trading-content input { box-sizing: border-box; width: 100%; margin: 4px 0; border: 2px solid #656945; padding: 9px; background: #0c110b; color: #f3e7bd; }
+.trading-content input,.trading-content select { box-sizing: border-box; width: 100%; margin: 4px 0 10px; border: 2px solid #656945; padding: 9px; background: #0c110b; color: #f3e7bd; }
+.trading-content select[multiple] { min-height: 116px; }
+.trading-content label { display: grid; color: #c8d9b0; font-weight: bold; font-size: 13px; }
 .trading-content button { margin-top: 7px; border: 2px solid #8d874f; padding: 8px; background: #343621; color: #f3e7bd; cursor: pointer; }
 .market-card { margin: 7px 0; border: 1px solid #5e633d; padding: 9px; background: #232919; }
 .market-card summary { cursor: pointer; color: #9fcf71; font-weight: bold; }
 .market-card code,.market-card small { color: #aaa985; }
+.player-card { display: flex; justify-content: space-between; width: 100%; color: #9fcf71; text-align: left; font-weight: bold; }
+.player-card span { color: #ead77b; }
+.player-profile-modal { width: calc(100vw - 30px); max-width: none; height: calc(100vh - 30px); max-height: none; }
+.player-profile-modal .account-panel { height: calc(100% - 64px); }
+.profile-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; border-bottom: 3px solid #77744b; }
+.profile-header h2,.profile-header p { margin: 4px 0; text-align: left; }
+.profile-header strong { color: #ead77b; font-size: 20px; }
+.profile-weapon-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(390px,1fr)); gap: 14px; overflow: auto; min-height: 0; padding-right: 8px; }
+.profile-weapon-card { display: grid; grid-template-columns: 150px 1fr; gap: 14px; border: 2px solid #5e633d; padding: 14px; background: #151a11; color: #f3e7bd; text-align: left; cursor: pointer; }
+.profile-weapon-card:hover { border-color: #ead77b; background: #252c1a; }
+.profile-weapon-card canvas { width: 150px; height: 90px; background: #0b100a; image-rendering: pixelated; }
+.profile-weapon-card h3 { margin: 0 0 4px; color: #ead77b; }
+.profile-weapon-card p { margin: 4px 0; line-height: 1.35; }
+.profile-weapon-card dl { display: grid; grid-template-columns: repeat(2,minmax(70px,auto)); margin: 8px 0; font-size: 12px; }
+.profile-weapon-card dt { color: #9aa985; }.profile-weapon-card dd { margin: 0; color: #fff0b5; text-align: right; }
 @media (max-width: 760px) { .trading-content { grid-template-columns: 1fr; } }
 
 .account-modal {

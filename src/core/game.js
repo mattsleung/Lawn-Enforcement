@@ -722,7 +722,7 @@ export class Game {
       const spawnMultiplier = this.currentMap.normalEnemyType === "park" ? 1.3
         : this.currentMap.normalEnemyType === "lake" ? 1.5
           : this.currentMap.normalEnemyType === "golf" ? 1.1
-            : this.currentMap.normalEnemyType === "redwood-trail" ? 1.15 : 1;
+            : (this.currentMap.spawnIntervalMultiplier ?? 1);
       const schoolSpawnMultiplier = this.currentMap.normalEnemyType === "school-field" ? 1.28 : 1;
       this.spawnTimer = Math.max(0.6, 2.25 - this.runTime * 0.018) * spawnMultiplier * schoolSpawnMultiplier;
     }
@@ -808,6 +808,17 @@ export class Game {
         projectile.x = this.player.x; projectile.y = this.player.y; projectile.lifetime = 0;
       }
       projectile.update(deltaTime);
+      if (projectile.active && projectile.auraPullRadius > 0 && projectile.auraPullForce > 0) {
+        for (const nearby of this.enemies) {
+          if (!nearby.active || nearby.targetable === false || nearby.isBoss) continue;
+          const dx = projectile.x - nearby.x; const dy = projectile.y - nearby.y;
+          const distance = Math.hypot(dx, dy) || 1;
+          if (distance > projectile.auraPullRadius) continue;
+          const pull = projectile.auraPullForce * deltaTime * (1 - distance / projectile.auraPullRadius);
+          nearby.x += dx / distance * pull;
+          nearby.y += dy / distance * pull;
+        }
+      }
       if (projectile.active && !projectile.gravityPull) {
         for (const tree of this.activeObstacles.filter((obstacle) => obstacle.kind === "redwood-trunk" && obstacle.solid !== false)) {
           const closestX = clamp(projectile.x, tree.x, tree.x + tree.width);
@@ -2690,6 +2701,8 @@ export class Game {
               fireDuration: weapon.fireDuration,
               fireMaxStacks: weapon.fireMaxStacks,
               freezeDuration: weapon.freezeDuration,
+              auraPullRadius: weapon.auraPullRadius,
+              auraPullForce: weapon.auraPullForce,
             },
           });
         }
@@ -4153,17 +4166,22 @@ export class Game {
     context.fillStyle = "#ead77b";
     context.font = "bold 34px 'Courier New', monospace";
     context.fillText("GLOSSARY", width / 2, height / 2 - 260);
-    this.renderButton(context, width / 2 - 230, height / 2 - 225, 225, 38, "BESTIARY",
+    this.renderButton(context, width / 2 - 282, height / 2 - 225, 180, 38, "BESTIARY",
       { type: "glossary-tab", value: "bestiary" },
       { fill: this.glossaryTab === "bestiary" ? "#6a6031" : "#343621" });
-    this.renderButton(context, width / 2 + 5, height / 2 - 225, 225, 38, "COLLECTION",
+    this.renderButton(context, width / 2 - 90, height / 2 - 225, 180, 38, "WEAPONS",
       { type: "glossary-tab", value: "collection" },
       { fill: this.glossaryTab === "collection" ? "#6a6031" : "#343621" });
+    this.renderButton(context, width / 2 + 102, height / 2 - 225, 180, 38, "MAPS",
+      { type: "glossary-tab", value: "maps" },
+      { fill: this.glossaryTab === "maps" ? "#6a6031" : "#343621" });
 
     if (this.glossaryTab === "bestiary") {
       this.renderBestiary(context, width, height);
-    } else {
+    } else if (this.glossaryTab === "collection") {
       this.renderCollection(context, width, height);
+    } else {
+      this.renderMapCollection(context, width, height);
     }
     context.textAlign = "start";
   }
@@ -4220,10 +4238,13 @@ export class Game {
     const listTop = height / 2 - 165;
     const visibleHeight = height - 92 - listTop;
     const collectionWeapons = weaponsVisibleInCollection(this.progress.ownedWeapons);
+    if (this.glossaryTab === "maps") {
+      return Math.max(0, Math.ceil(MAP_SLOTS.length / 2) * 104 + 22 - visibleHeight);
+    }
     const itemCount = this.glossaryTab === "bestiary" ? ENEMY_GLOSSARY.length : collectionWeapons.length + 4;
     const limitedRows = Math.ceil(collectionWeapons.filter((weapon) => weapon.limited).length / 2);
     const regularRows = Math.ceil(collectionWeapons.filter((weapon) => !weapon.limited).length / 2);
-    const contentHeight = this.glossaryTab === "bestiary" ? itemCount * 112 : (limitedRows + regularRows) * 56 + (limitedRows > 0 ? 62 : 30) + 170;
+    const contentHeight = this.glossaryTab === "bestiary" ? itemCount * 112 : (limitedRows + regularRows) * 56 + (limitedRows > 0 ? 62 : 30) + 34;
     return Math.max(0, contentHeight - visibleHeight);
   }
 
@@ -4239,7 +4260,7 @@ export class Game {
     const limitedRows = Math.ceil(limitedWeapons.length / 2);
     const regularRows = Math.ceil(regularWeapons.length / 2);
     const limitedSectionHeight = limitedWeapons.length > 0 ? 34 + limitedRows * weaponRowSpacing : 0;
-    const contentHeight = limitedSectionHeight + 34 + regularRows * weaponRowSpacing + 170;
+    const contentHeight = limitedSectionHeight + 34 + regularRows * weaponRowSpacing + 34;
     const visibleHeight = height - 92 - listTop;
     const maxScroll = Math.max(0, contentHeight - visibleHeight);
     this.glossaryScroll = clamp(this.glossaryScroll, 0, maxScroll);
@@ -4286,32 +4307,91 @@ export class Game {
     context.fillText(`WEAPONS ${regularWeapons.filter((weapon) => owned.has(weapon.id)).length}/${ordinaryWeaponCount}`, width / 2, regularTitleY - 12 - this.glossaryScroll);
     renderWeaponSection(regularWeapons, regularTitleY + 4);
 
-    context.textAlign = "center";
-    context.fillStyle = "#ead77b";
-    context.font = "bold 14px 'Courier New', monospace";
-    const mapsTitleY = regularTitleY + regularRows * weaponRowSpacing + 34;
-    context.fillText(`MAPS ${this.unlockedMaps.size}/${MAP_SLOTS.length}`, width / 2, mapsTitleY - this.glossaryScroll);
-    const mapCardWidth = Math.min(180, Math.max(130, (width - 80) / 2));
-    const mapGap = 15;
-    const mapStartX = width / 2 - mapCardWidth - mapGap / 2;
-    MAP_SLOTS.forEach((map, index) => {
-      const unlocked = this.unlockedMaps.has(map.id);
-      const x = mapStartX + (index % 2) * (mapCardWidth + mapGap);
-      const y = mapsTitleY + 17 + Math.floor(index / 2) * 48 - this.glossaryScroll;
-      context.fillStyle = unlocked ? "#343621" : "#29291f";
-      context.fillRect(x, y, mapCardWidth, 42);
-      context.strokeStyle = unlocked ? "#9a9256" : "#4d493a";
-      context.lineWidth = 2;
-      context.strokeRect(x, y, mapCardWidth, 42);
-      context.fillStyle = unlocked ? "#f3e7bd" : "#696453";
-      context.font = "bold 10px 'Courier New', monospace";
-      fitCenteredText(context, unlocked ? map.name.toUpperCase() : "??? · LOCKED", x + mapCardWidth / 2, y + 26, mapCardWidth - 12, 10, 8, true);
-    });
     context.restore();
     this.renderScrollBar(context, Math.min(width / 2 + 294, width - 14), listTop - 28, visibleHeight + 28, maxScroll, this.glossaryScroll);
     const controlX = Math.min(width / 2 + 265, width - 64);
     this.renderButton(context, controlX, listTop - 32, 58, 24, "▲", { type: "glossary-scroll", value: -1 }, { font: "bold 12px 'Courier New', monospace" });
     this.renderButton(context, controlX, height - 86, 58, 24, "▼", { type: "glossary-scroll", value: 1 }, { font: "bold 12px 'Courier New', monospace" });
+  }
+
+  renderMapCollection(context, width, height) {
+    const listTop = height / 2 - 165;
+    const listBottom = height - 92;
+    const visibleHeight = listBottom - listTop;
+    const rowHeight = 104;
+    const maxScroll = Math.max(0, Math.ceil(MAP_SLOTS.length / 2) * rowHeight + 22 - visibleHeight);
+    this.glossaryScroll = clamp(this.glossaryScroll, 0, maxScroll);
+    context.save();
+    context.beginPath();
+    context.rect(width / 2 - 300, listTop, 600, visibleHeight);
+    context.clip();
+    context.textAlign = "center";
+    context.fillStyle = "#ead77b";
+    context.font = "bold 14px 'Courier New', monospace";
+    context.fillText(`MAPS ${this.unlockedMaps.size}/${MAP_SLOTS.length}`, width / 2, listTop + 14 - this.glossaryScroll);
+    const cardWidth = 278;
+    MAP_SLOTS.forEach((map, index) => {
+      const unlocked = this.unlockedMaps.has(map.id);
+      const x = width / 2 - 288 + (index % 2) * 298;
+      const y = listTop + 26 + Math.floor(index / 2) * rowHeight - this.glossaryScroll;
+      context.fillStyle = unlocked ? "#343621" : "#29291f";
+      context.fillRect(x, y, cardWidth, 94);
+      context.strokeStyle = unlocked ? "#9a9256" : "#4d493a";
+      context.lineWidth = 2;
+      context.strokeRect(x, y, cardWidth, 94);
+      this.renderMapThumbnail(context, map, x + 42, y + 45, unlocked);
+      context.fillStyle = unlocked ? "#f3e7bd" : "#696453";
+      context.font = "bold 11px 'Courier New', monospace";
+      context.textAlign = "left";
+      fitCenteredText(context, unlocked ? map.name.toUpperCase() : "??? · LOCKED", x + 181, y + 24, 176, 11, 8, true);
+      context.fillStyle = unlocked ? "#d8d0ae" : "#595548";
+      context.font = "9px 'Courier New', monospace";
+      const bosses = map.bosses ?? (map.boss ? [map.boss] : []);
+      const bossNames = unlocked ? bosses.map((boss) => boss.name).join(" · ") : "Boss undiscovered";
+      wrapCenteredText(context, `BOSS${bosses.length === 1 ? "" : "ES"}: ${bossNames}`, x + 181, y + 48, 174, 12, 3);
+    });
+    context.restore();
+    this.renderScrollBar(context, Math.min(width / 2 + 294, width - 14), listTop, visibleHeight, maxScroll, this.glossaryScroll);
+    const controlX = Math.min(width / 2 + 265, width - 64);
+    this.renderButton(context, controlX, listTop - 32, 58, 24, "▲", { type: "glossary-scroll", value: -1 }, { font: "bold 12px 'Courier New', monospace" });
+    this.renderButton(context, controlX, listBottom + 6, 58, 24, "▼", { type: "glossary-scroll", value: 1 }, { font: "bold 12px 'Courier New', monospace" });
+  }
+
+  renderMapThumbnail(context, map, x, y, unlocked) {
+    context.save();
+    context.globalAlpha = unlocked ? 1 : 0.35;
+    context.fillStyle = map.lawnColors?.primary ?? "#587744";
+    context.fillRect(x - 31, y - 30, 62, 60);
+    context.strokeStyle = map.lawnColors?.secondary ?? "#3d5832";
+    context.lineWidth = 3;
+    context.strokeRect(x - 31, y - 30, 62, 60);
+    const obstacleKinds = new Set((map.obstacles ?? []).map((obstacle) => obstacle.kind));
+    if (obstacleKinds.has("lake") || obstacleKinds.has("river")) {
+      context.fillStyle = "#4f91a9";
+      context.fillRect(x - 31, y - 8, 62, 18);
+    }
+    if (map.id.includes("farm") || map.id === "garden" || map.id === "aquatic-garden") {
+      context.strokeStyle = "#b49a42";
+      context.lineWidth = 3;
+      for (let offset = -20; offset <= 20; offset += 10) {
+        context.beginPath();
+        context.moveTo(x + offset, y - 24);
+        context.lineTo(x + offset, y + 24);
+        context.stroke();
+      }
+    } else if (map.id === "redwood-trail" || map.id === "public-park") {
+      context.fillStyle = "#5c3824";
+      [[-17, -13], [14, 12], [17, -17]].forEach(([ox, oy]) => context.fillRect(x + ox - 4, y + oy - 8, 8, 17));
+      context.fillStyle = "#315c35";
+      [[-17, -13], [14, 12], [17, -17]].forEach(([ox, oy]) => { context.beginPath(); context.arc(x + ox, y + oy - 9, 9, 0, Math.PI * 2); context.fill(); });
+    } else if (map.id === "construction-site") {
+      context.fillStyle = "#d58a32";
+      context.beginPath(); context.moveTo(x, y - 20); context.lineTo(x - 18, y + 20); context.lineTo(x + 18, y + 20); context.closePath(); context.fill();
+    } else {
+      context.fillStyle = "rgba(241, 221, 126, 0.8)";
+      context.beginPath(); context.arc(x, y, 13, 0, Math.PI * 2); context.fill();
+    }
+    context.restore();
   }
 
   renderScrollBar(context, x, y, height, maxScroll, scroll) {
@@ -4772,10 +4852,10 @@ export class Game {
     });
     context.fillStyle = "#ead77b";
     context.font = "bold 14px 'Courier New', monospace";
-    context.fillText("WEAPON UPGRADES", width / 2, height / 2 + 10);
+    context.fillText("WEAPON UPGRADES", width / 2, height / 2 + 28);
     context.fillStyle = "#f3e7bd";
     context.font = "12px 'Courier New', monospace";
-    this.renderButton(context, width / 2 - 225, height / 2 + 50, 450, 34,
+    this.renderButton(context, width / 2 - 225, height / 2 + 44, 450, 38,
       `OPEN WEAPON ARSENAL · ${this.ownedWeaponsForSlot("all").length} OWNED`, { type: "choice", value: 1 });
     context.fillStyle = "#9fcf71";
     context.fillText(this.menuMessage, width / 2, height / 2 + 125);

@@ -25,7 +25,7 @@ export const CHEST_ODDS = Object.freeze([
 export const PERMANENT_WEAPONS = WEAPON_DEFINITIONS;
 
 export const CHARACTER_STAT_COSTS = Object.freeze([40, 80, 140, 220, 320, 450, 600, 780, 980, 1200]);
-export const WEAPON_LEVEL_COSTS = Object.freeze([100, 250, 500, 900]);
+export const WEAPON_LEVEL_COSTS = Object.freeze([500, 1200, 2400, 4400]);
 export const BASE_WEAPON_MAX_LEVEL = 5;
 export const CHARACTER_STAT_LEVELS_PER_MAP = 2;
 
@@ -47,7 +47,9 @@ export function weaponUpgradeCost(currentLevel) {
   const configuredCost = WEAPON_LEVEL_COSTS[currentLevel - 1];
   if (configuredCost != null) return configuredCost;
   const extraLevel = currentLevel - WEAPON_LEVEL_COSTS.length;
-  return WEAPON_LEVEL_COSTS.at(-1) + extraLevel * 500 + extraLevel * (extraLevel + 1) * 50;
+  const softCap = 15000;
+  const remainingCost = softCap - WEAPON_LEVEL_COSTS.at(-1);
+  return Math.round((softCap - remainingCost * (0.72 ** extraLevel)) / 100) * 100;
 }
 
 export function characterStatUpgradeCost(currentLevel) {

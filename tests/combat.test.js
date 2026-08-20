@@ -76,6 +76,8 @@ test("new deployable weapons expose their distinct level-ten mechanics", () => {
   const fartGun = weaponById("fart-gun");
   assert.equal(rain.rarity, "Epic");
   assert.ok(weaponStatsAtLevel(rain, 10).cloudRadius > rain.cloudRadius);
+  assert.equal(pigeon.damage, 28);
+  assert.equal(pigeon.cooldown, 1.7);
   assert.equal(weaponStatsAtLevel(pigeon, 10).pigeonHits, pigeon.pigeonHits + 2);
   assert.equal(sprinkler.sprinklerFireInterval, 0.2);
   assert.equal(weaponStatsAtLevel(sprinkler, 10).sprinklerFireInterval, 0.16);
@@ -193,7 +195,9 @@ test("Ordinance Undefined is a Developer weapon with doubled damage", () => {
   assert.equal(ordinance.rarity, "Developer");
   assert.equal(ordinance.limited, true);
   assert.equal(ordinance.developerOnly, true);
-  assert.equal(ordinance.damage, 8.88832);
+  assert.equal(ordinance.damage, 12);
+  assert.equal(ordinance.auraPullRadius, 105);
+  assert.equal(ordinance.auraPullForce, 185);
   assert.equal(ordinance.burstRounds, 2);
   assert.ok(ordinance.burstInterval <= 0.05);
   assert.equal(ordinance.fireDamagePerSecond, 15);
@@ -393,7 +397,7 @@ test("new shotgun and nail-gun ranged designs expose their signatures", () => {
   assert.equal(salt.rarity, "Epic");
   assert.equal(salt.damage, 32);
   assert.equal(weaponStatsAtLevel(salt, 10).rounds, 2);
-  assert.equal(weaponStatsAtLevel(salt, 10).damage, Number((salt.damage * 1.05 * 2.08 * 0.75).toFixed(2)));
+  assert.equal(weaponStatsAtLevel(salt, 10).damage, Number((salt.damage * 1.05 * 1.63 * 0.75).toFixed(2)));
   assert.equal(nails.recoil, 0);
   assert.equal(nails.damage, 14);
   assert.equal(nails.perfectAccuracy, true);
@@ -530,8 +534,8 @@ test("Rock Salt Blaster pellets speed up initially and slow near the end of flig
 
 test("Ordinance Undefined keeps its reduced firing speed", () => {
   const ordinance = weaponById("ordinance-undefined");
-  assert.equal(ordinance.damage, 8.88832);
-  assert.equal(ordinance.cooldown, 0.5859375);
+  assert.equal(ordinance.damage, 12);
+  assert.equal(ordinance.cooldown, 0.5);
   assert.equal(ordinance.projectileCount, 2);
 });
 
@@ -601,6 +605,7 @@ test("stream, minigun, piercing, and explosive weapons expose their mechanics", 
   assert.ok(weaponById("acorn-slingshot").pierces > 0);
   assert.equal(weaponById("diet-cola-launcher").explosive, true);
   assert.equal(weaponById("diet-cola-launcher").damage, 50);
+  assert.equal(weaponById("diet-cola-launcher").splashRadius, 76);
   assert.equal(weaponById("orbital-sprinkler").damage, 30);
 });
 

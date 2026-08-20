@@ -136,19 +136,22 @@ test("weapon estimates are distinct and respond to scarcity, trades, and Limited
   assert.ok(estimateWeaponValue(pebble, { tradeCount: 20, averageTradePrice: 5000 }) > estimateWeaponValue(pebble));
   const rainbow = WEAPON_DEFINITIONS.find((weapon) => weapon.id === "rainbow-apples");
   assert.ok(estimateWeaponValue(rainbow, {}, Date.UTC(2027, 9, 1)) > estimateWeaponValue(rainbow, {}, Date.UTC(2026, 8, 1)));
+  const secret = WEAPON_DEFINITIONS.find((weapon) => weapon.id === "shurikens");
+  assert.ok(estimateWeaponValue(secret) > estimateWeaponValue(pebble) * 500);
+  assert.ok(estimateWeaponValue("ordinance-undefined") > 500000);
   assert.deepEqual([...UNTRADEABLE_WEAPONS].sort(), ["apples", "weedwacker-9000"]);
 });
 
-test("weapon upgrade costs increase by progressively larger amounts", () => {
-  const costs = [1, 2, 3, 4, 5, 6].map(weaponUpgradeCost);
-  assert.deepEqual(costs, [100, 250, 500, 900, 1500, 2200]);
-  const increases = costs.slice(1).map((cost, index) => cost - costs[index]);
-  assert.deepEqual(increases, [150, 250, 400, 600, 700]);
+test("weapon upgrade costs rise gently toward a 15000 soft cap", () => {
+  const costs = [1, 2, 3, 4, 5, 6, 8, 12, 20].map(weaponUpgradeCost);
+  assert.deepEqual(costs, [500, 1200, 2400, 4400, 7400, 9500, 12200, 14200, 14900]);
+  assert.ok(costs.every((cost, index) => index === 0 || cost > costs[index - 1]));
+  assert.ok(costs.every((cost) => cost <= 15000));
 });
 
 test("every owned weapon can be upgraded independently to level 5", () => {
   const progress = defaultProgress();
-  progress.coins = 100000;
+  progress.coins = 2000000;
   progress.ownedWeapons = PERMANENT_WEAPONS.map((weapon) => weapon.id);
   progress.weaponLevels = Object.fromEntries(progress.ownedWeapons.map((id) => [id, 1]));
 

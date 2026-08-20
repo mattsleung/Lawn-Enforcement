@@ -13,4 +13,4 @@ const game = new Game(canvas, debugOutput);
 game.start();
 const cloudSave = new CloudSaveClient(game);
 cloudSave.start();
-new TradingPostClient(cloudSave);
+new TradingPostClient(cloudSave, game);

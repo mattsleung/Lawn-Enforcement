@@ -11,6 +11,7 @@ export class Projectile {
     fertilizerCloudRadius = 0, fertilizerCloudDuration = 0, fertilizerTickInterval = 0.5,
     polarity = "pull", polarityRadius = 0, polarityForce = 0, bossDamageMultiplier = 1,
     horseshoe = false, horseshoeRange = 0, horseshoeArc = 0, horseshoeOrbitCount = 1, weaponId = null,
+    auraPullRadius = 0, auraPullForce = 0,
   }) {
     this.x = x;
     this.y = y;
@@ -32,6 +33,7 @@ export class Projectile {
     this.horseshoe = horseshoe; this.horseshoeRange = horseshoeRange; this.horseshoeArc = horseshoeArc;
     this.horseshoeOrbitCount = horseshoeOrbitCount;
     this.weaponId = weaponId;
+    this.auraPullRadius = auraPullRadius; this.auraPullForce = auraPullForce;
     this.polarity = polarity; this.polarityRadius = polarityRadius; this.polarityForce = polarityForce;
     this.bossDamageMultiplier = bossDamageMultiplier;
     this.fertilizerCloudRadius = fertilizerCloudRadius; this.fertilizerCloudDuration = fertilizerCloudDuration; this.fertilizerTickInterval = fertilizerTickInterval;
