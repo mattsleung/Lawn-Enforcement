@@ -313,8 +313,8 @@ export const WEAPON_DEFINITIONS = Object.freeze([
     id: "diet-cola-launcher", name: "Diet Cola Launcher", rarity: "Legendary", price: 25000,
     duplicateValue: 440, damage: 50, cooldown: 0.72, projectileSpeed: 570,
     projectileLifetime: 1.7, projectileKind: "diet-cola", color: "#b63b32",
-    explosive: true, splashRadius: 58, splashDamageMultiplier: 0.45, description: "Launches shaken cola bottles that burst across a group.",
-    recoil: 0.07, levelTenFeature: "Menthol reaction: +55% blast radius", levelTenModifiers: { splashRadius: 90 },
+    explosive: true, splashRadius: 76, splashDamageMultiplier: 0.45, description: "Launches shaken cola bottles that burst across a group.",
+    recoil: 0.07, levelTenFeature: "Menthol reaction: +55% blast radius", levelTenModifiers: { splashRadius: 118 },
   }),
   rangedWeapon({
     id: "slushie", name: "Slushie", rarity: "Rare", price: 2800,
@@ -394,7 +394,7 @@ export const WEAPON_DEFINITIONS = Object.freeze([
   }),
   rangedWeapon({
     id: "homing-pigeon", name: "Homing Pigeon", rarity: "Rare", price: null, duplicateValue: 170,
-    damage: 34, cooldown: 1.5, projectileSpeed: 470, projectileLifetime: 0, projectileKind: "homing-pigeon", color: "#aeb8bd",
+    damage: 28, cooldown: 1.7, projectileSpeed: 470, projectileLifetime: 0, projectileKind: "homing-pigeon", color: "#aeb8bd",
     pigeonHits: 4, description: "Launches a pigeon that seeks several enemies before returning.",
     levelTenFeature: "Experienced Pigeon: +2 enemy hits", levelTenModifiers: { pigeonHits: 6 },
   }),
@@ -425,12 +425,12 @@ export const WEAPON_DEFINITIONS = Object.freeze([
   }),
   rangedWeapon({
     id: "ordinance-undefined", name: "Ordinance Undefined", rarity: "Developer", price: null,
-    limited: true, developerOnly: true, duplicateValue: 2000, damage: 8.88832, cooldown: 0.5859375, projectileSpeed: 1040,
+    limited: true, developerOnly: true, duplicateValue: 2000, damage: 12, cooldown: 0.5, projectileSpeed: 1040,
     projectileLifetime: 1.1, projectileKind: "undefined", color: "#e05cff", projectileCount: 2, bounces: 2,
     burstRounds: 2, burstInterval: 0.045,
     pierces: 1, explosive: true, splashRadius: 44, knockback: 10, spread: 0.08, recoil: 0.035,
-    fireDamagePerSecond: 15, fireDuration: 5, freezeDuration: 2,
-    description: "Fires two illegal rapid bursts of burning, freezing, bouncing, piercing yard energy.",
+    fireDamagePerSecond: 15, fireDuration: 5, freezeDuration: 2, auraPullRadius: 105, auraPullForce: 185,
+    description: "Fires two illegal rapid bursts of burning, freezing, bouncing, piercing yard energy that pull nearby enemies inward.",
     levelTenFeature: "Code violation: +2 projectiles", levelTenModifiers: { projectileCount: 3 },
   }),
 ]);
@@ -610,14 +610,14 @@ export function isWithinMeleeArc(attacker, target, range, facing, arcRadians = M
 
 function meleeWeapon(config) {
   return Object.freeze({
-    slot: MELEE, slotNumber: 1, maxLevel: 10, damagePerLevel: 0.12,
+    slot: MELEE, slotNumber: 1, maxLevel: 10, damagePerLevel: 0.07,
     cooldownPerLevel: 0.025, rangePerLevel: 0, knockback: 0, width: 0, ...config,
   });
 }
 
 function rangedWeapon(config) {
   return Object.freeze({
-    slot: RANGED, slotNumber: 2, maxLevel: 10, damagePerLevel: 0.12,
+    slot: RANGED, slotNumber: 2, maxLevel: 10, damagePerLevel: 0.07,
     cooldownPerLevel: 0.025, projectileCount: 1, fanSpacing: 0.14, rounds: 1, centerPierceCount: 0, perfectAccuracy: false, spread: 0, bounces: 0,
     pierces: 0, knockback: 0, slowDuration: 0, explosive: false,
     splashRadius: 0, splashDamageMultiplier: 0.5, recoil: 0.04, projectileRadius: 7,

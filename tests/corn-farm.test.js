@@ -6,7 +6,7 @@ import { CombineBoss } from "../src/entities/combine-boss.js";
 
 test("Corn Farm follows Chicken Farm with crop enemies and a 100-enemy cap", () => {
   const map = mapById("corn-farm");
-  assert.equal(MAP_SLOTS.at(-1).id, "corn-farm");
+  assert.equal(MAP_SLOTS.at(-3).id, "corn-farm");
   assert.equal(map.enemyCap, 100);
   assert.equal(map.boss.type, "combine");
   assert.equal(map.boss.health, 18000);

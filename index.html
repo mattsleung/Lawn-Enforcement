@@ -39,7 +39,7 @@
         <label>USERNAME<input id="account-username" type="text" autocomplete="username" minlength="3" maxlength="20"></label>
         <label>PASSWORD<input id="account-password" type="password" autocomplete="current-password"></label>
         <label>CONFIRM PASSWORD<input id="account-password-confirm" type="password" autocomplete="new-password"></label>
-        <p class="account-note">Usernames are private for now, but may become public when social features are added. Emails and passwords will remain private; passwords are handled by Supabase and never stored in the game save.</p>
+        <p class="account-note">Usernames are public and uniquely identify players in trading. Emails and passwords remain private; passwords are handled by Supabase and never stored in the game save.</p>
         <div class="account-actions">
           <button id="account-signin" type="button">SIGN IN</button>
           <button id="account-signup" type="button">CREATE ACCOUNT</button>
@@ -49,6 +49,7 @@
       </form>
     </dialog>
     <dialog id="trading-modal" class="account-modal trading-modal"><div class="account-panel"><h2>TRADING POST</h2><p id="trading-status" class="account-status">Sign in to trade.</p><div id="trading-content" class="trading-content"></div><div class="account-actions"><button id="trading-close" type="button">CLOSE</button></div></div></dialog>
+    <dialog id="player-profile-modal" class="account-modal player-profile-modal"><div class="account-panel"><div id="player-profile-content"></div><div class="account-actions"><button id="player-profile-close" type="button">BACK TO TRADING POST</button></div></div></dialog>
 
     <noscript>Lawn Enforcement requires JavaScript to run.</noscript>
     <script defer src="game.bundle.js?v=20260816-limited-collection"></script>

@@ -165,10 +165,10 @@ test("unlockAllMaps grants every current map", () => {
     "golf-course",
     "aquatic-garden",
     "redwood-trail",
-    "school-field",
-    "construction-site",
     "chicken-farm",
     "corn-farm",
+    "school-field",
+    "construction-site",
   ]);
 });
 

@@ -144,10 +144,11 @@ test("Redwood Trail gives the Ancient Snail a faster boss pace", () => {
   assert.equal(MAP_SLOTS[7], REDWOOD_TRAIL_MAP);
   assert.equal(REDWOOD_TRAIL_MAP.boss.type, "ancient-snail");
   assert.equal(REDWOOD_TRAIL_MAP.boss.speed, 30);
+  assert.equal(REDWOOD_TRAIL_MAP.spawnIntervalMultiplier, 1.25);
 });
 
 test("School Field is an exclusive edge-spawn map with two sports bosses", () => {
-  assert.equal(MAP_SLOTS[8], SCHOOL_FIELD_MAP);
+  assert.equal(MAP_SLOTS[10], SCHOOL_FIELD_MAP);
   assert.equal(SCHOOL_FIELD_MAP.normalEnemyType, "school-field");
   assert.equal(SCHOOL_FIELD_MAP.bossSpawnTime, 120);
   assert.equal(SCHOOL_FIELD_MAP.bosses.length, 2);
