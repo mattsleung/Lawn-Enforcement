@@ -169,6 +169,12 @@ test("unlockAllMaps grants every current map", () => {
     "corn-farm",
     "school-field",
     "construction-site",
+    "botanical-garden",
+    "beach",
+    "campground",
+    "mountain-trail",
+    "neighborhood-block-party",
+    "supermarket",
   ]);
 });
 
@@ -240,8 +246,8 @@ test("all weapon-specific Gold upgrades modify final weapon stats", () => {
 
 test("the full upgrade catalog has one weapon-specific Gold upgrade per weapon", () => {
   const weaponUpgrades = RUN_UPGRADES.filter((upgrade) => upgrade.weaponId);
-  assert.equal(weaponUpgrades.length, 55);
-  assert.equal(new Set(weaponUpgrades.map((upgrade) => upgrade.weaponId)).size, 55);
+  assert.equal(weaponUpgrades.length, WEAPON_DEFINITIONS.length);
+  assert.equal(new Set(weaponUpgrades.map((upgrade) => upgrade.weaponId)).size, WEAPON_DEFINITIONS.length);
 });
 
 test("new deployable weapon Gold upgrades alter their runtime behavior", () => {
@@ -259,7 +265,7 @@ test("new deployable weapon Gold upgrades alter their runtime behavior", () => {
   const player = new Player();
   applyRunUpgrade(player, "fart-extra-stinky");
   const fartGun = applyRunWeaponBonuses(weaponById("fart-gun"), player);
-  assert.equal(fartGun.fertilizerCloudRadius, 78 * 1.5);
+  assert.equal(fartGun.fertilizerCloudRadius, weaponById("fart-gun").fertilizerCloudRadius * 1.5);
   assert.equal(fartGun.damage, 9 * 1.25);
 });
 
@@ -354,6 +360,40 @@ test("glossary enemy defeat counts persist and reject malformed values", () => {
     popcorn: 0,
     "mini-tractor": 0,
     combine: 0,
+    cactus: 0,
+    snapflower: 0,
+    sunflower: 0,
+    vine: 0,
+    "queen-rose": 0,
+    crab: 0,
+    "hermit-crab": 0,
+    "beach-ball-enemy": 0,
+    "sand-octopus": 0,
+    lifeguard: 0,
+    "king-crab": 0,
+    raccoon: 0,
+    skunk: 0,
+    "camp-bear": 0,
+    "camp-owl": 0,
+    "campground-ranger": 0,
+    "mountain-goat": 0,
+    "mountain-eagle": 0,
+    "mountain-ram": 0,
+    "billy-mountain-king": 0,
+    partygoer: 0,
+    "hype-man": 0,
+    "grill-master": 0,
+    "cooler-carrier": 0,
+    "party-dj": 0,
+    "party-coach": 0,
+    "first-aid-volunteer": 0,
+    "party-planner": 0,
+    "bag-gremlin": 0,
+    "can-stack": 0,
+    "baguette-bandit": 0,
+    "frozen-dinner": 0,
+    "cart-goblin": 0,
+    "store-manager": 0,
   });
   values.set("lawn-enforcement-save-v1", JSON.stringify({
     defeatedEnemies: { gnome: -5, gopher: "many", "king-gnomulus": 2.9 },
@@ -398,6 +438,40 @@ test("glossary enemy defeat counts persist and reject malformed values", () => {
     popcorn: 0,
     "mini-tractor": 0,
     combine: 0,
+    cactus: 0,
+    snapflower: 0,
+    sunflower: 0,
+    vine: 0,
+    "queen-rose": 0,
+    crab: 0,
+    "hermit-crab": 0,
+    "beach-ball-enemy": 0,
+    "sand-octopus": 0,
+    lifeguard: 0,
+    "king-crab": 0,
+    raccoon: 0,
+    skunk: 0,
+    "camp-bear": 0,
+    "camp-owl": 0,
+    "campground-ranger": 0,
+    "mountain-goat": 0,
+    "mountain-eagle": 0,
+    "mountain-ram": 0,
+    "billy-mountain-king": 0,
+    partygoer: 0,
+    "hype-man": 0,
+    "grill-master": 0,
+    "cooler-carrier": 0,
+    "party-dj": 0,
+    "party-coach": 0,
+    "first-aid-volunteer": 0,
+    "party-planner": 0,
+    "bag-gremlin": 0,
+    "can-stack": 0,
+    "baguette-bandit": 0,
+    "frozen-dinner": 0,
+    "cart-goblin": 0,
+    "store-manager": 0,
   });
 });
 
@@ -418,6 +492,10 @@ test("structurally invalid save fields safely fall back and clamp", () => {
   assert.equal(progress.characterStats.damage, 0);
   assert.equal(progress.characterStats.accuracy, 0);
   assert.equal(progress.settings.sound, true);
+  assert.equal(progress.settings.tutorialEnabled, true);
+  assert.equal(progress.settings.tutorialSeen, false);
+  assert.equal(progress.settings.seasonTutorialSeen, false);
+  assert.equal(progress.settings.questTutorialSeen, false);
   assert.equal(progress.keybinds.melee, "Digit1");
 });
 

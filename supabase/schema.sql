@@ -51,8 +51,14 @@ create table if not exists public.player_inventory (
   level integer not null default 1 check (level >= 1),
   acquired_at timestamptz not null default now(),
   primary key (owner_id, weapon_id),
-  check (weapon_id not in ('weedwacker-9000', 'apples', 'ordinance-undefined'))
+  check (weapon_id not in ('weedwacker-9000', 'apples'))
 );
+-- Earlier schema versions blocked Ordinance Undefined from every cloud
+-- inventory. It must be storable when granted by the protected admin RPC,
+-- while the sync and trading functions below continue to reject it.
+alter table public.player_inventory drop constraint if exists player_inventory_weapon_id_check;
+alter table public.player_inventory add constraint player_inventory_weapon_id_check
+  check (weapon_id not in ('weedwacker-9000', 'apples'));
 create table if not exists public.player_weapon_claims (
   owner_id uuid not null references public.player_profiles(user_id) on delete cascade,
   weapon_id text not null,
@@ -194,7 +200,7 @@ begin
   if (select count(*) from market_action_log where actor_id=auth.uid() and action_kind='admin_giveaway' and created_at>now()-interval '1 hour') >= 15 then raise exception 'Hourly giveaway limit reached'; end if;
   insert into market_action_log(actor_id,action_kind) values(auth.uid(),'admin_giveaway');
   update player_profiles set money=money+p_money where user_id=p_recipient;
-  if p_weapon_id is not null and p_weapon_id not in ('weedwacker-9000','apples','ordinance-undefined') then
+  if p_weapon_id is not null and p_weapon_id not in ('weedwacker-9000','apples') then
     insert into player_inventory(owner_id,weapon_id) values(p_recipient,p_weapon_id) on conflict do nothing;
   end if;
 end $$;

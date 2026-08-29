@@ -6,7 +6,7 @@ import { MotherHenBoss } from "../src/entities/mother-hen-boss.js";
 
 test("Chicken Farm precedes Corn Farm and raises its enemy cap to 150", () => {
   const map = mapById("chicken-farm");
-  assert.equal(MAP_SLOTS.at(-4).id, "chicken-farm");
+  assert.equal(MAP_SLOTS.at(-10).id, "chicken-farm");
   assert.equal(map.unlocks, "corn-farm");
   assert.equal(map.enemyCap, 150);
   assert.equal(map.chickenEggDeathChance, 0.5);

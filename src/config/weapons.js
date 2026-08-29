@@ -2,8 +2,8 @@ const MELEE = "melee";
 const RANGED = "ranged";
 const GENERAL_DAMAGE_MULTIPLIER = 1.1;
 const UNIVERSAL_DAMAGE_MULTIPLIER = 1.05;
-const SECRET_DAMAGE_MULTIPLIER = 1.2;
-const SECRET_COOLDOWN_MULTIPLIER = 0.85;
+const SECRET_DAMAGE_MULTIPLIER = 1.3;
+const SECRET_COOLDOWN_MULTIPLIER = 0.8;
 
 export const WEAPON_DEFINITIONS = Object.freeze([
   meleeWeapon({
@@ -71,6 +71,14 @@ export const WEAPON_DEFINITIONS = Object.freeze([
     description: "Opens a forward umbrella that shoves enemies and blocks ordinary projectiles.",
     levelTenFeature: "Patio Size: +30% umbrella width and range",
     levelTenModifiers: { range: 146, width: 146 },
+  }),
+  meleeWeapon({
+    id: "wheelchair", name: "Wheelchair", rarity: "Rare", price: null, duplicateValue: 170,
+    damage: 18, cooldown: .72, range: 94, width: 72, shape: "lane", color: "#6fa5bd", knockback: 32,
+    wheelchairSpeedMultiplier: 2, wheelchairArmorMultiplier: .5, wheelchairTouchDamage: 80,
+    description: "A reusable mobility rig: double speed, 50% armor, and damaging enemy collisions while equipped.",
+    levelTenFeature: "Armored Momentum: +25% movement speed and 120 touch damage",
+    levelTenModifiers: { wheelchairSpeedMultiplier: 2.5, wheelchairTouchDamage: 120 },
   }),
   rangedWeapon({
     id: "gravity-freezer", name: "Gravity Freezer", rarity: "Epic", price: 4200,
@@ -366,7 +374,7 @@ export const WEAPON_DEFINITIONS = Object.freeze([
   }),
   rangedWeapon({
     id: "surveyor", name: "Surveyor", rarity: "Rare", price: null, duplicateValue: 170,
-    damage: 300, cooldown: 2.8, projectileSpeed: 2600, projectileLifetime: .72,
+    damage: 300, cooldown: 5.6, projectileSpeed: 2600, projectileLifetime: .72,
     projectileKind: "surveyor", color: "#ff5a55", projectileRadius: 2, perfectAccuracy: true,
     movementDeviation: .035, criticalEvery: 3, criticalMultiplier: 1,
     description: "An extreme-range surveying laser that stops at the first enemy in its path.",
@@ -394,9 +402,44 @@ export const WEAPON_DEFINITIONS = Object.freeze([
   }),
   rangedWeapon({
     id: "homing-pigeon", name: "Homing Pigeon", rarity: "Rare", price: null, duplicateValue: 170,
-    damage: 28, cooldown: 1.7, projectileSpeed: 470, projectileLifetime: 0, projectileKind: "homing-pigeon", color: "#aeb8bd",
-    pigeonHits: 4, description: "Launches a pigeon that seeks several enemies before returning.",
-    levelTenFeature: "Experienced Pigeon: +2 enemy hits", levelTenModifiers: { pigeonHits: 6 },
+    damage: 22, cooldown: 2, projectileSpeed: 450, projectileLifetime: 0, projectileKind: "homing-pigeon", color: "#aeb8bd",
+    pigeonHits: 3, description: "Launches a pigeon that seeks several enemies before returning.",
+    levelTenFeature: "Experienced Pigeon: +2 enemy hits", levelTenModifiers: { pigeonHits: 5 },
+  }),
+  rangedWeapon({
+    id: "beehive", name: "Beehive", rarity: "Rare", price: null, duplicateValue: 170,
+    damage: 18, cooldown: 5, projectileSpeed: 390, projectileLifetime: 0, projectileKind: "beehive", color: "#e7b83f",
+    hiveDuration: 10, hiveBeeCount: 3, beeSearchRadius: 430, beeHits: 1, beeTurnSpeed: 5.2,
+    description: "Places a hive whose bees visibly chase enemies, strike, and return home.",
+    levelTenFeature: "Bigger Colony: each hive controls four bees", levelTenModifiers: { hiveBeeCount: 4 },
+  }),
+  rangedWeapon({
+    id: "heat-lamp", name: "Heat Lamp", rarity: "Uncommon", price: null, duplicateValue: 90,
+    damage: 5, cooldown: 0.12, projectileSpeed: 0, projectileLifetime: 0, projectileKind: "heat-lamp", color: "#ff8b45",
+    heatRange: 620, heatAssistRadius: 105, heatChainRadius: 150,
+    description: "A long heat beam that bends toward enemies near the cursor while you keep aiming.",
+    levelTenFeature: "Focused Heat: repeated hits on one enemy steadily increase damage", levelTenModifiers: { focusedHeat: true },
+  }),
+  rangedWeapon({
+    id: "firefly-jar", name: "Firefly Jar", rarity: "Epic", price: null, duplicateValue: 260,
+    damage: 25, cooldown: 1.45, projectileSpeed: 560, projectileLifetime: 0.65, projectileKind: "firefly-jar", color: "#f4e86b",
+    fireflyCount: 5, fireflyHits: 1, fireflySpeed: 420, fireflyTurnSpeed: 5.8, fireflyLifetime: 3.4,
+    description: "Throws a jar that shatters into five independently homing fireflies.",
+    levelTenFeature: "Full Jar: releases seven fireflies", levelTenModifiers: { fireflyCount: 7 },
+  }),
+  rangedWeapon({
+    id: "homing-darts", name: "Homing Darts", rarity: "Uncommon", price: null, duplicateValue: 90,
+    damage: 17, cooldown: 0.8, projectileSpeed: 760, projectileLifetime: 1.35, projectileKind: "homing-dart", color: "#79d7b5",
+    projectileCount: 3, fanSpacing: 0.09, homingTurnSpeed: 4.5, homingFrontArc: Math.PI * 0.8,
+    description: "Fires three fast darts that visibly curve toward enemies ahead.",
+    levelTenFeature: "Dart Pack: fires four darts", levelTenModifiers: { projectileCount: 4 },
+  }),
+  rangedWeapon({
+    id: "bottle-rocket", name: "Bottle Rocket", rarity: "Uncommon", price: null, duplicateValue: 90,
+    damage: 48, cooldown: 1.25, projectileSpeed: 680, projectileLifetime: 1.8, projectileKind: "bottle-rocket", color: "#ef6a45",
+    projectileRadius: 8, guidanceDelay: 0.3, homingTurnSpeed: 7.5, explosive: true, splashRadius: 72, splashDamageMultiplier: 0.7,
+    description: "Launches straight, ignites its guidance, then sharply curves into a target and explodes.",
+    levelTenFeature: "Bigger Bang: explosion radius increases by 35%", levelTenModifiers: { splashRadius: 97.2 },
   }),
   rangedWeapon({
     id: "lawn-sprinkler", name: "Lawn Sprinkler", rarity: "Uncommon", price: null, duplicateValue: 90,
@@ -417,19 +460,32 @@ export const WEAPON_DEFINITIONS = Object.freeze([
   rangedWeapon({
     id: "fart-gun", name: "Fart Gun", rarity: "Uncommon", price: null, duplicateValue: 90,
     damage: 9, cooldown: 1, projectileSpeed: 0, projectileLifetime: 0, projectileKind: "fart-gun", color: "#93a94e",
-    fertilizerCloudRadius: 78, fertilizerCloudDuration: 4, fertilizerTickInterval: .35,
-    cloudExpands: true, cloudStartScale: .45, cloudExpansionDuration: 1.8,
-    description: "Immediately creates a lingering damaging gas cloud just in front of you.",
+    fertilizerCloudRadius: 175, fertilizerCloudDuration: 4, fertilizerTickInterval: .35,
+    cloudExpands: true, cloudStartScale: .62, cloudExpansionDuration: 1.8,
+    description: "Creates a huge skunk-like gas cloud that expands around the area in front of you.",
     levelTenFeature: "Lingering Stink: gas clouds last 50% longer",
     levelTenModifiers: { fertilizerCloudDuration: 6 },
   }),
+  rangedWeapon({ id: "flare-gun", name: "Flare Gun", rarity: "Uncommon", price: null, duplicateValue: 90, damage: 42, cooldown: 2.8, projectileSpeed: 720, projectileLifetime: 1.45, projectileKind: "flare", color: "#ff6a32", projectileRadius: 8, firePatchRadius: 88, firePatchDuration: 6, firePatchTickInterval: .45, firePatchDamage: 9, fireDamagePerSecond: 12, fireDuration: 3, fireMaxStacks: 2, description: "Launches a brilliant flare that leaves a six-second burning zone at impact.", levelTenFeature: "Wildfire: fire patch radius increases by 40%", levelTenModifiers: { firePatchRadius: 123.2 } }),
+  rangedWeapon({ id: "gasoline-can", name: "Gasoline Can", rarity: "Rare", price: null, duplicateValue: 170, damage: 10, cooldown: 4.5, projectileSpeed: 0, projectileLifetime: 0, projectileKind: "gasoline-can", color: "#e45b35", gasolineMaxLength: 620, gasolineSpacing: 24, gasolineBurnDuration: 5, gasolineTickInterval: .4, fireDamagePerSecond: 16, fireDuration: 4, fireMaxStacks: 2, description: "Hold while moving to pour a trail, then release to ignite the whole path.", levelTenFeature: "Bigger Can: maximum trail length increases by 50%", levelTenModifiers: { gasolineMaxLength: 930 } }),
+  rangedWeapon({ id: "magnifying-glass", name: "Magnifying Glass", rarity: "Rare", price: null, duplicateValue: 170, damage: 8, cooldown: .16, projectileSpeed: 0, projectileLifetime: 0, projectileKind: "magnifying-glass", color: "#ffe16a", sunlightRadius: 28, sunlightLifetime: .24, fireDamagePerSecond: 10, fireDuration: 2.5, fireMaxStacks: 2, description: "Hold to steer a concentrated sunbeam that burns a tiny area near the cursor.", levelTenFeature: "Bigger Lens: sunlight area increases by 30%", levelTenModifiers: { sunlightRadius: 36.4 } }),
+  rangedWeapon({ id: "soda-bottle", name: "Soda Bottle", rarity: "Common", price: null, duplicateValue: 45, damage: 32, cooldown: 1.7, projectileSpeed: 430, projectileLifetime: 2.2, projectileKind: "soda-bottle", color: "#59b9df", projectileRadius: 11, sodaMaxCharge: 1.25, sodaSprayDamage: 7, sodaSprayInterval: .12, sodaErraticStrength: 2.6, description: "Hold to shake up pressure, then release an erratic bottle that sprays damaging soda behind it.", levelTenFeature: "Extra Fizzy: higher maximum pressure and stronger spray", levelTenModifiers: { sodaMaxCharge: 1.7, sodaSprayDamage: 10 } }),
+  rangedWeapon({ id: "lawn-flamingo", name: "Lawn Flamingo", rarity: "Secret", price: null, duplicateValue: 900, damage: 75, cooldown: 4.5, projectileSpeed: 760, projectileLifetime: .75, projectileKind: "lawn-flamingo", color: "#f378a4", projectileRadius: 6, flamingoDuration: 12, flamingoAttackInterval: 1.55, flamingoRange: 480, flamingoPierce: 0, flamingoWaveRadius: 105, flamingoWaveDamage: 24, flamingoWaveKnockback: 92, flamingoWaveCooldown: 1.25, flamingoTouchLimit: 1, flamingoWaveLimit: 2, description: "Places a temporary pink precision turret. It breaks when touched by an enemy or after releasing two damaging knockback waves.", levelTenFeature: "Sharp Beak: flamingo shots pierce one enemy", levelTenModifiers: { flamingoPierce: 1 } }),
+  rangedWeapon({ id: "grill", name: "Grill", rarity: "Rare", price: null, duplicateValue: 170, damage: 20, cooldown: 5, projectileSpeed: 360, projectileLifetime: .42, projectileKind: "grill", color: "#ef6b35", projectileRadius: 10, grillDuration: 12, grillAttackInterval: 1.35, grillDirections: 4, grillBurstRange: 150, fireDamagePerSecond: 14, fireDuration: 3, fireMaxStacks: 2, description: "Places a hot barbecue that blasts short burning flames in four directions.", levelTenFeature: "High Heat: flame burst range increases by 30%", levelTenModifiers: { grillBurstRange: 195 } }),
+  rangedWeapon({ id: "laser-measure", name: "Laser Measure", rarity: "Rare", price: null, duplicateValue: 170, damage: 55, cooldown: 2.3, projectileSpeed: 0, projectileLifetime: 0, projectileKind: "laser-measure", color: "#ff4d48", perfectAccuracy: true, laserRange: 1050, distanceDamageBonus: 3, description: "An instant measuring laser whose damage climbs continuously with the distance to its first target.", levelTenFeature: "Long Distance: increases maximum distance damage bonus", levelTenModifiers: { distanceDamageBonus: 4.25 } }),
+  rangedWeapon({ id: "kite", name: "Kite", rarity: "Rare", price: null, duplicateValue: 170, damage: 9, cooldown: 5, projectileSpeed: 0, projectileLifetime: 0, projectileKind: "kite", color: "#e85b78", kiteDuration: 10, kiteRange: 650, kiteFollowSpeed: 7, kiteTickInterval: .25, kiteStringCount: 1, description: "Flies after the cursor while its taut string repeatedly cuts enemies swept across it.", levelTenFeature: "Longer String: maximum kite range increases by 30%", levelTenModifiers: { kiteRange: 845 } }),
+  rangedWeapon({ id: "leaf-rake-trap", name: "Leaf Rake Trap", rarity: "Common", price: null, duplicateValue: 45, damage: 145, cooldown: 3, projectileSpeed: 0, projectileLifetime: 0, projectileKind: "leaf-rake-trap", color: "#b98b46", rakeTrapRadius: 30, rakeTrapKnockback: 150, rakeTrapTriggers: 1, description: "Places a flat rake that snaps upward for high damage and knockback when stepped on.", levelTenFeature: "Reinforced Rake: survives one additional trigger", levelTenModifiers: { rakeTrapTriggers: 2 } }),
+  rangedWeapon({ id: "ceiling-fan", name: "Ceiling Fan", rarity: "Rare", price: null, duplicateValue: 170, damage: 28, cooldown: 5, projectileSpeed: 0, projectileLifetime: 0, projectileKind: "ceiling-fan", color: "#b8d2d4", fanDuration: 11, fanBladeCount: 3, fanBladeLength: 125, fanBladeWidth: 16, fanRotationSpeed: 2.7, fanHitInterval: .45, description: "Drops a floating ceiling fan whose long rotating blades repeatedly sweep through enemies.", levelTenFeature: "High Setting: rotates 30% faster", levelTenModifiers: { fanRotationSpeed: 3.51 } }),
+  rangedWeapon({ id: "wind-up-frog", name: "Wind-Up Frog", rarity: "Common", price: null, duplicateValue: 45, damage: 52, cooldown: 4, projectileSpeed: 330, projectileLifetime: 0, projectileKind: "wind-up-frog", color: "#71b95c", frogDuration: 12, frogWindup: .65, frogJumpSpeed: 330, frogLandingRadius: 65, frogCount: 1, description: "Deploys a mechanical frog that crouches, leaps to snapshotted targets, and lands with an AOE impact.", levelTenFeature: "Stronger Spring: jumps 25% faster with a larger landing AOE", levelTenModifiers: { frogJumpSpeed: 412.5, frogLandingRadius: 84.5 } }),
+  rangedWeapon({ id: "lawn-roller", name: "Lawn Roller", rarity: "Uncommon", price: null, duplicateValue: 90, damage: 18, cooldown: 4, projectileSpeed: 145, projectileLifetime: 5, projectileKind: "lawn-roller", color: "#d05b3f", rollerWidth: 105, rollerLength: 72, rollerPushForce: 105, rollerHitInterval: .32, rollerCount: 1, description: "Launches a heavy push mower wall that slowly gathers and damages groups of enemies.", levelTenFeature: "Heavy Duty: +30% width and significantly stronger push", levelTenModifiers: { rollerWidth: 136.5, rollerPushForce: 160 } }),
+  ...paintballWeapons(),
   rangedWeapon({
     id: "ordinance-undefined", name: "Ordinance Undefined", rarity: "Developer", price: null,
-    limited: true, developerOnly: true, duplicateValue: 2000, damage: 12, cooldown: 0.5, projectileSpeed: 1040,
+    limited: true, developerOnly: true, giveawayOnly: true, duplicateValue: 2000, damage: 18, cooldown: 0.4, projectileSpeed: 1120,
     projectileLifetime: 1.1, projectileKind: "undefined", color: "#e05cff", projectileCount: 2, bounces: 2,
     burstRounds: 2, burstInterval: 0.045,
-    pierces: 1, explosive: true, splashRadius: 44, knockback: 10, spread: 0.08, recoil: 0.035,
-    fireDamagePerSecond: 15, fireDuration: 5, freezeDuration: 2, auraPullRadius: 105, auraPullForce: 185,
+    pierces: 1, explosive: true, splashRadius: 55, knockback: 14, spread: 0.08, recoil: 0.035,
+    fireDamagePerSecond: 18, fireDuration: 5, freezeDuration: 2, auraPullRadius: 130, auraPullForce: 240,
     description: "Fires two illegal rapid bursts of burning, freezing, bouncing, piercing yard energy that pull nearby enemies inward.",
     levelTenFeature: "Code violation: +2 projectiles", levelTenModifiers: { projectileCount: 3 },
   }),
@@ -479,6 +535,40 @@ export function weaponLevelWithLoadoutBonus(weaponId, level, equippedWeapons = {
   return Math.max(1, Math.floor(level || 1)) + (paired && receivesBonus ? (weaponId === "vampire-fang" || weaponId === "plastic-ghost" ? 2 : 1) : 0);
 }
 
+export const SIDE_DAMAGE_SCALING = Object.freeze({
+  knockbackCollisionDamage: 0.55,
+  wheelchairTouchDamage: 0.4,
+  splitDamage: 0.45,
+  fireDamagePerSecond: 0.45,
+  decoyExplosionDamage: 0.55,
+  pinataConfettiDamage: 0.45,
+  lightningDamage: 0.5,
+  rcExplosionDamage: 0.55,
+  vacuumReleaseDamage: 0.6,
+  vacuumCollisionDamage: 0.45,
+  plateMaxStoredDamage: 0.4,
+  radialDamage: 0.55,
+  paintLightningDamage: 0.5,
+  paintBurnDamagePerSecond: 0.5,
+  firePatchDamage: 0.5,
+  sodaSprayDamage: 0.45,
+  flamingoWaveDamage: 0.5,
+});
+
+export function sideDamageScaling(field) {
+  return SIDE_DAMAGE_SCALING[field] ?? 0.65;
+}
+
+export function scaleSideDamageValue(value, damageMultiplier, field) {
+  if (!Number.isFinite(value) || value <= 0) return value ?? 0;
+  const reducedMultiplier = 1 + (Math.max(0, damageMultiplier) - 1) * sideDamageScaling(field);
+  return value * Math.max(0, reducedMultiplier);
+}
+
+export function scaledWeaponSideDamage(weapon, field, playerDamageMultiplier = 1) {
+  return scaleSideDamageValue(weapon?.[field] ?? 0, playerDamageMultiplier, field);
+}
+
 export function weaponStatsAtLevel(weapon, level) {
   const safeLevel = Math.max(1, Math.floor(level || 1));
   const steps = safeLevel - 1;
@@ -493,8 +583,7 @@ export function weaponStatsAtLevel(weapon, level) {
     range: weapon.range ? weapon.range * (1 + weapon.rangePerLevel * steps) : weapon.range,
     levelTenActive: safeLevel >= 10,
   };
-  if (safeLevel < 10) return stats;
-  return {
+  const finalStats = safeLevel < 10 ? stats : {
     ...stats,
     damage: Number((stats.damage * (weapon.levelTenDamageMultiplier ?? 1)).toFixed(2)),
     range: stats.range ? stats.range * (weapon.levelTenRangeMultiplier ?? 1) : stats.range,
@@ -505,12 +594,21 @@ export function weaponStatsAtLevel(weapon, level) {
       : stats.projectileLifetime,
     ...weapon.levelTenModifiers,
   };
+  const levelOneDamage = weapon.damage * generalDamageMultiplier * UNIVERSAL_DAMAGE_MULTIPLIER * secretDamageMultiplier;
+  const levelDamageMultiplier = finalStats.damage / levelOneDamage;
+  const scaledStats = { ...finalStats };
+  for (const field of Object.keys(SIDE_DAMAGE_SCALING)) {
+    if (Number.isFinite(finalStats[field]) && finalStats[field] > 0) {
+      scaledStats[field] = scaleSideDamageValue(finalStats[field], levelDamageMultiplier, field);
+    }
+  }
+  return scaledStats;
 }
 
 export function applyRunWeaponBonuses(weapon, player) {
   const bonus = player.weaponBonuses?.[weapon.id];
   if (!bonus) return weapon;
-  return {
+  const result = {
     ...weapon,
     damage: weapon.damage * (bonus.damageMultiplier ?? 1),
     range: weapon.range ? weapon.range * (bonus.rangeMultiplier ?? 1) : weapon.range,
@@ -533,13 +631,34 @@ export function applyRunWeaponBonuses(weapon, player) {
     decoyExplosionRadius: (weapon.decoyExplosionRadius ?? 0) * (bonus.decoyExplosionRadiusMultiplier ?? 1),
     returnDamageMultiplier: (weapon.returnDamageMultiplier ?? 1) * (bonus.returnDamageMultiplier ?? 1),
     fertilizerCloudRadius: (weapon.fertilizerCloudRadius ?? 0) * (bonus.fertilizerCloudRadiusMultiplier ?? 1),
+    firePatchRadius: (weapon.firePatchRadius ?? 0) * (bonus.firePatchRadiusMultiplier ?? 1),
+    firePatchDuration: (weapon.firePatchDuration ?? 0) * (bonus.firePatchDurationMultiplier ?? 1),
+    gasolineBurnDuration: (weapon.gasolineBurnDuration ?? 0) * (bonus.gasolineBurnDurationMultiplier ?? 1),
+    gasolineMaxLength: (weapon.gasolineMaxLength ?? 0) * (bonus.gasolineMaxLengthMultiplier ?? 1),
+    sunlightRadius: (weapon.sunlightRadius ?? 0) * (bonus.sunlightRadiusMultiplier ?? 1),
+    sodaBottleCount: (weapon.sodaBottleCount ?? 1) + (bonus.sodaBottleCountAdd ?? 0),
+    flamingoCount: (weapon.flamingoCount ?? 1) + (bonus.flamingoCountAdd ?? 0),
+    grillDirections: (weapon.grillDirections ?? 0) + (bonus.grillDirectionsAdd ?? 0),
     thunderstorm: weapon.thunderstorm || Boolean(bonus.thunderstorm),
+    spreadingFlames: weapon.spreadingFlames || Boolean(bonus.spreadingFlames),
+    sunlightCount: (weapon.sunlightCount ?? 1) + (bonus.sunlightCountAdd ?? 0),
+    laserDoubleMeasure: weapon.laserDoubleMeasure || Boolean(bonus.laserDoubleMeasure),
+    kiteStringCount: (weapon.kiteStringCount ?? 1) + (bonus.kiteStringCountAdd ?? 0),
+    rakeTrapCount: (weapon.rakeTrapCount ?? 1) + (bonus.rakeTrapCountAdd ?? 0),
+    fanBladeCount: (weapon.fanBladeCount ?? 3) + (bonus.fanBladeCountAdd ?? 0),
+    frogCount: (weapon.frogCount ?? 1) + (bonus.frogCountAdd ?? 0),
+    rollerCount: (weapon.rollerCount ?? 1) + (bonus.rollerCountAdd ?? 0),
     sprinklerDirections: (weapon.sprinklerDirections ?? 0) + (bonus.sprinklerDirectionsAdd ?? 0),
     chainReaction: weapon.chainReaction || Boolean(bonus.chainReaction),
     criticalMultiplier: (weapon.criticalMultiplier ?? 1) * (bonus.criticalMultiplier ?? 1),
     rcCount: (weapon.rcCount ?? 1) + (bonus.rcCountAdd ?? 0),
     reflectProjectiles: weapon.reflectProjectiles || Boolean(bonus.reflectProjectiles),
     humanCannonball: weapon.humanCannonball || Boolean(bonus.humanCannonball),
+    beeHits: (weapon.beeHits ?? 1) + (bonus.beeHitsAdd ?? 0),
+    heatSplitBeam: weapon.heatSplitBeam || Boolean(bonus.heatSplitBeam),
+    fireflyHits: (weapon.fireflyHits ?? 1) + (bonus.fireflyHitsAdd ?? 0),
+    homingTurnSpeed: (weapon.homingTurnSpeed ?? 0) * (bonus.homingTurnSpeedMultiplier ?? 1),
+    wheelchairTouchDamage: (weapon.wheelchairTouchDamage ?? 0) * (bonus.wheelchairTouchDamageMultiplier ?? 1),
     tornadoPullRadius: (weapon.tornadoPullRadius ?? 0) * (bonus.tornadoPullRadiusMultiplier ?? 1),
     tornadoPullForce: (weapon.tornadoPullForce ?? 0) * (bonus.tornadoPullForceMultiplier ?? 1),
     polarityRadius: (weapon.polarityRadius ?? 0) * (bonus.polarityRadiusMultiplier ?? 1),
@@ -563,6 +682,14 @@ export function applyRunWeaponBonuses(weapon, player) {
     bounces: (weapon.bounces ?? 0) + (bonus.bouncesAdd ?? 0),
     pierces: (weapon.pierces ?? 0) + (bonus.piercesAdd ?? 0),
   };
+  if (Number.isFinite(bonus.damageMultiplier) && bonus.damageMultiplier !== 1) {
+    for (const field of Object.keys(SIDE_DAMAGE_SCALING)) {
+      if (Number.isFinite(result[field]) && result[field] > 0) {
+        result[field] = scaleSideDamageValue(result[field], bonus.damageMultiplier, field);
+      }
+    }
+  }
+  return result;
 }
 
 export function isEnemyHitByMelee(attacker, target, weapon, rangeMultiplier = 1) {
@@ -624,4 +751,30 @@ function rangedWeapon(config) {
     endSpeedMultiplier: 1, lifesteal: 0, projectileRadiusMultiplier: 1,
     fireDamagePerSecond: 0, fireDuration: 0, fireMaxStacks: 1, freezeDuration: 0, ...config,
   });
+}
+
+function paintballWeapons() {
+  const variants = [
+    ["black", "Black Paintball Gun", "Rare", "#222326", "Burning Paint: 25 damage per second while painted."],
+    ["yellow", "Yellow Paintball Gun", "Legendary", "#f1cf3e", "Marked Target: painted enemies take double damage."],
+    ["blue", "Blue Paintball Gun", "Epic", "#438fe3", "Cold Coat: freezes enemies but grants them 50% armor."],
+    ["red", "Red Paintball Gun", "Rare", "#d94b4b", "Shared Pain: painted enemies receive 2% of all player damage."],
+    ["white", "White Paintball Gun", "Secret", "#f4f2e9", "Storm Paint: strikes every second for 50 damage and chains at full damage through ten nearby enemies."],
+    ["green", "Green Paintball Gun", "Mythical", "#53b65d", "Friendly Fire: painted enemies heal the player instead of hurting them."],
+  ];
+  return variants.map(([paintColor, name, rarity, color, effect]) => rangedWeapon({
+    id: `${paintColor}-paintball-gun`, name, rarity, price: null,
+    duplicateValue: rarity === "Secret" ? 2000 : rarity === "Mythical" ? 800 : rarity === "Legendary" ? 440 : rarity === "Epic" ? 260 : 170,
+    damage: 40, cooldown: .75, projectileSpeed: 760, projectileLifetime: 1.15,
+    projectileKind: "paintball", projectileRadius: 8, color, explosive: true,
+    splashRadius: 62, splashDamageMultiplier: .35, paintColor, paintDuration: 5,
+    paintLightningDamage: paintColor === "white" ? 50 : 0,
+    paintLightningInterval: paintColor === "white" ? 1 : 0,
+    paintLightningChainCount: paintColor === "white" ? 10 : 0,
+    paintLightningScaling: paintColor === "white" ? 0.5 : 0,
+    paintBurnDamagePerSecond: paintColor === "black" ? 25 : 0,
+    description: `A medium paint blast. ${effect}`,
+    levelTenFeature: "Long-Lasting Paint: paint duration increases from 5 to 8 seconds",
+    levelTenModifiers: { paintDuration: 8 },
+  }));
 }

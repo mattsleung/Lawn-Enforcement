@@ -63,6 +63,31 @@ test("Bestiary descriptions wrap within their card width", () => {
   assert.ok(lines.every((line) => context.measureText(line).width <= 120));
 });
 
+test("first enemy discoveries smoothly stop time for five seconds and queue entries", () => {
+  const game = Object.create(Game.prototype);
+  game.enemyDiscovery = null;
+  game.enemyDiscoveryQueue = [];
+  game.input = { pointer: { down: true } };
+  game.beginEnemyDiscovery("mountain-goat");
+  game.beginEnemyDiscovery("mountain-ram");
+  assert.equal(game.enemyDiscovery.entry.id, "mountain-goat");
+  assert.equal(game.enemyDiscoveryQueue[0].id, "mountain-ram");
+  assert.equal(game.input.pointer.down, false);
+  game.screenState = "running";
+  game.progress = { settings: { screenShake: true, reducedMotion: false } };
+  game.addScreenShake(1, 1, 8, 8);
+  assert.equal(game.screenShakeTime, 0);
+  assert.equal(game.screenKickX, 0);
+  assert.equal(game.screenKickY, 0);
+  const easedStep = game.applyEnemyDiscoverySlowdown(0.1);
+  assert.ok(easedStep > 0);
+  assert.ok(easedStep < 0.1);
+  assert.equal(game.applyEnemyDiscoverySlowdown(2.4), 0);
+  game.applyEnemyDiscoverySlowdown(2.51);
+  assert.equal(game.enemyDiscovery.entry.id, "mountain-ram");
+  assert.equal(game.enemyDiscovery.remaining, 5);
+});
+
 test("Community Garden is the third map and uses weed waves", () => {
   assert.equal(MAP_SLOTS[2], GARDEN_MAP);
   assert.equal(GARDEN_MAP.name, "The Community Garden");

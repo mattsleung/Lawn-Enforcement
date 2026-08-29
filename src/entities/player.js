@@ -22,6 +22,7 @@ export class Player {
     this.lifestealAccumulator = 0;
     this.rangedExplosion = false;
     this.weaponBonuses = {};
+    this.wheelchairTouchDamage = 0;
     this.syrupTrail = false;
     this.autonomousMower = false;
     this.batteryPack = false;
@@ -61,7 +62,7 @@ export class Player {
     const inSandBunker = obstacles.some((obstacle) => obstacle.kind === "sand-bunker"
       && this.x >= obstacle.x && this.x <= obstacle.x + obstacle.width
       && this.y >= obstacle.y && this.y <= obstacle.y + obstacle.height);
-    const inWater = obstacles.some((obstacle) => obstacle.kind === "river"
+    const inWater = obstacles.some((obstacle) => (obstacle.kind === "river" || obstacle.kind === "shallow-water")
       && this.x >= obstacle.x && this.x <= obstacle.x + obstacle.width
       && this.y >= obstacle.y && this.y <= obstacle.y + obstacle.height);
     const onRunningTrack = obstacles.some((obstacle) => obstacle.kind === "running-track"
@@ -74,7 +75,12 @@ export class Player {
     const inMatureCorn = obstacles.some((obstacle) => obstacle.kind === "mature-corn"
       && this.x >= obstacle.x && this.x <= obstacle.x + obstacle.width
       && this.y >= obstacle.y && this.y <= obstacle.y + obstacle.height);
-    const movementSpeed = inSlime ? this.speed * 0.4 : inDirtPile ? this.speed * 0.7 : (inSandBunker || inWater) ? this.speed * 0.5 : inMatureCorn ? this.speed * 0.7 : onRunningTrack ? this.speed * 1.2 : this.speed;
+    const inLavender = obstacles.some((obstacle) => obstacle.kind === "lavender-bed"
+      && this.x >= obstacle.x && this.x <= obstacle.x + obstacle.width
+      && this.y >= obstacle.y && this.y <= obstacle.y + obstacle.height);
+    this.vineSlowTime = Math.max(0, (this.vineSlowTime ?? 0) - deltaTime);
+    this.searchlightSlowTime=Math.max(0,(this.searchlightSlowTime??0)-deltaTime);
+    const movementSpeed = this.searchlightSlowTime>0?this.speed*.5:inSlime ? this.speed * 0.4 : this.vineSlowTime > 0 ? this.speed * .45 : inLavender ? this.speed * .75 : inDirtPile ? this.speed * 0.7 : inWater ? this.speed * (obstacles.some((o) => o.kind === "shallow-water" && this.x >= o.x && this.x <= o.x + o.width && this.y >= o.y && this.y <= o.y + o.height) ? .7 : .5) : inSandBunker ? this.speed * .5 : inMatureCorn ? this.speed * 0.7 : onRunningTrack ? this.speed * 1.2 : this.speed;
     if (this.maxShield > 0) this.shield = Math.min(this.maxShield, this.shield + this.shieldRegen * deltaTime);
     if (this.healthRegenAmount > 0 && this.healthRegenInterval > 0) {
       this.healthRegenTimer += deltaTime;
@@ -162,15 +168,21 @@ export class Player {
     const healthRatio = Math.max(0, Math.min(1, this.health / Math.max(1, this.maxHealth)));
     context.fillRect(-16, -53, 34 * healthRatio, 3);
 
-    this.renderHeldWeapon(context, heldWeapon);
+    if (Array.isArray(heldWeapon)) {
+      this.renderHeldWeapon(context, heldWeapon[0], -8, -0.08);
+      this.renderHeldWeapon(context, heldWeapon[1], 8, 0.08);
+    } else {
+      this.renderHeldWeapon(context, heldWeapon);
+    }
 
     context.restore();
   }
 
-  renderHeldWeapon(context, heldWeapon) {
+  renderHeldWeapon(context, heldWeapon, sideOffset = 0, angleOffset = 0) {
     context.save();
     context.translate(4, -14);
-    context.rotate(this.facing);
+    context.rotate(this.facing + angleOffset);
+    context.translate(0, sideOffset);
     context.fillStyle = COLORS.playerShirt;
     context.fillRect(0, -5, 13, 10);
     context.fillStyle = COLORS.playerSkin;

@@ -306,7 +306,7 @@ export const CONSTRUCTION_SITE_MAP = Object.freeze({
   bossSpawnTime: 120,
   victoryCoinBonus: 5500,
   bossThrownEnemy: null,
-  unlocks: null,
+  unlocks: "botanical-garden",
   debrisMinCooldown: 6,
   debrisMaxCooldown: 10,
   // Requested relative weights total 110 (20/30/15/15/30), so store their
@@ -320,6 +320,37 @@ export const CONSTRUCTION_SITE_MAP = Object.freeze({
     Object.freeze({ x: 1120, y: 820, width: 190, height: 35, kind: "barrier", solid: false }),
   ]),
   boss: Object.freeze({ type: "excavator", name: "The Excavator", health: 12000, speed: 52, damage: 35 }),
+});
+
+export const BOTANICAL_GARDEN_MAP = Object.freeze({
+  id: "botanical-garden",
+  name: "Botanical Garden",
+  world: Object.freeze({ width: VIEWPORT.designWidth * 1.8, height: VIEWPORT.designHeight * 1.7, gridSize: 96 }),
+  lawnColors: Object.freeze({ primary: "#557f48", secondary: "#4d7442" }),
+  houseSide: null,
+  normalEnemyType: "botanical-garden",
+  enemyCap: 100,
+  spawnIntervalMultiplier: 1.12,
+  bossSpawnTime: 120,
+  victoryCoinBonus: 7500,
+  bossThrownEnemy: null,
+  unlocks: "beach",
+  botanicalSpawnWeights: Object.freeze({ cactus: .28, snapflower: .32, sunflower: .18, vine: .22 }),
+  obstacles: Object.freeze([
+    Object.freeze({ x: 170, y: 170, width: 310, height: 180, kind: "sunflower-bed", solid: false }),
+    Object.freeze({ x: 870, y: 130, width: 340, height: 190, kind: "rose-bed", solid: false }),
+    Object.freeze({ x: 1580, y: 190, width: 330, height: 175, kind: "lavender-bed", solid: false }),
+    Object.freeze({ x: 290, y: 760, width: 350, height: 190, kind: "lavender-bed", solid: false }),
+    Object.freeze({ x: 990, y: 720, width: 330, height: 205, kind: "sunflower-bed", solid: false }),
+    Object.freeze({ x: 1700, y: 760, width: 320, height: 185, kind: "rose-bed", solid: false }),
+    Object.freeze({ x: 90, y: 510, width: 190, height: 28, kind: "hedge", solid: false }),
+    Object.freeze({ x: 2020, y: 520, width: 190, height: 28, kind: "hedge", solid: false }),
+    Object.freeze({ x: 660, y: 475, width: 80, height: 80, kind: "fountain", solid: false }),
+    Object.freeze({ x: 1460, y: 465, width: 80, height: 80, kind: "statue", solid: false }),
+    Object.freeze({ x: 470, y: 500, width: 150, height: 25, kind: "bench", solid: false }),
+    Object.freeze({ x: 1670, y: 500, width: 150, height: 25, kind: "bench", solid: false }),
+  ]),
+  boss: Object.freeze({ type: "queen-rose", name: "Queen Rose", health: 20000, damage: 0, speed: 0 }),
 });
 
 export const CHICKEN_FARM_MAP = Object.freeze({
@@ -365,7 +396,75 @@ export const CORN_FARM_MAP = Object.freeze({
   }),
 });
 
-export const MAP_SLOTS = Object.freeze([FIRST_MAP, FRONTYARD_MAP, GARDEN_MAP, PUBLIC_PARK_MAP, LAKE_ELIZABETH_MAP, GOLF_COURSE_MAP, AQUATIC_GARDEN_MAP, REDWOOD_TRAIL_MAP, CHICKEN_FARM_MAP, CORN_FARM_MAP, SCHOOL_FIELD_MAP, CONSTRUCTION_SITE_MAP]);
+export const BEACH_MAP = Object.freeze({
+  id: "beach",
+  name: "Beach",
+  world: Object.freeze({ width: VIEWPORT.designWidth * 2, height: VIEWPORT.designHeight * 1.5, gridSize: 96 }),
+  lawnColors: Object.freeze({ primary: "#d9bd7b", secondary: "#d1b271" }),
+  houseSide: null,
+  normalEnemyType: "beach",
+  enemyCap: 100,
+  bossSpawnTime: 120,
+  victoryCoinBonus: 8000,
+  bossThrownEnemy: null,
+  unlocks: "campground",
+  beachSpawnWeights: Object.freeze({ crab: .42, hermitCrab: .2, beachBall: .2, sandOctopus: .1, lifeguard: .08 }),
+  obstacles: Object.freeze([]),
+  boss: Object.freeze({ type: "king-crab", name: "King Crab", health: 25000, speed: 150, damage: 35 }),
+});
+
+export const CAMPGROUND_MAP = Object.freeze({
+  id:"campground",name:"Campground",
+  world:Object.freeze({width:VIEWPORT.designWidth*1.8,height:VIEWPORT.designHeight*1.8,gridSize:96}),
+  lawnColors:Object.freeze({primary:"#263426",secondary:"#202d23"}),houseSide:null,
+  normalEnemyType:"campground",enemyCap:100,bossSpawnTime:120,victoryCoinBonus:8500,bossThrownEnemy:null,unlocks:"mountain-trail",
+  campgroundSpawnWeights:Object.freeze({raccoon:.74,skunk:.12,bear:.08,owl:.06}),
+  campfires:Object.freeze([
+    Object.freeze({x:340,y:290}),Object.freeze({x:VIEWPORT.designWidth*1.8-340,y:290}),
+    Object.freeze({x:340,y:VIEWPORT.designHeight*1.8-290}),Object.freeze({x:VIEWPORT.designWidth*1.8-340,y:VIEWPORT.designHeight*1.8-290}),
+  ]),
+  obstacles:Object.freeze([]),boss:Object.freeze({type:"campground-ranger",name:"Campground Ranger",health:28000,speed:95,damage:30}),
+});
+
+export const MOUNTAIN_TRAIL_MAP=Object.freeze({
+  id:"mountain-trail",name:"Mountain Trail",world:Object.freeze({width:VIEWPORT.designWidth*1.8,height:VIEWPORT.designHeight*1.8,gridSize:96}),
+  lawnColors:Object.freeze({primary:"#716852",secondary:"#655d4a"}),houseSide:null,normalEnemyType:"mountain-trail",enemyCap:100,bossSpawnTime:120,victoryCoinBonus:9000,bossThrownEnemy:null,unlocks:"neighborhood-block-party",
+  mountainSpawnWeights:Object.freeze({goat:.12,acornSquirrel:.71,eagle:.12,ram:.05}),obstacles:Object.freeze([]),
+  boulderEntries:Object.freeze([{x:0,y:.2,dx:1,dy:.12},{x:0,y:.7,dx:1,dy:-.08},{x:1,y:.3,dx:-1,dy:.1},{x:1,y:.82,dx:-1,dy:-.12},{x:.25,y:0,dx:.18,dy:1},{x:.75,y:0,dx:-.15,dy:1}]),
+  boss:Object.freeze({type:"billy-mountain-king",name:"Billy the Mountain King",health:32000,speed:115,damage:38}),
+});
+
+export const NEIGHBORHOOD_BLOCK_PARTY_MAP = Object.freeze({
+  id: "neighborhood-block-party",
+  name: "Neighborhood Block Party",
+  world: Object.freeze({ width: VIEWPORT.designWidth * 1.7, height: VIEWPORT.designHeight * 1.7, gridSize: 96 }),
+  lawnColors: Object.freeze({ primary: "#668c62", secondary: "#5f845d" }),
+  houseSide: null,
+  normalEnemyType: "block-party",
+  enemyCap: 100,
+  bossSpawnTime: 120,
+  victoryCoinBonus: 9500,
+  bossThrownEnemy: null,
+  unlocks: "supermarket",
+  blockPartySpawnWeights: Object.freeze({ partygoer: .46, hype: .12, grill: .1, cooler: .1, dj: .08, coach: .1, firstAid: .04 }),
+  obstacles: Object.freeze([]),
+  boss: Object.freeze({ type: "party-planner", name: "The Party Planner", health: 38000, speed: 105, damage: 22 }),
+});
+
+export const SUPERMARKET_MAP = Object.freeze({
+  id:"supermarket",name:"Supermarket",
+  world:Object.freeze({width:VIEWPORT.designWidth*1.8,height:VIEWPORT.designHeight*1.6,gridSize:80}),
+  lawnColors:Object.freeze({primary:"#bbb7a9",secondary:"#aaa79b"}),houseSide:null,
+  normalEnemyType:"supermarket",enemyCap:100,bossSpawnTime:120,victoryCoinBonus:10000,bossThrownEnemy:null,unlocks:null,
+  supermarketSpawnWeights:Object.freeze({bagGremlin:.5,canStack:.22,baguette:.16,frozenDinner:.07,cartGoblin:.05}),
+  obstacles:Object.freeze([
+    Object.freeze({kind:"supermarket-shelf",x:140,y:240,width:VIEWPORT.designWidth*1.8-280,height:52,solid:true}),
+    Object.freeze({kind:"supermarket-shelf",x:140,y:570,width:VIEWPORT.designWidth*1.8-280,height:52,solid:true}),
+    Object.freeze({kind:"supermarket-shelf",x:140,y:900,width:VIEWPORT.designWidth*1.8-280,height:52,solid:true}),
+  ]),boss:Object.freeze({type:"store-manager",name:"The Store Manager",health:42000,speed:105,damage:28}),
+});
+
+export const MAP_SLOTS = Object.freeze([FIRST_MAP, FRONTYARD_MAP, GARDEN_MAP, PUBLIC_PARK_MAP, LAKE_ELIZABETH_MAP, GOLF_COURSE_MAP, AQUATIC_GARDEN_MAP, REDWOOD_TRAIL_MAP, CHICKEN_FARM_MAP, CORN_FARM_MAP, SCHOOL_FIELD_MAP, CONSTRUCTION_SITE_MAP, BOTANICAL_GARDEN_MAP, BEACH_MAP, CAMPGROUND_MAP, MOUNTAIN_TRAIL_MAP, NEIGHBORHOOD_BLOCK_PARTY_MAP, SUPERMARKET_MAP]);
 export const MAPS_BY_ID = Object.freeze(Object.fromEntries(MAP_SLOTS.map((map) => [map.id, map])));
 
 export function mapById(id) {

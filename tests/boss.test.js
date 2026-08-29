@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { FIRST_MAP, FRONTYARD_MAP } from "../src/config/map-config.js";
-import { Game } from "../src/core/game.js";
+import { Game, safeBossSpawnPoint } from "../src/core/game.js";
 import { Boss } from "../src/entities/boss.js";
 import { CommonWeed } from "../src/entities/common-weed.js";
 import { Gopher } from "../src/entities/gopher.js";
@@ -29,6 +29,19 @@ test("boss abilities use separate four-second timers", () => {
   assert.equal(FIRST_MAP.boss.summonCooldown, 4);
   assert.equal(FIRST_MAP.boss.thrownGnomeCooldown, 4);
   assert.equal(FIRST_MAP.bossSpawnTime, 60);
+});
+
+test("boss spawn placement moves an unsafe spawn away from the player", () => {
+  const point = safeBossSpawnPoint({ desiredX: 500, desiredY: 400, player: { x: 500, y: 400 }, world: { width: 1000, height: 800 } });
+  assert.ok(Math.hypot(point.x - 500, point.y - 400) >= 320);
+});
+
+test("restricted boss spawns stay inside their feature while avoiding the player", () => {
+  const pond = { x: 300, y: 200, width: 600, height: 400 };
+  const point = safeBossSpawnPoint({ desiredX: 600, desiredY: 400, player: { x: 600, y: 400 }, world: { width: 1200, height: 800 }, bounds: pond });
+  assert.ok(point.x >= pond.x + 80 && point.x <= pond.x + pond.width - 80);
+  assert.ok(point.y >= pond.y + 80 && point.y <= pond.y + pond.height - 80);
+  assert.ok(Math.hypot(point.x - 600, point.y - 400) > 0);
 });
 
 test("thrown gnome stops exactly at its fixed landing position", () => {

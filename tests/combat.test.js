@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { isEnemyHitByMelee, isWithinMeleeArc, RARITY_ORDER, WEAPON_DEFINITIONS, WEAPONS, WEAPONS_SORTED_BY_RARITY, weaponById, weaponForSlot, weaponLevelWithLoadoutBonus, weaponStatsAtLevel, weaponsVisibleInCollection } from "../src/config/weapons.js";
+import { isEnemyHitByMelee, isWithinMeleeArc, RARITY_ORDER, SIDE_DAMAGE_SCALING, WEAPON_DEFINITIONS, WEAPONS, WEAPONS_SORTED_BY_RARITY, weaponById, weaponForSlot, weaponLevelWithLoadoutBonus, weaponStatsAtLevel, weaponsVisibleInCollection } from "../src/config/weapons.js";
 import { HELD_WEAPON_VISUALS } from "../src/entities/held-weapon.js";
 import { Gnome } from "../src/entities/gnome.js";
 import { Player } from "../src/entities/player.js";
@@ -45,12 +45,96 @@ test("every permanent weapon level improves damage and attack speed", () => {
 
 test("weapon roster has unique playable designs in both slots", () => {
   assert.equal(new Set(WEAPON_DEFINITIONS.map((weapon) => weapon.id)).size, WEAPON_DEFINITIONS.length);
-  assert.equal(WEAPON_DEFINITIONS.filter((weapon) => weapon.slot === "melee").length, 10);
-  assert.equal(WEAPON_DEFINITIONS.filter((weapon) => weapon.slot === "ranged").length, 45);
+  assert.equal(WEAPON_DEFINITIONS.filter((weapon) => weapon.slot === "melee").length, 11);
+  assert.equal(WEAPON_DEFINITIONS.filter((weapon) => weapon.slot === "ranged").length, 68);
   for (const weapon of WEAPON_DEFINITIONS) {
     assert.ok(weapon.description.length > 10);
     assert.ok(weapon.levelTenFeature.length > 10);
   }
+});
+
+test("wheelchair and paintball weapons expose their core identities", () => {
+  const wheelchair = weaponById("wheelchair");
+  assert.equal(wheelchair.rarity, "Rare");
+  assert.equal(wheelchair.wheelchairArmorMultiplier, 0.5);
+  assert.equal(wheelchair.wheelchairSpeedMultiplier, 2);
+  assert.equal(wheelchair.wheelchairTouchDamage, 80);
+
+  const colors = ["black", "yellow", "blue", "red", "white", "green"];
+  for (const color of colors) {
+    const weapon = weaponById(`${color}-paintball-gun`);
+    assert.equal(weapon.damage, 40);
+    assert.equal(weapon.paintColor, color);
+    assert.equal(weapon.paintDuration, 5);
+    assert.equal(weaponStatsAtLevel(weapon, 10).paintDuration, 8);
+  }
+  assert.equal(weaponById("white-paintball-gun").paintLightningDamage, 50);
+  assert.equal(weaponById("white-paintball-gun").paintLightningInterval, 1);
+  assert.equal(weaponById("white-paintball-gun").paintLightningChainCount, 10);
+  assert.equal(weaponById("white-paintball-gun").paintLightningScaling, 0.5);
+});
+
+test("paint effects tick, modify damage, freeze, and share red damage", () => {
+  const game = Object.create(Game.prototype);
+  game.player = { health: 50, maxHealth: 100, lifestealAccumulator: 0 };
+  game.bossSpawned = false;
+  game.random = () => .5;
+  game.lightningArcs = [];
+  const enemy = (paintEffects = {}) => ({
+    x: 0, y: 0, radius: 16, health: 500, shield: 0, active: true,
+    isBoss: false, bossMinion: false, paintEffects,
+    takeDamage(amount) { this.health -= amount; return false; },
+  });
+  const direct = enemy({ yellow: 5, blue: 5 });
+  const red = enemy({ red: 5 });
+  game.enemies = [direct, red];
+  game.damageEnemy(direct, 100, 0, "apple");
+  assert.equal(direct.health, 400, "yellow double damage and blue armor cancel each other");
+  assert.equal(red.health, 498, "red paint shares two percent of actual player damage");
+
+  const black = enemy({ black: 5, blue: 5 });
+  black.blackPaintTick = .5;
+  game.enemies = [black];
+  game.updatePaintEffects(black, .5);
+  assert.equal(black.health, 493.75, "blue armor also protects against black paint ticks");
+  assert.ok(black.freezeTime > 0);
+
+  const white = enemy({ white: 5 });
+  const unpainted = enemy();
+  unpainted.x = 80;
+  white.whitePaintTimer = 1;
+  game.enemies = [white, unpainted];
+  game.updatePaintEffects(white, 1);
+  assert.equal(white.health, 450);
+  assert.equal(unpainted.health, 450, "white lightning chains at full damage without requiring white paint");
+});
+
+test("white paint lightning chains to ten enemies at full damage once per second", () => {
+  const game = Object.create(Game.prototype);
+  game.player = { health: 50, maxHealth: 100, lifestealAccumulator: 0 };
+  game.bossSpawned = false;
+  game.lightningArcs = [];
+  const primary = { x: 0, y: 0, radius: 16, health: 500, shield: 0, active: true, isBoss: false, bossMinion: false, paintEffects: { white: 5 }, whitePaintTimer: 1, takeDamage(amount) { this.health -= amount; return false; } };
+  const nearby = Array.from({ length: 12 }, (_, index) => ({ x: 20 + index * 10, y: 0, radius: 16, health: 500, shield: 0, active: true, isBoss: false, bossMinion: false, paintEffects: {}, takeDamage(amount) { this.health -= amount; return false; } }));
+  game.enemies = [primary, ...nearby];
+  game.updatePaintEffects(primary, 1);
+  assert.equal(primary.health, 450);
+  assert.equal(nearby.filter((enemy) => enemy.health === 450).length, 10);
+  assert.equal(nearby.filter((enemy) => enemy.health === 500).length, 2);
+  assert.equal(game.lightningArcs.length, 10);
+});
+
+test("white paint lightning uses reduced weapon and player damage scaling", () => {
+  const game = Object.create(Game.prototype);
+  game.player = { damageMultiplier: 2, weaponBonuses: {} };
+  game.progress = { weaponLevels: { "white-paintball-gun": 10 }, equippedWeapons: {} };
+  const baseWeapon = weaponById("white-paintball-gun");
+  const leveled = weaponStatsAtLevel(baseWeapon, 10);
+  const fullScale = leveled.damage / weaponStatsAtLevel(baseWeapon, 1).damage * 2;
+  const scaledLightning = game.whitePaintLightningDamage();
+  assert.ok(scaledLightning > baseWeapon.paintLightningDamage);
+  assert.ok(scaledLightning < baseWeapon.paintLightningDamage * fullScale);
+  assert.equal(scaledLightning, leveled.paintLightningDamage * 1.5);
 });
 
 test("Surveyor, RC Car, Garden Umbrella, and Vacuum Cleaner keep their distinct mechanics", () => {
@@ -59,6 +143,7 @@ test("Surveyor, RC Car, Garden Umbrella, and Vacuum Cleaner keep their distinct 
   const umbrella = weaponById("garden-umbrella");
   const vacuum = weaponById("vacuum-cleaner");
   assert.equal(surveyor.damage, 300);
+  assert.equal(surveyor.cooldown, 5.6);
   assert.equal(surveyor.perfectAccuracy, true);
   assert.equal(surveyor.pierces, 0);
   assert.ok(weaponStatsAtLevel(surveyor, 10).movementDeviation < surveyor.movementDeviation);
@@ -76,16 +161,41 @@ test("new deployable weapons expose their distinct level-ten mechanics", () => {
   const fartGun = weaponById("fart-gun");
   assert.equal(rain.rarity, "Epic");
   assert.ok(weaponStatsAtLevel(rain, 10).cloudRadius > rain.cloudRadius);
-  assert.equal(pigeon.damage, 28);
-  assert.equal(pigeon.cooldown, 1.7);
+  assert.equal(pigeon.damage, 22);
+  assert.equal(pigeon.cooldown, 2);
+  assert.equal(pigeon.pigeonHits, 3);
   assert.equal(weaponStatsAtLevel(pigeon, 10).pigeonHits, pigeon.pigeonHits + 2);
   assert.equal(sprinkler.sprinklerFireInterval, 0.2);
   assert.equal(weaponStatsAtLevel(sprinkler, 10).sprinklerFireInterval, 0.16);
-  assert.equal(weaponStatsAtLevel(plate, 10).plateMaxStoredDamage, plate.plateMaxStoredDamage * 1.5);
+  assert.ok(weaponStatsAtLevel(plate, 10).plateMaxStoredDamage > plate.plateMaxStoredDamage * 1.5);
   assert.equal(weaponStatsAtLevel(fartGun, 10).fertilizerCloudDuration, fartGun.fertilizerCloudDuration * 1.5);
   assert.equal(fartGun.cooldown, 1);
   assert.equal(fartGun.cloudExpands, true);
   assert.ok(fartGun.cloudExpansionDuration > 1);
+});
+
+test("new homing weapons expose smooth-guidance, level-ten, and deployable identities", () => {
+  const hive = weaponById("beehive");
+  const heat = weaponById("heat-lamp");
+  const jar = weaponById("firefly-jar");
+  const darts = weaponById("homing-darts");
+  const rocket = weaponById("bottle-rocket");
+  assert.equal(heat.rarity, "Uncommon");
+  assert.equal(jar.rarity, "Epic");
+  assert.equal(jar.damage, 25);
+  assert.ok(jar.fireflySpeed > 400);
+  assert.equal(hive.hiveBeeCount, 3);
+  assert.equal(weaponStatsAtLevel(hive, 10).hiveBeeCount, 4);
+  assert.ok(hive.beeTurnSpeed > 0);
+  assert.ok(heat.heatAssistRadius < heat.heatRange);
+  assert.equal(weaponStatsAtLevel(heat, 10).focusedHeat, true);
+  assert.equal(jar.fireflyCount, 5);
+  assert.equal(weaponStatsAtLevel(jar, 10).fireflyCount, 7);
+  assert.equal(darts.projectileCount, 3);
+  assert.equal(weaponStatsAtLevel(darts, 10).projectileCount, 4);
+  assert.ok(darts.homingTurnSpeed > 0);
+  assert.ok(rocket.guidanceDelay > 0);
+  assert.equal(weaponStatsAtLevel(rocket, 10).splashRadius, rocket.splashRadius * 1.35);
 });
 
 test("arsenal presentation is sorted from Common through Secret", () => {
@@ -195,12 +305,13 @@ test("Ordinance Undefined is a Developer weapon with doubled damage", () => {
   assert.equal(ordinance.rarity, "Developer");
   assert.equal(ordinance.limited, true);
   assert.equal(ordinance.developerOnly, true);
-  assert.equal(ordinance.damage, 12);
-  assert.equal(ordinance.auraPullRadius, 105);
-  assert.equal(ordinance.auraPullForce, 185);
+  assert.equal(ordinance.giveawayOnly, true);
+  assert.equal(ordinance.damage, 18);
+  assert.equal(ordinance.auraPullRadius, 130);
+  assert.equal(ordinance.auraPullForce, 240);
   assert.equal(ordinance.burstRounds, 2);
   assert.ok(ordinance.burstInterval <= 0.05);
-  assert.equal(ordinance.fireDamagePerSecond, 15);
+  assert.equal(ordinance.fireDamagePerSecond, 18);
   assert.equal(ordinance.fireDuration, 5);
   assert.equal(ordinance.freezeDuration, 2);
 });
@@ -295,7 +406,7 @@ test("Wheelbarrow and Garden Shears expose their distinct melee designs", () => 
   assert.equal(shears.range, 104);
   assert.equal(isEnemyHitByMelee(player, { x: 90, y: 0, radius: 5 }, shears), true);
   assert.equal(isEnemyHitByMelee(player, { x: 90, y: 20, radius: 5 }, shears), false);
-  assert.equal(weaponStatsAtLevel(barrow, 10).knockbackCollisionDamage, 8);
+  assert.ok(weaponStatsAtLevel(barrow, 10).knockbackCollisionDamage > 8);
   assert.equal(weaponStatsAtLevel(shears, 10).extraAttackChance, 0.5);
 });
 
@@ -342,9 +453,36 @@ test("projectiles support the configured fire and freeze weapon payloads", () =>
   assert.equal(projectile.fireMaxStacks, 1);
   assert.equal(projectile.freezeDuration, 2);
   for (const weapon of WEAPON_DEFINITIONS.filter((entry) => entry.slot === "ranged")) {
-    assert.equal(weapon.fireDuration > 0, ["backyard-flamethrower", "firecracker", "ordinance-undefined"].includes(weapon.id));
+    assert.equal(weapon.fireDuration > 0, ["backyard-flamethrower", "firecracker", "ordinance-undefined", "flare-gun", "gasoline-can", "magnifying-glass", "grill"].includes(weapon.id));
     assert.equal(weapon.freezeDuration, ["sprinkler-mine", "ordinance-undefined"].includes(weapon.id) ? 2 : (["gravity-freezer", "slushie", "polarity-gun"].includes(weapon.id) ? 1 : 0), `${weapon.id} freeze duration`);
   }
+});
+
+test("new fire and control weapon batch exposes six distinct mechanics", () => {
+  const flare=weaponById("flare-gun"),gas=weaponById("gasoline-can"),lens=weaponById("magnifying-glass"),soda=weaponById("soda-bottle"),flamingo=weaponById("lawn-flamingo"),grill=weaponById("grill");
+  assert.deepEqual([flare.rarity,gas.rarity,lens.rarity,soda.rarity,flamingo.rarity,grill.rarity],["Uncommon","Rare","Rare","Common","Secret","Rare"]);
+  assert.ok(Math.abs(weaponStatsAtLevel(flare,10).firePatchRadius-flare.firePatchRadius*1.4)<.001);
+  assert.ok(Math.abs(weaponStatsAtLevel(gas,10).gasolineMaxLength-gas.gasolineMaxLength*1.5)<.001);
+  assert.ok(Math.abs(weaponStatsAtLevel(lens,10).sunlightRadius-lens.sunlightRadius*1.3)<.001);
+  assert.ok(weaponStatsAtLevel(soda,10).sodaMaxCharge>soda.sodaMaxCharge);
+  assert.equal(weaponStatsAtLevel(flamingo,10).flamingoPierce,1);
+  assert.equal(flamingo.damage,75);
+  assert.equal(flamingo.flamingoWaveDamage,24);
+  assert.equal(flamingo.flamingoTouchLimit,1);
+  assert.equal(flamingo.flamingoWaveLimit,2);
+  assert.ok(flamingo.flamingoWaveKnockback > 0);
+  assert.ok(Math.abs(weaponStatsAtLevel(grill,10).grillBurstRange-grill.grillBurstRange*1.3)<.001);
+});
+
+test("laser, kite, rake, fan, frog, and roller expose their distinct mechanics", () => {
+  const laser=weaponById("laser-measure"),kite=weaponById("kite"),rake=weaponById("leaf-rake-trap"),fan=weaponById("ceiling-fan"),frog=weaponById("wind-up-frog"),roller=weaponById("lawn-roller");
+  assert.deepEqual([laser.rarity,kite.rarity,rake.rarity,fan.rarity,frog.rarity,roller.rarity],["Rare","Rare","Common","Rare","Common","Uncommon"]);
+  assert.equal(laser.perfectAccuracy,true);assert.ok(weaponStatsAtLevel(laser,10).distanceDamageBonus>laser.distanceDamageBonus);
+  assert.ok(Math.abs(weaponStatsAtLevel(kite,10).kiteRange-kite.kiteRange*1.3)<.001);
+  assert.equal(weaponStatsAtLevel(rake,10).rakeTrapTriggers,2);
+  assert.ok(Math.abs(weaponStatsAtLevel(fan,10).fanRotationSpeed-fan.fanRotationSpeed*1.3)<.001);
+  assert.ok(weaponStatsAtLevel(frog,10).frogJumpSpeed>frog.frogJumpSpeed);
+  assert.ok(weaponStatsAtLevel(roller,10).rollerWidth>roller.rollerWidth);
 });
 
 test("Backyard Flamethrower has short range and at most two burn stacks", () => {
@@ -356,8 +494,8 @@ test("Backyard Flamethrower has short range and at most two burn stacks", () => 
   assert.equal(flamethrower.fireDamagePerSecond, 10);
   assert.equal(flamethrower.fireDuration, 5);
   assert.equal(flamethrower.fireMaxStacks, 2);
-  assert.equal(weaponStatsAtLevel(flamethrower, 9).fireDamagePerSecond, 10);
-  assert.equal(weaponStatsAtLevel(flamethrower, 10).fireDamagePerSecond, 15);
+  assert.ok(weaponStatsAtLevel(flamethrower, 9).fireDamagePerSecond > 10);
+  assert.ok(weaponStatsAtLevel(flamethrower, 10).fireDamagePerSecond > 15);
 
   const enemy = {};
   applyFire(enemy, flamethrower.fireDamagePerSecond, flamethrower.fireDuration, flamethrower.fireMaxStacks);
@@ -457,6 +595,20 @@ test("weapon popup calculations include weapon level and permanent upgrades", ()
   assert.ok(weaponPopupStats(upgraded).some((stat) => stat.text === "LEVEL: 5"));
 });
 
+test("every secondary weapon damage channel receives restrained level and permanent scaling", () => {
+  for (const weapon of WEAPON_DEFINITIONS) {
+    for (const field of Object.keys(SIDE_DAMAGE_SCALING)) {
+      if (!(weapon[field] > 0)) continue;
+      const levelOne = weaponStatsAtLevel(weapon, 1)[field];
+      const levelTen = weaponStatsAtLevel(weapon, 10)[field];
+      const permanent = weaponStatsWithPermanentProgress(weapon, 10, { damage: 5 })[field];
+      assert.ok(levelTen > levelOne, `${weapon.id} ${field} should scale with weapon level`);
+      assert.ok(permanent > levelTen, `${weapon.id} ${field} should scale with permanent damage`);
+      assert.ok(permanent / levelTen < 1.4, `${weapon.id} ${field} scaling should remain restrained`);
+    }
+  }
+});
+
 test("Vampire Fang is a fast Secret lifesteal arc and pairs with Plastic Ghost", () => {
   const fang = weaponById("vampire-fang");
   assert.equal(fang.rarity, "Secret");
@@ -472,8 +624,8 @@ test("Vampire Fang is a fast Secret lifesteal arc and pairs with Plastic Ghost",
 test("all Secret weapons receive the global damage and attack-speed buff", () => {
   for (const weapon of WEAPON_DEFINITIONS.filter((entry) => entry.rarity === "Secret")) {
     const stats = weaponStatsAtLevel(weapon, 1);
-    assert.equal(stats.damage, Number((weapon.damage * 1.2 * 1.1 * 1.05).toFixed(2)), `${weapon.name} damage should be buffed`);
-    assert.equal(stats.cooldown, weapon.cooldown * 0.85, `${weapon.name} should attack faster`);
+    assert.equal(stats.damage, Number((weapon.damage * 1.3 * 1.1 * 1.05).toFixed(2)), `${weapon.name} damage should be buffed`);
+    assert.equal(stats.cooldown, weapon.cooldown * 0.8, `${weapon.name} should attack faster`);
   }
   const developerWeapon = weaponById("ordinance-undefined");
   assert.equal(weaponStatsAtLevel(developerWeapon, 1).damage, Number((developerWeapon.damage * 1.1 * 1.05).toFixed(2)));
@@ -484,7 +636,7 @@ test("all weapons get the latest modest damage buff", () => {
   for (const weapon of WEAPON_DEFINITIONS) {
     const stats = weaponStatsAtLevel(weapon, 1);
     const previousGeneralMultiplier = weapon.id === "rock-salt-blaster" ? 1 : 1.1;
-    const secretMultiplier = weapon.rarity === "Secret" ? 1.2 : 1;
+    const secretMultiplier = weapon.rarity === "Secret" ? 1.3 : 1;
     assert.equal(stats.damage, Number((weapon.damage * previousGeneralMultiplier * secretMultiplier * 1.05).toFixed(2)));
   }
 });
@@ -532,10 +684,10 @@ test("Rock Salt Blaster pellets speed up initially and slow near the end of flig
   assert.ok(lateDistance < earlyDistance);
 });
 
-test("Ordinance Undefined keeps its reduced firing speed", () => {
+test("Ordinance Undefined keeps its buffed firing speed", () => {
   const ordinance = weaponById("ordinance-undefined");
-  assert.equal(ordinance.damage, 12);
-  assert.equal(ordinance.cooldown, 0.5);
+  assert.equal(ordinance.damage, 18);
+  assert.equal(ordinance.cooldown, 0.4);
   assert.equal(ordinance.projectileCount, 2);
 });
 

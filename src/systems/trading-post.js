@@ -6,7 +6,7 @@ const SAFE_SCREENS = new Set(["menu", "shop", "quests", "season-shop", "permanen
 
 export class TradingPostClient {
   constructor(cloud, game) {
-    this.cloud = cloud; this.game = game; this.data = null; this.selectedRecipient = null;
+    this.cloud = cloud; this.game = game; this.data = null; this.selectedRecipient = null; this.selectedGiveawayRecipient = null;
     this.modal = document.querySelector("#trading-modal"); this.content = document.querySelector("#trading-content"); this.status = document.querySelector("#trading-status");
     this.profileModal = document.querySelector("#player-profile-modal"); this.profileContent = document.querySelector("#player-profile-content");
     document.querySelector("#trading-button")?.addEventListener("click", () => this.open());
@@ -48,6 +48,10 @@ export class TradingPostClient {
     const me = profiles.find((profile) => profile.user_id === this.cloud.session.user.id);
     const online = profiles.filter((profile) => profile.user_id !== me?.user_id && Date.now() - Date.parse(profile.last_seen) < 300000);
     const recipientOptions = online.map((p) => `<option value="${p.user_id}">${escapeHtml(p.username)}</option>`).join("");
+    const searchablePlayers = profiles.filter((p) => p.user_id !== me?.user_id);
+    const playerSearchOptions = searchablePlayers.map((p) => `<option value="${escapeHtml(p.username)}"></option>`).join("");
+    this.selectedRecipient = null;
+    this.selectedGiveawayRecipient = null;
     this.content.innerHTML = `
       <section><h3>TOP 10 BY WEAPON WORTH</h3>${profiles.slice(0, 10).map((p, i) => profileRow(p, i + 1)).join("") || "<p>No public profiles yet.</p>"}</section>
       <section><h3>ONLINE PLAYERS</h3>${online.map((p) => profileRow(p)).join("") || "<p>No other players online.</p>"}</section>
@@ -55,14 +59,18 @@ export class TradingPostClient {
       <section><h3>PENDING OFFERS</h3>${offers.map((o) => offerRow(o, offerItems, profiles, me)).join("") || "<p>No pending offers.</p>"}</section>
       <section class="trade-builder"><h3>CREATE TRADE REQUEST</h3>
         <label>ONLINE PLAYER<select id="trade-recipient-online"><option value="">Choose online player…</option>${recipientOptions}</select></label>
-        <label>OR ANY USERNAME<input id="trade-recipient-search" placeholder="Exact username" maxlength="20"></label><button id="trade-find-player">LOAD PLAYER</button>
+        <label>OR SEARCH ALL PLAYERS<input id="trade-recipient-search" list="trade-player-search-options" placeholder="Search username" maxlength="20"></label><datalist id="trade-player-search-options">${playerSearchOptions}</datalist><button id="trade-find-player">LOAD PLAYER</button>
         <p id="trade-selected-player">No player selected.</p>
         <label>YOUR WEAPONS (OPTIONAL)<select id="trade-offered" multiple>${weaponOptions(me?.weapons ?? [])}</select></label>
         <label>THEIR WEAPONS (OPTIONAL)<select id="trade-requested" multiple></select></label>
         <label>MONEY YOU GIVE (OPTIONAL)<input id="trade-offered-money" type="number" min="0" placeholder="$0"></label>
         <label>MONEY YOU REQUEST (OPTIONAL)<input id="trade-requested-money" type="number" min="0" placeholder="$0"></label>
         <button id="trade-create">SEND OFFER</button><small>Limit: one request per minute and 15 per hour.</small></section>
-      ${me?.is_admin ? `<section><h3>ADMIN GIVEAWAY</h3><label>PLAYER<select id="giveaway-recipient"><option value="">Choose player…</option>${profiles.filter((p) => p.user_id !== me.user_id).map((p) => `<option value="${p.user_id}">${escapeHtml(p.username)}</option>`).join("")}</select></label><label>WEAPON (OPTIONAL)<select id="giveaway-weapon"><option value="">No weapon</option>${allWeaponOptions()}</select></label><label>MONEY (OPTIONAL)<input id="giveaway-money" type="number" min="0" placeholder="$0"></label><button id="giveaway-send">GIVE</button><small>Limit: one giveaway per minute and 15 per hour.</small></section>` : ""}`;
+      ${me?.is_admin ? `<section><h3>ADMIN GIVEAWAY</h3>
+        <label>ONLINE PLAYER<select id="giveaway-recipient-online"><option value="">Choose online player…</option>${recipientOptions}</select></label>
+        <label>OR SEARCH ALL PLAYERS<input id="giveaway-recipient-search" list="giveaway-player-search-options" placeholder="Search username" maxlength="20"></label><datalist id="giveaway-player-search-options">${playerSearchOptions}</datalist><button id="giveaway-find-player">LOAD PLAYER</button>
+        <p id="giveaway-selected-player">No player selected.</p>
+        <label>WEAPON (OPTIONAL)<select id="giveaway-weapon"><option value="">No weapon</option>${allWeaponOptions()}</select></label><label>MONEY (OPTIONAL)<input id="giveaway-money" type="number" min="0" placeholder="$0"></label><button id="giveaway-send">GIVE</button><small>Limit: one giveaway per minute and 15 per hour.</small></section>` : ""}`;
     this.bindMarketEvents(); this.setStatus(`Money ${formatMoney(me?.money)} · Weapon worth ${formatMoney(me?.worth)}`);
   }
   bindMarketEvents() {
@@ -72,6 +80,8 @@ export class TradingPostClient {
     this.content.querySelector("#trade-recipient-online")?.addEventListener("change", (event) => this.selectTradeRecipient(event.target.value));
     this.content.querySelector("#trade-find-player")?.addEventListener("click", () => this.selectTradeRecipientByUsername(this.content.querySelector("#trade-recipient-search").value));
     this.content.querySelector("#trade-create")?.addEventListener("click", () => this.createOffer());
+    this.content.querySelector("#giveaway-recipient-online")?.addEventListener("change", (event) => this.selectGiveawayRecipient(event.target.value));
+    this.content.querySelector("#giveaway-find-player")?.addEventListener("click", () => this.selectGiveawayRecipientByUsername(this.content.querySelector("#giveaway-recipient-search").value));
     this.content.querySelector("#giveaway-send")?.addEventListener("click", () => this.giveaway());
   }
   openProfileByUsername(username) { const profile = this.findProfile(username); if (!profile) return this.setStatus("No player has that username.", true); this.openProfile(profile.user_id); }
@@ -89,6 +99,17 @@ export class TradingPostClient {
     this.selectedRecipient = profile.user_id; this.content.querySelector("#trade-selected-player").textContent = `Trading with ${profile.username}`;
     this.content.querySelector("#trade-requested").innerHTML = weaponOptions(profile.weapons);
   }
+  selectGiveawayRecipientByUsername(username) {
+    const profile = this.findProfile(username);
+    if (!profile) return this.setStatus("No player has that username.", true);
+    this.selectGiveawayRecipient(profile.user_id);
+  }
+  selectGiveawayRecipient(userId) {
+    const profile = this.data?.profiles.find((item) => item.user_id === userId);
+    if (!profile || profile.user_id === this.cloud.session.user.id) return this.setStatus("Choose another player.", true);
+    this.selectedGiveawayRecipient = profile.user_id;
+    this.content.querySelector("#giveaway-selected-player").textContent = `Giving to ${profile.username}`;
+  }
   async rpc(name, body) { return this.cloud.request(`/rest/v1/rpc/${name}`, { method: "POST", body, token: this.cloud.session.access_token }); }
   async acceptOffer(id) { try { await this.rpc("accept_trade_offer", { p_offer_id: id }); await this.renderMarket(); } catch (error) { this.setStatus(error.message, true); } }
   async createOffer() {
@@ -97,7 +118,11 @@ export class TradingPostClient {
     try { await this.rpc("create_trade_offer", { p_recipient: this.selectedRecipient, p_offered: selected("#trade-offered"), p_requested: selected("#trade-requested"), p_offered_money: Number(this.content.querySelector("#trade-offered-money").value) || 0, p_requested_money: Number(this.content.querySelector("#trade-requested-money").value) || 0 }); await this.renderMarket(); }
     catch (error) { this.setStatus(error.message, true); }
   }
-  async giveaway() { try { await this.rpc("admin_giveaway", { p_recipient: this.content.querySelector("#giveaway-recipient").value, p_weapon_id: this.content.querySelector("#giveaway-weapon").value || null, p_money: Number(this.content.querySelector("#giveaway-money").value) || 0 }); await this.renderMarket(); } catch (error) { this.setStatus(error.message, true); } }
+  async giveaway() {
+    if (!this.selectedGiveawayRecipient) return this.setStatus("Choose an online player or search a username first.", true);
+    try { await this.rpc("admin_giveaway", { p_recipient: this.selectedGiveawayRecipient, p_weapon_id: this.content.querySelector("#giveaway-weapon").value || null, p_money: Number(this.content.querySelector("#giveaway-money").value) || 0 }); await this.renderMarket(); }
+    catch (error) { this.setStatus(error.message, true); }
+  }
   setStatus(text, error = false) { this.status.textContent = text; this.status.classList.toggle("is-error", error); }
 }
 
@@ -110,7 +135,7 @@ export function buildMarketMetrics(inventory, history) {
 }
 function profileRow(profile, rank = null) { return `<button class="market-card player-card" data-profile="${profile.user_id}">${rank ? `#${rank} ` : ""}${escapeHtml(profile.username)}<span>${formatMoney(profile.worth)}</span></button>`; }
 function weaponOptions(items) { return items.filter((item) => !UNTRADEABLE_WEAPONS.has(item.weapon_id)).map((item) => `<option value="${item.weapon_id}">${escapeHtml(weaponById(item.weapon_id)?.name ?? item.weapon_id)} · LV ${item.level}</option>`).join(""); }
-function allWeaponOptions() { return WEAPON_DEFINITIONS.filter((w) => !UNTRADEABLE_WEAPONS.has(w.id) && !w.developerOnly).map((w) => `<option value="${w.id}">${escapeHtml(w.name)}</option>`).join(""); }
+function allWeaponOptions() { return WEAPON_DEFINITIONS.filter((w) => !UNTRADEABLE_WEAPONS.has(w.id)).map((w) => `<option value="${w.id}">${escapeHtml(w.name)}${w.giveawayOnly ? " · GIVEAWAY ONLY" : ""}</option>`).join(""); }
 function offerRow(offer, items, profiles, me) {
   const username = (id) => profiles.find((p) => p.user_id === id)?.username ?? "Unknown";
   const names = (side) => items.filter((item) => item.offer_id === offer.id && item.side === side).map((item) => weaponById(item.weapon_id)?.name ?? item.weapon_id).join(", ") || "no weapons";

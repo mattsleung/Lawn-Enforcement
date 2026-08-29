@@ -12,6 +12,7 @@ export class Projectile {
     polarity = "pull", polarityRadius = 0, polarityForce = 0, bossDamageMultiplier = 1,
     horseshoe = false, horseshoeRange = 0, horseshoeArc = 0, horseshoeOrbitCount = 1, weaponId = null,
     auraPullRadius = 0, auraPullForce = 0,
+    paintColor = null, paintDuration = 0,
   }) {
     this.x = x;
     this.y = y;
@@ -34,6 +35,7 @@ export class Projectile {
     this.horseshoeOrbitCount = horseshoeOrbitCount;
     this.weaponId = weaponId;
     this.auraPullRadius = auraPullRadius; this.auraPullForce = auraPullForce;
+    this.paintColor = paintColor; this.paintDuration = paintDuration;
     this.polarity = polarity; this.polarityRadius = polarityRadius; this.polarityForce = polarityForce;
     this.bossDamageMultiplier = bossDamageMultiplier;
     this.fertilizerCloudRadius = fertilizerCloudRadius; this.fertilizerCloudDuration = fertilizerCloudDuration; this.fertilizerTickInterval = fertilizerTickInterval;
@@ -100,6 +102,12 @@ export class Projectile {
 }
 
 function renderProjectileShape(context, projectile) {
+  if (projectile.kind === "paintball") {
+    context.fillStyle = projectile.color;
+    context.beginPath(); context.arc(0, 0, projectile.radius, 0, Math.PI * 2); context.fill();
+    context.fillStyle = "rgba(255,255,255,.7)"; context.fillRect(-3, -4, 4, 3);
+    return;
+  }
   if (projectile.kind === "rainbow-apple") {
     const hue = typeof performance === "undefined" ? 0 : performance.now() / 10 % 360;
     context.fillStyle = `hsl(${hue} 90% 58%)`;
