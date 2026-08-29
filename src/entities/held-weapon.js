@@ -46,12 +46,36 @@ export const HELD_WEAPON_VISUALS = Object.freeze({
   "plastic-ghost": { kind: "ghost", primary: "#b9f4ed", secondary: "#5c9f9b" },
   "rain-cloud": { kind: "tech-gun", primary: "#8cb9d2", secondary: "#d9f2ff" },
   "homing-pigeon": { kind: "pigeon", primary: "#aeb8bd", secondary: "#59666b" },
+  beehive: { kind: "beehive", primary: "#e7b83f", secondary: "#6c4b22" },
+  "heat-lamp": { kind: "heat-lamp", primary: "#ff8b45", secondary: "#68402e" },
+  "firefly-jar": { kind: "jar", primary: "#f4e86b", secondary: "#7cb9ad" },
+  "homing-darts": { kind: "dart-gun", primary: "#79d7b5", secondary: "#385c58" },
+  "bottle-rocket": { kind: "rocket", primary: "#ef6a45", secondary: "#f3d26a" },
   "lawn-sprinkler": { kind: "sprinkler", primary: "#66d4ec", secondary: "#456b72" },
   "pressure-plate": { kind: "lid", primary: "#d4a64e", secondary: "#6b542d" },
   "fart-gun": { kind: "small-gun", primary: "#93a94e", secondary: "#526333" },
+  "flare-gun": { kind: "flare-gun", primary: "#ff6a32", secondary: "#413a34" },
+  "gasoline-can": { kind: "gas-can", primary: "#e45b35", secondary: "#332d29" },
+  "magnifying-glass": { kind: "magnifier", primary: "#ffe16a", secondary: "#70492d" },
+  "soda-bottle": { kind: "soda-bottle", primary: "#59b9df", secondary: "#eaf7ff" },
+  "lawn-flamingo": { kind: "flamingo", primary: "#f378a4", secondary: "#3a3134" },
+  grill: { kind: "grill", primary: "#ef6b35", secondary: "#35383a" },
+  "laser-measure": { kind: "laser-measure", primary: "#ff4d48", secondary: "#25282a" },
+  kite: { kind: "kite", primary: "#e85b78", secondary: "#f4d76a" },
+  "leaf-rake-trap": { kind: "rake", primary: "#b98b46", secondary: "#6f4b2c" },
+  "ceiling-fan": { kind: "ceiling-fan", primary: "#b8d2d4", secondary: "#4b5d62" },
+  "wind-up-frog": { kind: "frog", primary: "#71b95c", secondary: "#d4be55" },
+  "lawn-roller": { kind: "lawn-roller", primary: "#d05b3f", secondary: "#343a36" },
   surveyor: { kind: "tech-gun", primary: "#e2c84f", secondary: "#ff5a55" },
   "remote-control-car": { kind: "rc-car", primary: "#e75b3f", secondary: "#30363a" },
   "garden-umbrella": { kind: "umbrella", primary: "#e77575", secondary: "#72514c" },
+  wheelchair: { kind: "wheelchair", primary: "#6fa5bd", secondary: "#313a42" },
+  "black-paintball-gun": { kind: "paintball-gun", primary: "#222326", secondary: "#6d7378" },
+  "yellow-paintball-gun": { kind: "paintball-gun", primary: "#f1cf3e", secondary: "#6d7378" },
+  "blue-paintball-gun": { kind: "paintball-gun", primary: "#438fe3", secondary: "#6d7378" },
+  "red-paintball-gun": { kind: "paintball-gun", primary: "#d94b4b", secondary: "#6d7378" },
+  "white-paintball-gun": { kind: "paintball-gun", primary: "#f4f2e9", secondary: "#6d7378" },
+  "green-paintball-gun": { kind: "paintball-gun", primary: "#53b65d", secondary: "#6d7378" },
   "vacuum-cleaner": { kind: "vacuum", primary: "#8cb6bd", secondary: "#4d6368" },
   "ordinance-undefined": { kind: "glitch-gun", primary: "#e05cff", secondary: "#51f0de" },
 });
@@ -95,11 +119,25 @@ export function renderHeldWeaponVisual(context, weapon) {
       context.fillStyle = secondary; context.fillRect(0, -2, 15, 4); context.strokeStyle = primary; context.lineWidth = 4; context.beginPath(); context.ellipse(24, 0, 10, 14, 0, 0, Math.PI * 2); context.stroke(); context.lineWidth = 1; context.beginPath(); context.moveTo(17, -7); context.lineTo(31, 7); context.moveTo(17, 7); context.lineTo(31, -7); context.stroke(); break;
     case "tech-gun": case "magnet-gun": case "glitch-gun":
       context.fillStyle = primary; context.fillRect(0, -7, 25, 14); context.fillStyle = secondary; context.fillRect(18, -10, 10, 20); context.fillRect(5, 7, 7, 8); circle(context, 15, 0, 3, "#f5f4d7"); break;
-    case "small-gun": case "nail-gun": case "shotgun": {
+    case "small-gun": case "nail-gun": case "shotgun": case "paintball-gun": {
       const length = kind === "shotgun" ? 34 : 24; context.fillStyle = primary; context.fillRect(0, -5, length, 10); context.fillStyle = secondary; context.fillRect(5, 5, 8, 9); if (kind === "shotgun") context.fillRect(22, 4, 12, 3); break;
     }
+    case "wheelchair":
+      context.strokeStyle = secondary; context.lineWidth = 4; context.beginPath(); context.arc(9, 6, 9, 0, Math.PI * 2); context.stroke();
+      context.fillStyle = primary; context.fillRect(3, -9, 15, 10); context.fillRect(13, -7, 4, 14); context.fillStyle = secondary; context.fillRect(15, 4, 17, 4); break;
     case "firecracker":
       context.fillStyle = primary; context.fillRect(0, -5, 19, 10); context.fillStyle = secondary; context.fillRect(17, -2, 5, 4); context.beginPath(); context.moveTo(21, 0); context.lineTo(26, -5); context.strokeStyle = secondary; context.stroke(); break;
+    case "flare-gun": context.fillStyle=primary;context.fillRect(0,-6,27,12);context.fillStyle=secondary;context.fillRect(5,6,8,10);context.fillRect(24,-3,9,6);circle(context,33,0,3,"#fff2a5");break;
+    case "gas-can": context.fillStyle=primary;context.fillRect(1,-10,22,20);context.fillStyle=secondary;context.fillRect(5,-13,12,4);context.fillRect(19,-8,8,4);context.fillStyle="#ffd25a";context.fillRect(6,-3,10,6);break;
+    case "magnifier": context.strokeStyle=primary;context.lineWidth=5;context.beginPath();context.arc(22,0,10,0,Math.PI*2);context.stroke();context.fillStyle=secondary;context.fillRect(0,-2,14,4);break;
+    case "soda-bottle": context.fillStyle=primary;context.fillRect(5,-7,20,14);context.fillStyle=secondary;context.fillRect(24,-4,7,8);context.fillRect(1,-3,5,6);context.fillStyle="#ffffff";context.fillRect(10,-5,5,10);break;
+    case "flamingo": context.strokeStyle=primary;context.lineWidth=5;context.beginPath();context.arc(19,-5,8,0,Math.PI*2);context.moveTo(13,0);context.quadraticCurveTo(7,8,1,2);context.stroke();context.fillStyle=secondary;context.fillRect(24,-7,9,3);break;
+    case "grill": context.fillStyle=secondary;context.fillRect(3,-8,25,16);context.strokeStyle=primary;context.lineWidth=3;context.beginPath();context.arc(15,-8,12,Math.PI,0);context.stroke();context.fillRect(7,8,3,10);context.fillRect(22,8,3,10);break;
+    case "laser-measure": context.fillStyle=secondary;context.fillRect(0,-7,28,14);context.fillStyle=primary;circle(context,25,0,4,primary);context.fillRect(5,7,8,8);break;
+    case "kite": context.strokeStyle=secondary;context.beginPath();context.moveTo(0,0);context.lineTo(28,-8);context.stroke();context.fillStyle=primary;context.beginPath();context.moveTo(28,-18);context.lineTo(39,-8);context.lineTo(28,2);context.lineTo(17,-8);context.closePath();context.fill();break;
+    case "ceiling-fan": context.fillStyle=secondary;circle(context,12,0,5,secondary);for(let i=0;i<3;i++){context.save();context.translate(12,0);context.rotate(i*Math.PI*2/3);context.fillStyle=primary;context.fillRect(4,-3,27,6);context.restore();}break;
+    case "frog": context.fillStyle=primary;context.fillRect(3,-7,20,14);circle(context,7,-8,5,primary);circle(context,19,-8,5,primary);context.fillStyle=secondary;context.fillRect(0,6,8,5);context.fillRect(18,6,8,5);break;
+    case "lawn-roller": context.fillStyle=primary;context.fillRect(1,-9,28,18);context.fillStyle=secondary;circle(context,8,10,6,secondary);circle(context,24,10,6,secondary);context.fillRect(27,-12,10,24);break;
     case "party-hat":
       context.fillStyle = primary; context.beginPath(); context.moveTo(0, 8); context.lineTo(25, 0); context.lineTo(0, -8); context.closePath(); context.fill();
       context.fillStyle = secondary; context.fillRect(5, -5, 4, 4); context.fillRect(12, 1, 4, 4); context.fillRect(18, -3, 4, 4); break;
@@ -113,6 +151,16 @@ export function renderHeldWeaponVisual(context, weapon) {
       context.fillStyle = primary; context.beginPath(); for (let index = 0; index < 8; index += 1) { const angle = index * Math.PI / 4; const radius = index % 2 ? 3 : 10; const x = 9 + Math.cos(angle) * radius; const y = Math.sin(angle) * radius; if (index === 0) context.moveTo(x, y); else context.lineTo(x, y); } context.closePath(); context.fill(); circle(context, 9, 0, 2, secondary); break;
     case "pigeon":
       context.fillStyle = primary; context.fillRect(2, -6, 20, 12); context.fillStyle = secondary; context.fillRect(17, -10, 9, 9); context.fillRect(6, -12, 9, 7); context.fillStyle = "#e7b24b"; context.fillRect(26, -7, 6, 3); break;
+    case "beehive":
+      context.fillStyle = primary; context.fillRect(1, -10, 22, 20); context.fillStyle = secondary; context.fillRect(0, -7, 24, 4); context.fillRect(0, 1, 24, 4); circle(context, 13, 5, 3, "#25211c"); break;
+    case "heat-lamp":
+      context.fillStyle = secondary; context.fillRect(0, -3, 23, 6); context.fillStyle = primary; context.beginPath(); context.moveTo(19, -11); context.lineTo(37, -5); context.lineTo(37, 5); context.lineTo(19, 11); context.closePath(); context.fill(); circle(context, 31, 0, 5, "#ffe6a1"); break;
+    case "jar":
+      context.fillStyle = secondary; context.fillRect(2, -9, 17, 18); context.fillStyle = "rgba(244,232,107,.55)"; context.fillRect(5, -6, 11, 12); circle(context, 9, -2, 2, primary); circle(context, 14, 3, 2, primary); break;
+    case "dart-gun":
+      context.fillStyle = secondary; context.fillRect(0, -5, 24, 10); context.fillStyle = primary; context.fillRect(19, -8, 15, 3); context.fillRect(19, -1, 15, 3); context.fillRect(19, 6, 15, 3); break;
+    case "rocket":
+      context.fillStyle = primary; context.fillRect(2, -5, 26, 10); context.beginPath(); context.moveTo(28, -5); context.lineTo(38, 0); context.lineTo(28, 5); context.closePath(); context.fill(); context.fillStyle = secondary; context.fillRect(0, -3, 6, 6); break;
     case "sprinkler": case "orbital":
       context.fillStyle = secondary; context.fillRect(0, -4, 18, 8); circle(context, 17, 0, 8, primary); context.fillStyle = "#e8fbff"; context.fillRect(15, -11, 3, 6); context.fillRect(15, 5, 3, 6); break;
     case "zapper": case "rod":

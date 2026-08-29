@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { CHEST_COST, CHEST_ODDS, PERMANENT_WEAPONS, characterStatMaxLevelForMaps, characterStatUpgradeCost, weaponMaxLevelForMaps, weaponUpgradeCost } from "../src/config/economy-config.js";
-import { buyWeapon, chestCost, openChest, rollChestRarity, shopWeaponPrice, upgradeCharacterStat, upgradeWeapon } from "../src/systems/economy.js";
+import { buyWeapon, chestCost, openChest, openFreeChest, rollChestRarity, shopWeaponPrice, upgradeCharacterStat, upgradeWeapon } from "../src/systems/economy.js";
 import { defaultProgress } from "../src/systems/progression.js";
 import { WEAPON_DEFINITIONS } from "../src/config/weapons.js";
 import { estimateWeaponValue, systemSellValue, UNTRADEABLE_WEAPONS } from "../src/systems/weapon-value.js";
@@ -67,6 +67,19 @@ test("weapon chest price rises by 200 per purchase and caps at 10,000", () => {
   assert.equal(chestCost(progress), 10000);
   progress.chestPurchases = 400;
   assert.equal(chestCost(progress), 10000);
+});
+
+test("tutorial chest is free and does not advance the paid chest price", () => {
+  const progress = defaultProgress();
+  progress.coins = 37;
+  progress.chestPurchases = 6;
+  const priceBefore = chestCost(progress);
+  const result = openFreeChest(progress, () => 0);
+  assert.ok(result?.weapon);
+  assert.equal(result.free, true);
+  assert.equal(progress.coins, 37);
+  assert.equal(progress.chestPurchases, 6);
+  assert.equal(chestCost(progress), priceBefore);
 });
 
 test("shop weapon prices are fixed by rarity", () => {
@@ -138,7 +151,8 @@ test("weapon estimates are distinct and respond to scarcity, trades, and Limited
   assert.ok(estimateWeaponValue(rainbow, {}, Date.UTC(2027, 9, 1)) > estimateWeaponValue(rainbow, {}, Date.UTC(2026, 8, 1)));
   const secret = WEAPON_DEFINITIONS.find((weapon) => weapon.id === "shurikens");
   assert.ok(estimateWeaponValue(secret) > estimateWeaponValue(pebble) * 500);
-  assert.ok(estimateWeaponValue("ordinance-undefined") > 500000);
+  const ordinanceValue = estimateWeaponValue("ordinance-undefined");
+  assert.ok(ordinanceValue > Math.max(...WEAPON_DEFINITIONS.filter((weapon) => weapon.id !== "ordinance-undefined").map((weapon) => estimateWeaponValue(weapon))));
   assert.deepEqual([...UNTRADEABLE_WEAPONS].sort(), ["apples", "weedwacker-9000"]);
 });
 

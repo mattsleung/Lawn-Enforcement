@@ -7,6 +7,8 @@ export class Input {
     this.pointer = { x: 0, y: 0, inside: false, down: false };
     this.debugToggleRequested = false;
     this.bossSpawnRequested = false;
+    this.autoFireToggleRequested = false;
+    this.dualWieldToggleRequested = false;
     this.weaponSlotRequested = null;
     this.attackRequested = false;
     this.clickRequested = null;
@@ -90,6 +92,8 @@ export class Input {
       event.preventDefault();
       this.bossSpawnRequested = true;
     }
+    if (event.code === "KeyQ" && !event.repeat) this.dualWieldToggleRequested = true;
+    if (event.code === "KeyE" && !event.repeat) this.autoFireToggleRequested = true;
 
     if ((event.code === "Digit1" || event.code === "Numpad1") && !event.repeat) {
       this.upgradeChoiceRequested = 1;
@@ -150,6 +154,18 @@ export class Input {
   consumeBossSpawnRequest() {
     const requested = this.bossSpawnRequested;
     this.bossSpawnRequested = false;
+    return requested;
+  }
+
+  consumeAutoFireToggle() {
+    const requested = this.autoFireToggleRequested;
+    this.autoFireToggleRequested = false;
+    return requested;
+  }
+
+  consumeDualWieldToggle() {
+    const requested = this.dualWieldToggleRequested;
+    this.dualWieldToggleRequested = false;
     return requested;
   }
 

@@ -80,3 +80,17 @@ export function openChest(progress, random = Math.random) {
   progress.weaponLevels[weapon.id] = 1;
   return { weapon, rarity, duplicate: false, coinsReturned: 0 };
 }
+
+export function openFreeChest(progress, random = Math.random) {
+  const rarity = rollChestRarity(random);
+  const candidates = PERMANENT_WEAPONS.filter((weapon) => weapon.rarity === rarity && !weapon.developerOnly && !weapon.limited);
+  const weapon = candidates[Math.floor(random() * candidates.length)];
+  if (progress.ownedWeapons.includes(weapon.id)) {
+    const moneyReturned = systemSellValue(weapon);
+    progress.money = Math.max(0, progress.money ?? 0) + moneyReturned;
+    return { weapon, rarity, duplicate: true, coinsReturned: 0, moneyReturned, free: true };
+  }
+  progress.ownedWeapons.push(weapon.id);
+  progress.weaponLevels[weapon.id] = 1;
+  return { weapon, rarity, duplicate: false, coinsReturned: 0, free: true };
+}

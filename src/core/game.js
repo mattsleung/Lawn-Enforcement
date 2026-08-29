@@ -39,17 +39,49 @@ import { MotherHenBoss } from "../entities/mother-hen-boss.js";
 import { AngryCorn, PopcornEnemy, MiniTractor } from "../entities/corn-farm-enemies.js";
 import { CornKernelProjectile } from "../entities/corn-kernel-projectile.js";
 import { CombineBoss } from "../entities/combine-boss.js";
+import { Cactus, Snapflower, SunflowerEnemy, VineEnemy } from "../entities/botanical-enemies.js";
+import { QueenRoseBoss } from "../entities/queen-rose-boss.js";
+import { BotanicalProjectile } from "../entities/botanical-projectile.js";
+import { Crab, HermitCrab, BeachBallEnemy, SandOctopus, Lifeguard } from "../entities/beach-enemies.js";
+import { KingCrabBoss } from "../entities/king-crab-boss.js";
+import { BeachBubble } from "../entities/beach-bubble.js";
+import { Raccoon, Skunk, CampBear, CampOwl } from "../entities/campground-enemies.js";
+import { CampgroundRangerBoss } from "../entities/campground-ranger-boss.js";
+import { CampgroundProjectile } from "../entities/campground-projectile.js";
+import { MountainGoat, MountainEagle, MountainRam } from "../entities/mountain-trail-enemies.js";
+import { MountainRock } from "../entities/mountain-rock.js";
+import { BillyMountainKingBoss } from "../entities/billy-mountain-king-boss.js";
+import { BLOCK_PARTY_ENEMY_TYPES, Partygoer, HypeMan, GrillMaster, CoolerCarrier, PartyDJ, PartyCoach, FirstAidVolunteer, keepPartyEnemyInWorld } from "../entities/block-party-enemies.js";
+import { PartyPlannerBoss } from "../entities/party-planner-boss.js";
+import { PartyConfetti } from "../entities/party-confetti.js";
+import { BagGremlin, CanStack, BaguetteBandit, FrozenDinner, CartGoblin, StoreManagerBoss } from "../entities/supermarket-enemies.js";
 import { renderHeldWeaponVisual } from "../entities/held-weapon.js";
 import { COLORS } from "../config/game-config.js";
 import { FIRST_MAP, MAP_SLOTS, mapById } from "../config/map-config.js";
 import { ENEMY_GLOSSARY } from "../config/glossary-config.js";
+
+export function safeBossSpawnPoint({ desiredX, desiredY, player, world, bounds = null, inset = 80, minimumDistance = 320 }) {
+  const area = bounds ?? { x: 0, y: 0, width: world.width, height: world.height };
+  const minX = area.x + inset, maxX = area.x + area.width - inset;
+  const minY = area.y + inset, maxY = area.y + area.height - inset;
+  const clampX = (value) => clamp(value, Math.min(minX, maxX), Math.max(minX, maxX));
+  const clampY = (value) => clamp(value, Math.min(minY, maxY), Math.max(minY, maxY));
+  const desired = { x: clampX(desiredX), y: clampY(desiredY) };
+  if (Math.hypot(desired.x - player.x, desired.y - player.y) >= minimumDistance) return desired;
+  const centerX = (minX + maxX) / 2, centerY = (minY + maxY) / 2;
+  const candidates = [
+    { x: minX, y: minY }, { x: maxX, y: minY }, { x: minX, y: maxY }, { x: maxX, y: maxY },
+    { x: centerX, y: minY }, { x: centerX, y: maxY }, { x: minX, y: centerY }, { x: maxX, y: centerY },
+  ];
+  return candidates.reduce((best, candidate) => Math.hypot(candidate.x - player.x, candidate.y - player.y) > Math.hypot(best.x - player.x, best.y - player.y) ? candidate : best, candidates[0]);
+}
 import { characterStatMaxLevelForMaps, characterStatUpgradeCost, weaponMaxLevelForMaps, weaponUpgradeCost } from "../config/economy-config.js";
-import { applyRunWeaponBonuses, isEnemyHitByMelee, WEAPON_DEFINITIONS, WEAPONS, WEAPONS_SORTED_BY_RARITY, weaponById, weaponForSlot, weaponLevelWithLoadoutBonus, weaponStatsAtLevel, weaponsForSlot, weaponsVisibleInCollection } from "../config/weapons.js";
+import { applyRunWeaponBonuses, isEnemyHitByMelee, scaleSideDamageValue, scaledWeaponSideDamage, SIDE_DAMAGE_SCALING, WEAPON_DEFINITIONS, WEAPONS, WEAPONS_SORTED_BY_RARITY, weaponById, weaponForSlot, weaponLevelWithLoadoutBonus, weaponStatsAtLevel, weaponsForSlot, weaponsVisibleInCollection } from "../config/weapons.js";
 import { applyFire, applyFreeze, applyKnockback, nearestBounceTarget, totalContactDamage, updateEnemyStatus } from "../systems/combat.js";
 import { applyRunUpgrade, chooseRunUpgrades, loadProgress, REPEATABLE_GOLD_UPGRADES, saveProgress, unlockAllMaps, unlockAllWeapons, unlockSeasonWeapons, xpRequiredForLevel } from "../systems/progression.js";
 import { dailyQuestTimeRemaining, ensureDailyQuests, formatQuestTimer, updateDailyQuestProgress } from "../systems/daily-quests.js";
 import { buySeasonWeapon, claimCompletedSeasonQuests, ensureSeasonState, exchangeSeasonCoin, PARTY_HAT_COST, PINATA_COST, RAINBOW_APPLE_COST, RAINBOW_HORSESHOE_COST, SEASON_ACTIVE, SEASON_COIN_EXCHANGE_VALUE, SEASON_DAILY_CLAIM_LIMIT, updateSeasonQuestProgress } from "../systems/season.js";
-import { buyWeapon, chestCost, openChest, shopWeaponPrice, upgradeCharacterStat, upgradeWeapon } from "../systems/economy.js";
+import { buyWeapon, chestCost, openChest, openFreeChest, shopWeaponPrice, upgradeCharacterStat, upgradeWeapon } from "../systems/economy.js";
 import { estimateWeaponValue, formatMoney } from "../systems/weapon-value.js";
 
 const FIXED_STEP = 1 / 60;
@@ -63,6 +95,18 @@ const SHOP_WEAPON_IDS = Object.freeze([
   "tennis-balls", "hedge-clippers", "acorn-slingshot", "beach-ball", "diet-cola-launcher",
   "pebble-shooter", "jumper-cables", "garden-mirror", "orbital-sprinkler",
 ]);
+export const AUTO_FIRE_RECOIL = 0.16;
+
+export function shouldAutoFire(progress, enabled) {
+  return progress?.autoFireUnlocked === true && enabled === true;
+}
+export function beachTideState(time) {
+  const stage = ((time % 80) + 80) % 80;
+  if (stage < 20) return { phase: "low", coverage: .15 };
+  if (stage < 40) return { phase: "advancing", coverage: .15 + (stage - 20) / 20 * .50 };
+  if (stage < 60) return { phase: "high", coverage: .65 };
+  return { phase: "retreating", coverage: .65 - (stage - 60) / 20 * .50 };
+}
 const SCREEN_SHAKE_DIRECTIONS = Object.freeze([
   [1, 0],
   [-1, 0],
@@ -121,6 +165,19 @@ export class Game {
     this.weaponPreviewReturnState = null;
     this.uiHitTargets = [];
     this.uiClickEffects = [];
+    this.tutorial = {
+      active: Boolean(savedProgress.settings.tutorialEnabled && !savedProgress.settings.tutorialSeen),
+      stage: "intro",
+      page: 0,
+      enemyScale: 1,
+      freeChestAvailable: false,
+      bossExplained: false,
+    };
+    this.infoTutorial = null;
+    this.chestReveal = null;
+    this.bossDeathCinematic = null;
+    this.enemyDiscovery = null;
+    this.enemyDiscoveryQueue = [];
 
     this.resize = this.resize.bind(this);
     this.frame = this.frame.bind(this);
@@ -129,7 +186,7 @@ export class Game {
       this.resize();
     }
     this.resetRun();
-    this.screenState = savedProgress.settings.tutorialSeen ? "menu" : "tutorial";
+    this.screenState = this.tutorial.active ? "tutorial" : "menu";
   }
 
   resetRun() {
@@ -139,6 +196,7 @@ export class Game {
     this.player = new Player();
     this.player.x = this.world.width / 2;
     this.player.y = this.world.height / 2;
+    if(this.currentMap.id==="supermarket")this.player.y=390;
     this.applyPermanentProgression();
     this.enemies = [];
     this.projectiles = [];
@@ -158,8 +216,28 @@ export class Game {
     this.bugZappers = [];
     this.gardenDecoys = [];
     this.fertilizerClouds = [];
+    this.firePatches = [];
+    this.flareShots = [];
+    this.gasolineTrail = [];
+    this.gasolineWasHeld = false;
+    this.sunlightPoints = [];
+    this.sodaBottles = [];
+    this.sodaCharge = 0;
+    this.sodaWasHeld = false;
+    this.lawnFlamingos = [];
+    this.weaponGrills = [];
+    this.kites = [];
+    this.rakeTraps = [];
+    this.ceilingFans = [];
+    this.windUpFrogs = [];
+    this.lawnRollers = [];
     this.rainClouds = [];
     this.homingPigeons = [];
+    this.beehives = [];
+    this.homingShots = [];
+    this.heatBeams = [];
+    this.heatFocusTarget = null;
+    this.heatFocusTime = 0;
     this.lawnSprinklers = [];
     this.pressurePlates = [];
     this.rcCars = [];
@@ -186,9 +264,28 @@ export class Game {
     this.lilypads = this.currentMap.id === "aquatic-garden" ? this.createLilyPads() : [];
     this.cornSections = this.currentMap.id === "corn-farm" ? this.createCornSections() : [];
     this.cornDumps = [];
+    this.botanicalGroundVines = [];
+    this.queenThornLines = [];
+    this.botanicalTerrainTimer = 0;
+    this.beachTideTime = 0;
+    this.beachTidePhase = "low";
+    this.beachWaterCoverage = .08;
+    this.temporaryBeachWater = [];
+    this.beachWarnings = [];
+    this.rescueRings = [];
+    this.campfires=(this.currentMap.campfires??[]).map((fire,index)=>({...fire,index,lit:index===0,lightRadius:190}));
+    this.campfireCycleTimer=30;this.campfireLitTimer=this.campfires.length?20:0;this.campfireRelightTimer=0;
+    this.campgroundClosedTime=0;this.campgroundHazards=[];this.campgroundWarnings=[];
+    this.movementEffects=[];this.movementEffectDistance=0;
+    this.mountainRocks=[];this.mountainWarnings=[];this.mountainBoulderTimer=10+(this.random??Math.random)()*5;this.mountainRockslideTimer=30;this.mountainShakeTime=0;
+    this.partyEffects = [];
+    this.shoppingCarts=this.currentMap.id==="supermarket"?this.createShoppingCarts():[];
+    this.supermarketSpills=[];this.supermarketWarnings=[];this.supermarketProjectiles=[];this.supermarketSpillTimer=25;this.supermarketAnnouncement="";this.supermarketAnnouncementTime=0;
     this.cornDamageBonus = 0;
     this.cornShotsRemaining = 0;
     this.weaponSlot = 1;
+    this.autoFireEnabled = false;
+    this.dualWieldEnabled = false;
     this.attackCooldown = 0;
     this.attackCooldowns = { 1: 0, 2: 0 };
     this.meleePulse = 0;
@@ -217,12 +314,17 @@ export class Game {
     this.bossNextSpawnTimer = null;
     this.firstBossDefeated = false;
     this.bossIntroTime = 0;
+    this.bossDeathCinematic = null;
+    this.enemyDiscovery = null;
+    this.enemyDiscoveryQueue = [];
     this.victoryReward = 0;
     this.spawnTimer = 0.8;
     this.screenState = "running";
     this.runRewardsBanked = false;
     this.input.pointer.down = false;
     this.input.consumeAttackRequest();
+    this.input.consumeAutoFireToggle?.();
+    this.input.consumeDualWieldToggle?.();
     this.camera.follow(this.player);
 
     for (let index = 0; index < 3; index += 1) {
@@ -270,13 +372,17 @@ export class Game {
     }
     this.input.setTextCapture(this.screenState === "melee-selection" || this.screenState === "ranged-selection");
 
+    if (this.infoTutorial) {
+      const uiAction = this.consumeUiAction();
+      if (uiAction === "tutorial-skip") this.closeInfoTutorial(true);
+      else if (uiAction === "tutorial-next" || this.input.consumeConfirmRequest()) this.advanceInfoTutorial();
+      return;
+    }
+
     if (this.screenState === "tutorial") {
       const uiAction = this.consumeUiAction();
-      if (this.input.consumeConfirmRequest() || uiAction === "continue") {
-        this.progress.settings.tutorialSeen = true;
-        this.savePermanentProgress();
-        this.screenState = "menu";
-      }
+      if (uiAction === "tutorial-skip") this.skipMainTutorial();
+      else if (this.input.consumeConfirmRequest() || uiAction === "tutorial-next") this.advanceMainTutorial();
       return;
     }
 
@@ -288,22 +394,33 @@ export class Game {
       const menuAction = uiAction?.type === "menu" ? uiAction.value : this.input.consumeMenuAction();
       if (menuAction === "shop") {
         this.screenState = "shop";
+        if (this.tutorial.active && this.tutorial.stage === "shop") this.tutorial.freeChestAvailable = true;
         this.input.consumeUpgradeChoice();
         return;
       }
       if (menuAction === "upgrades") {
         this.screenState = "permanent-upgrades";
         this.permanentUpgradeCategory = null;
+        if (this.tutorial.active && this.tutorial.stage === "post-victory") {
+          this.tutorial.stage = "upgrades";
+          this.openInfoTutorial("stats", STAT_TUTORIAL_PAGES);
+        }
         this.input.consumeUpgradeChoice();
         return;
       }
       if (menuAction === "quests") {
         this.screenState = "quests";
+        if (this.progress.settings.tutorialEnabled && !this.progress.settings.questTutorialSeen) {
+          this.openInfoTutorial("quests", QUEST_TUTORIAL_PAGES);
+        }
         this.input.consumeUpgradeChoice();
         return;
       }
       if (menuAction === "season-shop" && SEASON_ACTIVE) {
         this.screenState = "season-shop";
+        if (this.progress.settings.tutorialEnabled && !this.progress.settings.seasonTutorialSeen) {
+          this.openInfoTutorial("season", SEASON_TUTORIAL_PAGES);
+        }
         this.input.consumeUpgradeChoice();
         return;
       }
@@ -322,6 +439,7 @@ export class Game {
       this.input.consumeUpgradeChoice();
       if (this.input.consumeConfirmRequest() || uiAction === "start") {
         this.screenState = "map-selection";
+        if (this.tutorial.active && this.tutorial.stage === "start") this.tutorial.stage = "map";
         this.input.consumeUpgradeChoice();
       }
       this.updateDebugOutput();
@@ -348,8 +466,13 @@ export class Game {
         ? uiAction.value
         : MAP_SLOTS[keyboardChoice - 1]?.id;
       if (mapId && this.unlockedMaps.has(mapId)) {
+        if (this.tutorial.active && this.tutorial.stage === "map" && mapId !== "backyard") {
+          this.menuMessage = "Your first tutorial run begins in the Backyard.";
+          return;
+        }
         this.selectedMapId = mapId;
         this.screenState = "melee-selection";
+        if (this.tutorial.active && this.tutorial.stage === "map") this.tutorial.stage = "loadout";
       }
       return;
     }
@@ -396,6 +519,10 @@ export class Game {
         if (slot === "melee") this.screenState = "ranged-selection";
         else {
           this.savePermanentProgress();
+          if (this.tutorial.active && this.tutorial.stage === "loadout") {
+            this.tutorial.stage = "first-run";
+            this.openInfoTutorial("first-run", FIRST_RUN_TUTORIAL_PAGES);
+          }
           this.resetRun();
         }
       }
@@ -415,12 +542,46 @@ export class Game {
         const success = weapon && buyWeapon(this.progress, weapon.id, shopWeaponPrice(weapon.id), false);
         this.bankCoins = this.progress.coins;
         this.menuMessage = success ? `${weapon.name} purchased` : "Cannot purchase weapon";
-        if (success) this.savePermanentProgress();
+        if (success) {
+          this.savePermanentProgress();
+          this.openWeaponPreview(weapon.id, "shop");
+        }
+      }
+      if (uiAction === "preview-upgrade") {
+        const weapon = weaponById(this.weaponPreview?.weaponId);
+        const success = weapon && this.progress.ownedWeapons.includes(weapon.id) && upgradeWeapon(this.progress, weapon.id);
+        this.bankCoins = this.progress.coins;
+        this.menuMessage = success
+          ? `${weapon.name} upgraded to level ${this.progress.weaponLevels[weapon.id]}`
+          : `${weapon?.name ?? "Weapon"} cannot be upgraded`;
+        if (success) {
+          this.savePermanentProgress();
+          if (this.tutorial.active && this.tutorial.stage === "upgrade-weapon") {
+            this.tutorial.stage = "shop";
+            this.weaponPreview = null;
+            this.screenState = "menu";
+            return;
+          }
+          this.openWeaponPreview(weapon.id, this.weaponPreviewReturnState);
+        }
       }
       this.updateWeaponPreview(deltaTime, uiAction == null);
       this.input.consumeMenuAction();
       this.input.consumeUpgradeChoice();
       this.input.consumeWeaponSlot();
+      return;
+    }
+
+    if (this.screenState === "chest-reveal") {
+      this.chestReveal.time += deltaTime;
+      const uiAction = this.consumeUiAction();
+      if ((uiAction === "chest-continue" || this.input.consumeConfirmRequest()) && this.chestReveal.time >= .8) {
+        this.screenState = this.chestReveal.returnState ?? "shop";
+        this.chestReveal = null;
+        if (this.tutorial.active && this.tutorial.stage === "finish") {
+          this.openInfoTutorial("finish", FINAL_TUTORIAL_PAGES);
+        }
+      }
       return;
     }
 
@@ -505,6 +666,10 @@ export class Game {
           this.arsenalScroll[this.permanentUpgradeCategory] = clamp(this.arsenalScroll[this.permanentUpgradeCategory] + scrollDirection * 3, 0, maxOffset);
         }
       }
+      if (uiAction?.type === "weapon-preview") {
+        this.openWeaponPreview(uiAction.value, "permanent-upgrades");
+        return;
+      }
       const choice = uiAction?.type === "choice" ? uiAction.value : this.input.consumeUpgradeChoice();
       this.input.consumeWeaponSlot();
       if (choice !== null) this.handlePermanentUpgradeChoice(choice);
@@ -559,10 +724,17 @@ export class Game {
 
     if (this.screenState === "defeat" || this.screenState === "victory") {
       const uiAction = this.consumeUiAction();
+      if (this.screenState === "defeat" && this.tutorial.active && this.tutorial.stage === "first-run") {
+        this.tutorial.enemyScale = Math.min(this.tutorial.enemyScale, .4);
+        this.selectedMapId = "backyard";
+        this.resetRun();
+        return;
+      }
       if (this.input.consumeRestartRequest() || uiAction === "retry") {
         this.resetRun();
       } else if (this.input.consumeConfirmRequest() || uiAction === "menu") {
         this.screenState = "menu";
+        if (this.tutorial.active && this.tutorial.stage === "victory") this.tutorial.stage = "post-victory";
       }
       this.updateDebugOutput();
       return;
@@ -577,6 +749,11 @@ export class Game {
     }
 
     if (this.screenState === "upgrade") {
+      if (this.enemyDiscovery) {
+        this.applyEnemyDiscoverySlowdown(deltaTime);
+        this.updateDebugOutput();
+        return;
+      }
       this.upgradeSelectionDelay = Math.max(0, this.upgradeSelectionDelay - deltaTime);
       const uiAction = this.consumeUiAction();
       const choice = uiAction?.type === "choice" ? uiAction.value : this.input.consumeUpgradeChoice();
@@ -595,14 +772,28 @@ export class Game {
       return;
     }
 
+    const discoveryPauseActive = Boolean(this.enemyDiscovery);
+    deltaTime = this.applyEnemyDiscoverySlowdown(deltaTime);
+    if (discoveryPauseActive) this.input.pointer.down = false;
+
+    if (this.bossDeathCinematic) {
+      this.updateBossDeathCinematic(deltaTime);
+      return;
+    }
+
     this.input.consumeUpgradeChoice();
     this.input.consumeMenuAction();
-    this.input.consumeClickRequest();
 
     const requestedSlot = this.input.consumeWeaponSlot();
     if (requestedSlot !== null) {
       this.weaponSlot = requestedSlot;
     }
+
+    const runningUiAction = this.consumeUiAction();
+    const autoFireToggleRequested = this.input.consumeAutoFireToggle?.() || runningUiAction === "toggle-auto-fire";
+    if (this.progress.autoFireUnlocked && autoFireToggleRequested) this.autoFireEnabled = !this.autoFireEnabled;
+    const dualWieldToggleRequested = this.input.consumeDualWieldToggle?.() || runningUiAction === "toggle-dual-wield";
+    if (this.progress.autoFireUnlocked && dualWieldToggleRequested) this.dualWieldEnabled = !this.dualWieldEnabled;
 
     if (bossSpawnRequested && !this.bossSpawned) this.spawnBoss();
 
@@ -610,6 +801,7 @@ export class Game {
     this.updateTemporaryObstacles(deltaTime);
     this.updateConstructionSite(deltaTime);
     this.updateCornFarm(deltaTime);
+    this.updateBotanicalGarden(deltaTime);
     const river = this.currentMap.obstacles?.find((obstacle) => obstacle.kind === "river");
     if (river) {
       for (const lilyPad of this.lilypads) {
@@ -625,11 +817,24 @@ export class Game {
       }
     }
 
+    this.updateBeach(deltaTime);
+    this.updateCampground(deltaTime);
+    this.updateMountainTrail(deltaTime);
+    this.updateSupermarket(deltaTime);
     let aimPoint = this.camera.screenToWorld(this.input.pointer);
+    const previousPlayerX=this.player.x,previousPlayerY=this.player.y;
     this.player.update(deltaTime, this.input.movementVector(), aimPoint, this.world, this.activeObstacles);
+    this.applySupermarketTraction(deltaTime,previousPlayerX,previousPlayerY);
+    this.updatePlayerMovementEffects(deltaTime,previousPlayerX,previousPlayerY);
     this.camera.follow(this.player, deltaTime);
     aimPoint = this.camera.screenToWorld(this.input.pointer);
-    this.player.updateRecoil(deltaTime, this.input.pointer.down);
+    const activeWeaponId = this.progress.equippedWeapons[this.weaponSlot === 1 ? "melee" : "ranged"];
+    const autoFiring = !discoveryPauseActive && shouldAutoFire(this.progress, this.autoFireEnabled);
+    this.player.updateRecoil(deltaTime, this.input.pointer.down || autoFiring);
+    if (autoFiring) {
+      this.player.attackHoldTime = 1 / 0.7;
+      this.player.recoil = AUTO_FIRE_RECOIL;
+    }
     if (this.umbrellaGuard) {
       this.umbrellaGuard.lifetime -= deltaTime;
       if (this.umbrellaGuard.lifetime <= 0) this.umbrellaGuard = null;
@@ -638,13 +843,15 @@ export class Game {
       this.vacuumEffect.lifetime -= deltaTime;
       if (this.vacuumEffect.lifetime <= 0) this.vacuumEffect = null;
     }
-    const activeWeaponId = this.progress.equippedWeapons[this.weaponSlot === 1 ? "melee" : "ranged"];
-    const vacuumHeld = activeWeaponId === "vacuum-cleaner" && this.input.pointer.down;
+    const vacuumHeld = (autoFiring && this.dualWieldEnabled)
+      ? Object.values(this.progress.equippedWeapons).includes("vacuum-cleaner")
+      : activeWeaponId === "vacuum-cleaner" && this.input.pointer.down;
     if (this.vacuumWasHeld && !vacuumHeld) this.releaseVacuum(aimPoint);
     this.vacuumWasHeld = vacuumHeld;
 
     this.attackCooldowns[1] = Math.max(0, this.attackCooldowns[1] - deltaTime);
     this.attackCooldowns[2] = Math.max(0, this.attackCooldowns[2] - deltaTime);
+    if(this.player.inCampfireLight){this.attackCooldowns[1]=Math.max(0,this.attackCooldowns[1]-deltaTime*.15);this.attackCooldowns[2]=Math.max(0,this.attackCooldowns[2]-deltaTime*.15);}
     this.attackCooldown = this.attackCooldowns[this.weaponSlot];
     this.meleePulse = Math.max(0, this.meleePulse - deltaTime);
     for (const effect of this.attackEffects ?? []) effect.lifetime -= deltaTime;
@@ -736,12 +943,42 @@ export class Game {
     }
 
     const attackRequested = this.input.consumeAttackRequest();
-    if ((this.input.pointer.down || attackRequested) && this.attackCooldowns[this.weaponSlot] <= 0) {
+    const activeSpecialBase = weaponById(activeWeaponId);
+    const activeSpecialWeapon = activeSpecialBase ? applyRunWeaponBonuses(weaponStatsAtLevel(activeSpecialBase, weaponLevelWithLoadoutBonus(activeWeaponId, this.progress.weaponLevels[activeWeaponId], this.progress.equippedWeapons)), this.player) : null;
+    const manualHeld = !discoveryPauseActive && this.input.pointer.down;
+    const gasolineHeld = activeSpecialWeapon?.id === "gasoline-can" && manualHeld;
+    if (gasolineHeld) this.extendGasolineTrail(activeSpecialWeapon);
+    if (this.gasolineWasHeld && !gasolineHeld) this.igniteGasolineTrail(activeSpecialWeapon?.id === "gasoline-can" ? activeSpecialWeapon : weaponById("gasoline-can"));
+    this.gasolineWasHeld = gasolineHeld;
+    const sodaHeld = activeSpecialWeapon?.id === "soda-bottle" && manualHeld;
+    if (sodaHeld && this.attackCooldowns[this.weaponSlot] <= 0) this.sodaCharge = Math.min(activeSpecialWeapon.sodaMaxCharge, this.sodaCharge + deltaTime);
+    if (this.sodaWasHeld && !sodaHeld && this.sodaCharge > 0) this.releaseSodaBottle(activeSpecialWeapon?.id === "soda-bottle" ? activeSpecialWeapon : weaponById("soda-bottle"), aimPoint);
+    this.sodaWasHeld = sodaHeld;
+    const specialCharging = gasolineHeld || sodaHeld;
+    if (!specialCharging && !discoveryPauseActive && autoFiring && this.dualWieldEnabled) {
+      const selectedSlot = this.weaponSlot;
+      for (const slot of [1, 2]) {
+        if (this.attackCooldowns[slot] > 0) continue;
+        this.weaponSlot = slot;
+        this.attack(aimPoint);
+      }
+      this.weaponSlot = selectedSlot;
+      this.attackCooldown = this.attackCooldowns[selectedSlot];
+    } else if (!specialCharging && !discoveryPauseActive && this.dualWieldEnabled && (this.input.pointer.down || attackRequested)) {
+      const selectedSlot = this.weaponSlot;
+      for (const slot of [1, 2]) {
+        if (this.attackCooldowns[slot] > 0) continue;
+        this.weaponSlot = slot;
+        this.attack(aimPoint);
+      }
+      this.weaponSlot = selectedSlot;
+      this.attackCooldown = this.attackCooldowns[selectedSlot];
+    } else if (!specialCharging && !discoveryPauseActive && (autoFiring || this.input.pointer.down || attackRequested) && this.attackCooldowns[this.weaponSlot] <= 0) {
       this.attack(aimPoint);
     }
     this.updatePassiveAbilities(deltaTime);
     this.updateWeaponDeployables(deltaTime);
-    this.updatePendingBurstShots(deltaTime);
+    if (!discoveryPauseActive) this.updatePendingBurstShots(deltaTime);
 
     for (const projectile of this.projectiles) {
       if (projectile.horseshoe && projectile.active) {
@@ -946,6 +1183,7 @@ export class Game {
             ? hitDamage * (projectile.bossDamageMultiplier ?? 1)
             : hitDamage;
           this.damageEnemy(enemy, bossAdjustedDamage, projectile.lifesteal, projectile.weaponId);
+          if (projectile.paintColor) this.applyPaint(enemy, projectile.paintColor, projectile.paintDuration);
           if (projectile.slowDuration > 0) enemy.slowTime = Math.max(enemy.slowTime ?? 0, projectile.slowDuration);
           if (projectile.fireDuration > 0) applyFire(enemy, projectile.fireDamagePerSecond, projectile.fireDuration, projectile.fireMaxStacks);
           if (projectile.freezeDuration > 0) applyFreeze(enemy, projectile.freezeDuration);
@@ -959,6 +1197,7 @@ export class Game {
                 if (projectile.slowDuration > 0) nearbyEnemy.slowTime = Math.max(nearbyEnemy.slowTime ?? 0, projectile.slowDuration);
                 if (projectile.fireDuration > 0) applyFire(nearbyEnemy, projectile.fireDamagePerSecond, projectile.fireDuration, projectile.fireMaxStacks);
                 if (projectile.freezeDuration > 0) applyFreeze(nearbyEnemy, projectile.freezeDuration);
+                if (projectile.paintColor) this.applyPaint(nearbyEnemy, projectile.paintColor, projectile.paintDuration);
                 if (nearbyEnemy !== enemy) this.damageEnemy(nearbyEnemy, Math.round(projectile.damage * projectile.splashDamageMultiplier), projectile.lifesteal, projectile.weaponId);
               }
             }
@@ -1010,6 +1249,7 @@ export class Game {
     this.thrownGnomes = this.thrownGnomes.filter((thrownGnome) => !thrownGnome.arrived);
 
     for (const spore of this.bossProjectiles) {
+      if (spore instanceof BeachBubble) spore.inShallowWater = this.pointInBeachWater(spore.x, spore.y);
       spore.update(deltaTime, this.world, this.player);
       if (this.blockWithUmbrella(spore)) continue;
       if (spore instanceof SnailSpitProjectile && spore.active) {
@@ -1054,16 +1294,21 @@ export class Game {
       }
     }
     this.bossProjectiles = this.bossProjectiles.filter((spore) => spore.active);
+    this.updateBlockPartySupport(deltaTime);
 
     const touchingEnemies = [];
     for (const enemy of this.enemies) {
+      this.updatePaintEffects(enemy, deltaTime);
       const status = updateEnemyStatus(enemy, deltaTime);
       if (status.fireDamage > 0) this.damageEnemy(enemy, status.fireDamage);
       const enemyTarget = this.getEnemyTarget(enemy);
       const onRunningTrack = this.currentMap.id === "school-field" && this.activeObstacles.some((obstacle) => obstacle.kind === "running-track"
         && enemy.x >= obstacle.x && enemy.x <= obstacle.x + obstacle.width
         && enemy.y >= obstacle.y && enemy.y <= obstacle.y + obstacle.height);
-      const enemyDeltaTime = onRunningTrack ? deltaTime * 1.2 : deltaTime;
+      enemy.inShallowWater = this.pointInBeachWater(enemy.x, enemy.y);
+      if (enemy instanceof KingCrabBoss) enemy.highTide = this.beachTidePhase === "high";
+      const waterFactor = enemy.inShallowWater && !enemy.waterImmune && !enemy.isBoss ? .7 : 1;
+      const enemyDeltaTime = (onRunningTrack ? deltaTime * 1.2 : deltaTime) * waterFactor;
       const bossEvents = status.frozen || !enemy.active ? {} : enemy.update(enemyDeltaTime, enemyTarget, this.activeObstacles, this.enemies) ?? {};
       if (enemy.isBoss && bossEvents.summonGnomes) {
         this.summonBossGnomes(enemy);
@@ -1179,6 +1424,64 @@ export class Game {
           if (minion !== enemy && minion.active && !minion.isBoss && circlesOverlap(enemy, minion)) this.damageEnemy(minion, Number.POSITIVE_INFINITY);
         }
       }
+      if (bossEvents.needleBurst) this.fireCactusNeedles(enemy);
+      if (bossEvents.groundVine) this.botanicalGroundVines.push({ ...bossEvents.groundVine, maxLifetime: bossEvents.groundVine.lifetime });
+      if (bossEvents.healAura) {
+        for (const ally of this.enemies) if (ally !== enemy && ally.active && !ally.isBoss
+          && Math.hypot(ally.x - enemy.x, ally.y - enemy.y) <= bossEvents.healAura.radius) {
+          ally.health = Math.min(ally.maxHealth, ally.health + bossEvents.healAura.rate * deltaTime);
+        }
+      }
+      if (enemy.isBoss && bossEvents.thornLines) this.createQueenThornLines(bossEvents.thornLines);
+      if (enemy.isBoss && bossEvents.petalVolley) this.fireQueenPetals(enemy, bossEvents.petalVolley);
+      if (enemy.isBoss && bossEvents.pollenBurst) this.fireQueenPollen(enemy, bossEvents.pollenBurst);
+      if (enemy.isBoss && bossEvents.fullBloom) this.explosions.push({ x: enemy.x, y: enemy.y, radius: 120, lifetime: .8, maxLifetime: .8, ring: true, color: "#ff82b6" });
+      if (bossEvents.tentacleWarning) this.beachWarnings.push({ type:"tentacle", ...bossEvents.tentacleWarning, maxLifetime:bossEvents.tentacleWarning.lifetime });
+      if (bossEvents.tentacleStrike) {
+        const strike=bossEvents.tentacleStrike,dx=this.player.x-strike.x,dy=this.player.y-strike.y,d=Math.hypot(dx,dy)||1;
+        if(d<=strike.radius+this.player.radius){this.damagePlayer(strike.damage);this.player.x=clamp(this.player.x+dx/d*strike.pushback,this.player.radius,this.world.width-this.player.radius);this.player.y=clamp(this.player.y+dy/d*strike.pushback,this.player.radius,this.world.height-this.player.radius);}
+        this.explosions.push({x:strike.x,y:strike.y,radius:strike.radius,lifetime:.4,maxLifetime:.4,color:"#9c61a8"});
+      }
+      if (bossEvents.rescueEnemy) this.startBeachRescue(enemy,bossEvents.rescueEnemy);
+      if (enemy.isBoss && bossEvents.clawWarning) this.beachWarnings.push({type:"claw",x:enemy.x,y:enemy.y,radius:105,lifetime:.65,maxLifetime:.65,source:enemy});
+      if (enemy.isBoss && bossEvents.clawSlam) this.performKingCrabSlam(enemy,bossEvents.clawSlam);
+      if (enemy.isBoss && bossEvents.chargeWarning) this.beachWarnings.push({type:"charge",x:enemy.x,y:enemy.y,direction:bossEvents.chargeWarning.direction,lifetime:.7,maxLifetime:.7,source:enemy});
+      if (enemy.isBoss && bossEvents.tidalTrail) this.addTemporaryBeachWater(bossEvents.tidalTrail);
+      if (enemy.isBoss && bossEvents.bubbles) this.fireBeachBubbles(enemy,bossEvents.bubbles);
+      if (bossEvents.skunkGas) this.campgroundHazards.push({type:"gas",...bossEvents.skunkGas,maxLifetime:bossEvents.skunkGas.lifetime,radius:105,damage:7,hitTimer:0});
+      if (enemy.isBoss && bossEvents.searchlight) this.handleRangerSearchlight(enemy,bossEvents.searchlight);
+      if (enemy.isBoss && bossEvents.logToss) this.rangerLogToss(enemy,bossEvents.logToss.count);
+      if (enemy.isBoss && bossEvents.campfireKick) this.rangerCampfireKick();
+      if (enemy.isBoss && bossEvents.backpackDump) this.rangerBackpackDump(enemy,bossEvents.backpackDump.count);
+      if (enemy.isBoss && bossEvents.campgroundClosed) this.startCampgroundClosed();
+      if(bossEvents.chargeWarning&&!enemy.isBoss)this.mountainWarnings.push({type:"charge",...bossEvents.chargeWarning,maxLifetime:bossEvents.chargeWarning.lifetime});
+      if(bossEvents.eagleRock)this.mountainWarnings.push({type:"impact",...bossEvents.eagleRock,maxLifetime:bossEvents.eagleRock.lifetime,spawnRock:true});
+      if(enemy.isBoss&&bossEvents.mountainChargeWarning)this.mountainWarnings.push({type:"charge",...bossEvents.mountainChargeWarning,maxLifetime:bossEvents.mountainChargeWarning.lifetime,boss:true});
+      if(enemy.isBoss&&bossEvents.boulderHeadbutt)this.spawnMountainRockToward(enemy.x,enemy.y,bossEvents.boulderHeadbutt.x,bossEvents.boulderHeadbutt.y,{radius:44,speed:520,playerDamage:40,enemyDamage:700,knockback:180,color:"#554f47"});
+      if(bossEvents.boundaryImpact){if(bossEvents.boundaryImpact.selfDamage)this.damageEnemy(enemy,bossEvents.boundaryImpact.selfDamage);this.explosions.push({x:enemy.x,y:enemy.y,radius:90,lifetime:.5,maxLifetime:.5,ring:true,color:"#e5b45c"});this.triggerScreenShake?.(.12,.13);}
+      if(enemy.isBoss&&bossEvents.kingPhase)this.explosions.push({x:enemy.x,y:enemy.y,radius:150,lifetime:1,maxLifetime:1,ring:true,color:"#ff7b35"});
+      if(bossEvents.hypeShout){for(const ally of this.nearbyPartyEnemies(enemy,bossEvents.hypeShout.radius))ally.partySpeedBuffTime=Math.max(ally.partySpeedBuffTime??0,bossEvents.hypeShout.duration);this.addPartyEffect({type:"ring",kind:"hype",x1:enemy.x,y1:enemy.y,radius:bossEvents.hypeShout.radius,lifetime:.65});}
+      if(bossEvents.grillHeal)this.healPartyTargets(enemy,bossEvents.grillHeal.count,bossEvents.grillHeal.amount,bossEvents.grillHeal.radius,"food");
+      if(bossEvents.coachWhistle){this.coachPartyDash(enemy,bossEvents.coachWhistle.count);this.addPartyEffect({type:"ring",kind:"coach",x1:enemy.x,y1:enemy.y,radius:bossEvents.coachWhistle.radius,lifetime:.55});}
+      if(bossEvents.firstAidShield){const target=this.nearbyPartyEnemies(enemy,bossEvents.firstAidShield.radius).filter(ally=>ally.shield<=0).sort((a,b)=>a.health/a.maxHealth-b.health/b.maxHealth)[0];if(target){target.shield=bossEvents.firstAidShield.amount;target.supportShieldTime=bossEvents.firstAidShield.duration;target.aidFlashTime=.5;this.addPartyEffect({type:"travel",kind:"aid",x1:enemy.x,y1:enemy.y,x2:target.x,y2:target.y,lifetime:.7});}}
+      if(enemy.isBoss&&bossEvents.spawnPartygoer)this.spawnBlockPartyEnemyAt(enemy.x,enemy.y,"partygoer",true);
+      if(enemy.isBoss&&bossEvents.partyRally){for(const ally of this.enemies)if(ally.active&&!ally.isBoss){ally.partyRallySpeedTime=Math.max(ally.partyRallySpeedTime??0,bossEvents.partyRally.duration);ally.partyRallyAttackTime=Math.max(ally.partyRallyAttackTime??0,bossEvents.partyRally.duration);}this.addPartyEffect({type:"ring",kind:"rally",x1:enemy.x,y1:enemy.y,radius:520,lifetime:.8});}
+      if(enemy.isBoss&&bossEvents.balloonShield)this.shieldPartyTargets(enemy,bossEvents.balloonShield.count,bossEvents.balloonShield.amount,bossEvents.balloonShield.duration,"balloon");
+      if(enemy.isBoss&&bossEvents.pizzaDelivery){this.healPartyTargets(enemy,bossEvents.pizzaDelivery.count,bossEvents.pizzaDelivery.amount,9999,"pizza");enemy.health=Math.min(enemy.maxHealth,enemy.health+bossEvents.pizzaDelivery.selfHeal);}
+      if(enemy.isBoss&&bossEvents.confettiCannon)this.firePartyConfetti(enemy,bossEvents.confettiCannon);
+      if(enemy.isBoss&&bossEvents.perfectlyPlanned)this.addPartyEffect({type:"label",label:"PERFECTLY PLANNED!",x1:enemy.x,y1:enemy.y,lifetime:2});
+      if(enemy.isBoss&&bossEvents.supportOverload)this.applySupportOverload(enemy,bossEvents.supportOverload);
+      if(bossEvents.throwCan)this.createMarketProjectile(enemy,bossEvents.throwCan,{kind:"can",speed:bossEvents.throwCan.speed,damage:bossEvents.throwCan.damage});
+      if(bossEvents.frozenPackage)this.createMarketProjectile(enemy,bossEvents.frozenPackage,{kind:"frozen",speed:bossEvents.frozenPackage.speed,damage:bossEvents.frozenPackage.damage,freeze:1});
+      if(bossEvents.seekCart&&enemy instanceof CartGoblin){enemy.cart=this.shoppingCarts.filter(cart=>!cart.rolling&&!this.enemies.some(other=>other!==enemy&&other instanceof CartGoblin&&other.cart===cart)).sort((a,b)=>Math.hypot(a.x-enemy.x,a.y-enemy.y)-Math.hypot(b.x-enemy.x,b.y-enemy.y))[0]??null;}
+      if(bossEvents.cartWarning)bossEvents.cartWarning.cart.warning=bossEvents.cartWarning.lifetime;
+      if(bossEvents.launchCart){bossEvents.launchCart.cart.warning=.7;bossEvents.launchCart.cart.pendingLaunch={vx:bossEvents.launchCart.vx,vy:bossEvents.launchCart.vy};}
+      if(enemy.isBoss&&bossEvents.cartCall){const stopped=this.shoppingCarts.filter(cart=>!cart.rolling&&!cart.pendingLaunch).sort((a,b)=>Math.hypot(a.x-enemy.x,a.y-enemy.y)-Math.hypot(b.x-enemy.x,b.y-enemy.y)).slice(0,bossEvents.cartCall);for(const cart of stopped){const a=Math.atan2(this.player.y-cart.y,this.player.x-cart.x);cart.warning=.7;cart.pendingLaunch={vx:Math.cos(a)*880,vy:Math.sin(a)*880};}}
+      if(bossEvents.baguetteThrust){const thrust=bossEvents.baguetteThrust,dx=this.player.x-enemy.x,dy=this.player.y-enemy.y,forward=dx*Math.cos(thrust.angle)+dy*Math.sin(thrust.angle),side=Math.abs(-dx*Math.sin(thrust.angle)+dy*Math.cos(thrust.angle));if(forward>=0&&forward<=thrust.length&&side<=thrust.width/2+this.player.radius){this.damagePlayer(thrust.damage);const d=Math.hypot(dx,dy)||1;this.player.x=clamp(this.player.x+dx/d*thrust.knockback,this.player.radius,this.world.width-this.player.radius);this.player.y=clamp(this.player.y+dy/d*thrust.knockback,this.player.radius,this.world.height-this.player.radius);}}
+      if(enemy.isBoss&&bossEvents.shelfSweep){const target={x:this.player.x,y:this.player.y};for(let lane=0;lane<bossEvents.shelfSweep;lane++)this.createMarketProjectile(enemy,target,{kind:"grocery",speed:390,damage:34,lane:lane-(bossEvents.shelfSweep-1)/2});}
+      if(enemy.isBoss&&bossEvents.cleanupCrew){const sweep=bossEvents.cleanupCrew,start=bossEvents.cleanupCrew.angle-Math.PI*.75,playerAngle=Math.atan2(this.player.y-enemy.y,this.player.x-enemy.x),diff=Math.abs(Math.atan2(Math.sin(playerAngle-(start+Math.PI*.75)),Math.cos(playerAngle-(start+Math.PI*.75))));if(Math.hypot(this.player.x-enemy.x,this.player.y-enemy.y)<=sweep.radius&&diff<=Math.PI*.75){this.damagePlayer(sweep.damage);const d=Math.hypot(this.player.x-enemy.x,this.player.y-enemy.y)||1;this.player.x=clamp(this.player.x+(this.player.x-enemy.x)/d*sweep.knockback,this.player.radius,this.world.width-this.player.radius);this.player.y=clamp(this.player.y+(this.player.y-enemy.y)/d*sweep.knockback,this.player.radius,this.world.height-this.player.radius);}for(const cart of this.shoppingCarts)if(!cart.rolling&&Math.hypot(cart.x-enemy.x,cart.y-enemy.y)<=sweep.radius){const a=Math.atan2(cart.y-enemy.y,cart.x-enemy.x);this.launchShoppingCart(cart,Math.cos(a)*820,Math.sin(a)*820);}this.explosions.push({x:enemy.x,y:enemy.y,radius:sweep.radius,lifetime:.55,maxLifetime:.55,ring:true,color:"#79d8e5"});}
+      if(enemy.isBoss&&bossEvents.priceCheck){this.supermarketAnnouncement="PRICE CHECK!";this.supermarketAnnouncementTime=2;for(let i=0;i<bossEvents.priceCheck;i++){const angle=i/bossEvents.priceCheck*Math.PI*2+.35,radius=Math.min(this.world.width,this.world.height)*.28;this.supermarketWarnings.push({type:"crate",x:clamp(this.world.width/2+Math.cos(angle)*radius,90,this.world.width-90),y:clamp(this.world.height/2+Math.sin(angle)*radius,90,this.world.height-90),radius:72,lifetime:2,maxLifetime:2});}}
+      if(enemy.isBoss&&bossEvents.closingTime){this.supermarketAnnouncement="CLOSING TIME!";this.supermarketAnnouncementTime=3;for(const cart of this.shoppingCarts)if(!cart.rolling)cart.warning=999;}
       if (enemy.isBoss && bossEvents.chickenRush) {
         for (let chickenIndex = 0; chickenIndex < bossEvents.chickenRush; chickenIndex += 1) {
           const angle = chickenIndex / bossEvents.chickenRush * Math.PI * 2;
@@ -1208,6 +1511,7 @@ export class Game {
       }
       if (bossEvents.copyWeed) this.spawnCommonWeedAt(bossEvents.copyWeed.x, bossEvents.copyWeed.y);
       resolveEnemyObstacles(enemy, this.activeObstacles);
+      if(this.currentMap.id==="neighborhood-block-party")keepPartyEnemyInWorld(enemy,this.world);
       if (enemy.isBoss && bossEvents.fireClippings) this.fireGroundskeeperClippings(bossEvents.fireClippings);
       if (bossEvents.fireGolfBall) this.fireGolfBall(bossEvents.fireGolfBall);
       if (enemy.isBoss && bossEvents.attack) this.fireProGolferAttack(enemy, bossEvents.attack);
@@ -1273,7 +1577,28 @@ export class Game {
       this.separateWeeds();
     }
     if (touchingEnemies.length > 0) {
-      this.damagePlayer(totalContactDamage(touchingEnemies));
+      const harmful = [];
+      for (const enemy of touchingEnemies) {
+        if ((enemy.paintEffects?.green ?? 0) > 0) {
+          enemy.greenPaintHealCooldown = Math.max(0, (enemy.greenPaintHealCooldown ?? 0) - deltaTime);
+          if (enemy.greenPaintHealCooldown <= 0) {
+            this.player.health = Math.min(this.player.maxHealth, this.player.health + 1);
+            enemy.greenPaintHealCooldown = .65;
+          }
+        } else harmful.push(enemy);
+        if (this.player.wheelchairTouchDamage > 0) {
+          enemy.wheelchairHitCooldown = Math.max(0, (enemy.wheelchairHitCooldown ?? 0) - deltaTime);
+          if (enemy.wheelchairHitCooldown <= 0) {
+            this.damageEnemy(enemy, this.player.wheelchairTouchDamage, 0, "wheelchair");
+            enemy.wheelchairHitCooldown = .35;
+          }
+        }
+      }
+      if (harmful.length > 0) {
+        this.damagePlayer(totalContactDamage(harmful));
+        const forceful=harmful.find(enemy=>enemy.contactKnockback||(enemy instanceof KingCrabBoss&&enemy.chargeTime>0));
+        if(forceful){const dx=this.player.x-forceful.x,dy=this.player.y-forceful.y,d=Math.hypot(dx,dy)||1,k=forceful.contactKnockback??150;this.player.x=clamp(this.player.x+dx/d*k,this.player.radius,this.world.width-this.player.radius);this.player.y=clamp(this.player.y+dy/d*k,this.player.radius,this.world.height-this.player.radius);}
+      }
     }
     this.enemies = this.enemies.filter((enemy) => enemy.active);
 
@@ -1427,6 +1752,14 @@ export class Game {
     this.player.healthRegenInterval = (stats.regeneration ?? 0) > 0 ? 3 : 0;
     this.player.healthRegenTimer = 0;
     this.player.reducedMotion = this.progress.settings.reducedMotion;
+    if (Object.values(this.progress.equippedWeapons).includes("wheelchair")) {
+      const base = weaponById("wheelchair");
+      const level = weaponLevelWithLoadoutBonus("wheelchair", this.progress.weaponLevels.wheelchair, this.progress.equippedWeapons);
+      const wheelchair = applyRunWeaponBonuses(weaponStatsAtLevel(base, level), this.player);
+      this.player.speed *= wheelchair.wheelchairSpeedMultiplier;
+      this.player.damageTakenMultiplier *= wheelchair.wheelchairArmorMultiplier;
+      this.player.wheelchairTouchDamage = scaledWeaponSideDamage(wheelchair, "wheelchairTouchDamage", this.player.damageMultiplier);
+    }
   }
 
   ownedWeaponsForSlot(slot) {
@@ -1485,9 +1818,14 @@ export class Game {
       if (!weapon) return;
       success = upgradeWeapon(this.progress, weapon.id);
       label = success ? `${weapon.name} upgraded to level ${this.progress.weaponLevels[weapon.id]}` : `${weapon.name} cannot be upgraded`;
+      if (success && this.tutorial.active && this.tutorial.stage === "upgrade-weapon") {
+        this.tutorial.stage = "shop";
+        this.screenState = "menu";
+      }
     } else if (choice === 1) {
       this.permanentUpgradeCategory = "all";
       this.menuMessage = "Choose any owned weapon to upgrade";
+      if (this.tutorial.active && this.tutorial.stage === "open-arsenal") this.tutorial.stage = "upgrade-weapon";
       return;
     } else if (choice >= 3 && choice <= 9) {
       const stat = ["health", "damage", "speed", "attackSpeed", "accuracy", "shield", "regeneration"][choice - 3];
@@ -1500,8 +1838,9 @@ export class Game {
   }
 
   openChestFromMenu() {
-    const currentChestCost = chestCost(this.progress);
-    const result = openChest(this.progress);
+    const tutorialFree = Boolean(this.tutorial.active && this.tutorial.freeChestAvailable);
+    const currentChestCost = tutorialFree ? 0 : chestCost(this.progress);
+    const result = tutorialFree ? openFreeChest(this.progress) : openChest(this.progress);
     if (!result) {
       this.menuMessage = `Need ${currentChestCost} coins for a chest`;
       return;
@@ -1510,20 +1849,51 @@ export class Game {
     this.menuMessage = result.duplicate
       ? `${result.rarity} duplicate auto-sold: +$${result.moneyReturned}`
       : `${result.rarity}: ${result.weapon.name} unlocked`;
+    this.chestReveal = { result, time: 0, returnState: "shop" };
+    this.screenState = "chest-reveal";
+    if (tutorialFree) {
+      this.tutorial.freeChestAvailable = false;
+      this.tutorial.stage = "finish";
+    }
     this.savePermanentProgress();
   }
 
   handleSettingsChoice(choice) {
-    if (choice >= 1 && choice <= 3) {
-      const setting = ["sound", "screenShake", "reducedMotion"][choice - 1];
+    if (choice >= 1 && choice <= 4) {
+      const setting = ["sound", "screenShake", "reducedMotion", "tutorialEnabled"][choice - 1];
       this.progress.settings[setting] = !this.progress.settings[setting];
       this.menuMessage = `${setting}: ${this.progress.settings[setting] ? "ON" : "OFF"}`;
+      if (setting === "tutorialEnabled" && !this.progress.settings.tutorialEnabled) {
+        this.tutorial.active = false;
+        this.progress.settings.tutorialSeen = true;
+        this.infoTutorial = null;
+      } else if (setting === "tutorialEnabled") {
+        this.restartTutorial();
+      }
       this.savePermanentProgress();
-    } else if (choice === 4 || choice === 5) {
-      const action = choice === 4 ? "melee" : "ranged";
+    } else if (choice === 5) {
+      this.progress.settings.tutorialEnabled = true;
+      this.restartTutorial();
+      this.savePermanentProgress();
+    } else if (choice === 6 || choice === 7) {
+      const action = choice === 6 ? "melee" : "ranged";
       this.input.beginRebind(action);
       this.menuMessage = `Press a key for ${action}`;
     }
+  }
+
+  restartTutorial() {
+    this.progress.settings.tutorialSeen = false;
+    this.tutorial = {
+      active: true,
+      stage: "intro",
+      page: 0,
+      enemyScale: 1,
+      freeChestAvailable: false,
+      bossExplained: false,
+    };
+    this.infoTutorial = null;
+    this.screenState = "tutorial";
   }
 
   spawnEnemy(forcedAngle = Math.random() * Math.PI * 2) {
@@ -1531,12 +1901,13 @@ export class Game {
     const x = clamp(this.player.x + Math.cos(forcedAngle) * distance, 30, this.world.width - 30);
     const y = clamp(this.player.y + Math.sin(forcedAngle) * distance, 30, this.world.height - 30);
     const difficulty = 1 + this.runTime / 60;
+    const tutorialScale = this.tutorial?.active && this.tutorial.stage === "first-run" ? this.tutorial.enemyScale : 1;
     this.enemies.push(new Gnome({
       x,
       y,
-      health: GNOME_HEALTH,
-      speed: Math.min(145, 72 + this.runTime * 0.55),
-      damage: 6,
+      health: Math.max(1, Math.round(GNOME_HEALTH * tutorialScale)),
+      speed: Math.min(145, 72 + this.runTime * 0.55) * Math.max(.6, tutorialScale),
+      damage: Math.max(1, Math.round(6 * tutorialScale)),
       coinValue: 2 + Math.floor(difficulty),
       xpValue: 20,
     }));
@@ -1589,6 +1960,30 @@ export class Game {
     }
     if (this.currentMap.normalEnemyType === "corn-farm") {
       this.spawnCornFarmEnemy(forcedAngle);
+      return;
+    }
+    if (this.currentMap.normalEnemyType === "botanical-garden") {
+      this.spawnBotanicalEnemy(forcedAngle);
+      return;
+    }
+    if (this.currentMap.normalEnemyType === "beach") {
+      this.spawnBeachEnemy(forcedAngle);
+      return;
+    }
+    if (this.currentMap.normalEnemyType === "campground") {
+      this.spawnCampgroundEnemy(forcedAngle);
+      return;
+    }
+    if (this.currentMap.normalEnemyType === "mountain-trail") {
+      this.spawnMountainEnemy(forcedAngle);
+      return;
+    }
+    if (this.currentMap.normalEnemyType === "block-party") {
+      this.spawnBlockPartyEnemy(forcedAngle);
+      return;
+    }
+    if (this.currentMap.normalEnemyType === "supermarket") {
+      this.spawnSupermarketEnemy(forcedAngle);
       return;
     }
     this.spawnEnemy(forcedAngle);
@@ -1658,6 +2053,23 @@ export class Game {
     const enemy = type === "popcorn" ? new PopcornEnemy(options)
       : type === "mini-tractor" ? new MiniTractor(options) : new AngryCorn(options);
     enemy.bossMinion = bossMinion;
+    this.enemies.push(enemy);
+    return enemy;
+  }
+
+  spawnBotanicalEnemy(forcedAngle = Math.random() * Math.PI * 2, forcedType = null) {
+    if (this.enemies.filter((enemy) => enemy.active).length >= (this.currentMap.enemyCap ?? 100)) return null;
+    const distance = Math.max(this.camera.viewWidth, this.camera.viewHeight) * .52 + 90;
+    const x = clamp(this.player.x + Math.cos(forcedAngle) * distance, 35, this.world.width - 35);
+    const y = clamp(this.player.y + Math.sin(forcedAngle) * distance, 35, this.world.height - 35);
+    const weights = this.currentMap.botanicalSpawnWeights ?? { cactus: .28, snapflower: .32, sunflower: .18, vine: .22 };
+    const roll = (this.random ?? Math.random)();
+    const type = forcedType ?? (roll < weights.cactus ? "cactus"
+      : roll < weights.cactus + weights.snapflower ? "snapflower"
+        : roll < weights.cactus + weights.snapflower + weights.sunflower ? "sunflower" : "vine");
+    const enemy = type === "cactus" ? new Cactus({ x, y })
+      : type === "snapflower" ? new Snapflower({ x, y })
+        : type === "sunflower" ? new SunflowerEnemy({ x, y }) : new VineEnemy({ x, y });
     this.enemies.push(enemy);
     return enemy;
   }
@@ -1973,6 +2385,53 @@ export class Game {
     this.cornDumps = this.cornDumps.filter((entry) => !entry.burst);
   }
 
+  updateBotanicalGarden(deltaTime) {
+    if (this.currentMap.id !== "botanical-garden") return;
+    this.botanicalGroundVines = this.botanicalGroundVines.filter((vine) => (vine.lifetime -= deltaTime) > 0);
+    this.queenThornLines = this.queenThornLines.filter((line) => (line.lifetime -= deltaTime) > 0);
+    this.activeObstacles = this.activeObstacles.filter((obstacle) => obstacle.kind !== "ground-vine");
+    for (const vine of this.botanicalGroundVines) this.activeObstacles.push({ ...vine, kind: "ground-vine", solid: false });
+
+    for (const vine of this.botanicalGroundVines) {
+      if (distanceToSegment(this.player.x, this.player.y, vine.x1, vine.y1, vine.x2, vine.y2) <= vine.width + this.player.radius) this.player.vineSlowTime = .15;
+      for (const enemy of this.enemies) if (enemy.active && !enemy.isBoss && distanceToSegment(enemy.x, enemy.y, vine.x1, vine.y1, vine.x2, vine.y2) <= vine.width + (enemy.radius ?? 16)) enemy.slowTime = Math.max(enemy.slowTime ?? 0, .2);
+    }
+    for (const line of this.queenThornLines) {
+      line.hitCooldown = Math.max(0, (line.hitCooldown ?? 0) - deltaTime);
+      if (line.warning > 0) { line.warning -= deltaTime; continue; }
+      if (line.hitCooldown <= 0 && distanceToSegment(this.player.x, this.player.y, line.x1, line.y1, line.x2, line.y2) <= line.width + this.player.radius) { this.damagePlayer(50); line.hitCooldown = .55; }
+    }
+    this.botanicalTerrainTimer -= deltaTime;
+    if (this.botanicalTerrainTimer <= 0) {
+      this.botanicalTerrainTimer += .5;
+      for (const bed of this.currentMap.obstacles.filter((obstacle) => obstacle.kind.endsWith("-bed"))) {
+        const inside = (entity) => entity.x >= bed.x && entity.x <= bed.x + bed.width && entity.y >= bed.y && entity.y <= bed.y + bed.height;
+        if (inside(this.player)) {
+          if (bed.kind === "sunflower-bed") this.player.health = Math.min(this.player.maxHealth, this.player.health + 1);
+          if (bed.kind === "rose-bed") this.damagePlayer(4);
+        }
+        for (const enemy of this.enemies) if (enemy.active && !enemy.isBoss && inside(enemy)) {
+          if (bed.kind === "sunflower-bed") enemy.health = Math.min(enemy.maxHealth, enemy.health + 1);
+          if (bed.kind === "rose-bed") this.damageEnemy(enemy, 4);
+          if (bed.kind === "lavender-bed") enemy.slowTime = Math.max(enemy.slowTime ?? 0, .55);
+        }
+      }
+    }
+  }
+
+  fireCactusNeedles(source) {
+    // Roughly 187 units: just beyond the Brick Carrier's 150-unit death burst.
+    for (let index = 0; index < 8; index += 1) { const angle=index/8*Math.PI*2;this.bossProjectiles.push(new BotanicalProjectile({x:source.x,y:source.y,velocityX:Math.cos(angle)*520,velocityY:Math.sin(angle)*520,damage:10,lifetime:.36,kind:"needle",color:"#d8df9b"})); }
+  }
+
+  createQueenThornLines(count) {
+    const random=this.random??Math.random;const diagonal=Math.hypot(this.world.width,this.world.height);
+    for(let index=0;index<count;index++){const cx=random()*this.world.width,cy=random()*this.world.height,angle=random()*Math.PI;this.queenThornLines.push({x1:cx-Math.cos(angle)*diagonal,y1:cy-Math.sin(angle)*diagonal,x2:cx+Math.cos(angle)*diagonal,y2:cy+Math.sin(angle)*diagonal,width:17,warning:.7,lifetime:3.2,hitCooldown:0});}
+  }
+
+  fireQueenPetals(source,event){for(let i=0;i<event.count;i++){const angle=event.angle+i/event.count*Math.PI*2;this.bossProjectiles.push(new BotanicalProjectile({x:source.x,y:source.y,velocityX:Math.cos(angle)*260,velocityY:Math.sin(angle)*260,damage:30,lifetime:5,kind:"petal",radius:9,color:"#ec6793"}));}}
+  fireQueenPollen(source,event){for(let i=0;i<event.count;i++){const angle=i/event.count*Math.PI*2;this.bossProjectiles.push(new BotanicalProjectile({x:source.x,y:source.y,velocityX:Math.cos(angle)*event.speed,velocityY:Math.sin(angle)*event.speed,damage:8,lifetime:5,radius:28,kind:"pollen",color:"#f3dd72",bounces:1,repeat:true}));}}
+
   harvestCornAt(x, y, radius) {
     for (const section of this.cornSections) {
       const closestX = clamp(x, section.x, section.x + section.width); const closestY = clamp(y, section.y, section.y + section.height);
@@ -1992,13 +2451,155 @@ export class Game {
     }
   }
 
+  spawnBeachEnemy(forcedAngle = Math.random() * Math.PI * 2) {
+    if (this.enemies.length >= (this.currentMap.enemyCap ?? 100)) return null;
+    const distance=Math.max(this.camera.viewWidth,this.camera.viewHeight)*.52+90;
+    const x=clamp(this.player.x+Math.cos(forcedAngle)*distance,45,this.world.width-45);
+    const y=clamp(this.player.y+Math.sin(forcedAngle)*distance,45,this.world.height-45);
+    const weights=this.currentMap.beachSpawnWeights,roll=(this.random??Math.random)();
+    const options={x,y,world:this.world};
+    const enemy=roll<weights.crab?new Crab(options):roll<weights.crab+weights.hermitCrab?new HermitCrab(options)
+      :roll<weights.crab+weights.hermitCrab+weights.beachBall?new BeachBallEnemy(options)
+        :roll<weights.crab+weights.hermitCrab+weights.beachBall+weights.sandOctopus?new SandOctopus(options):new Lifeguard(options);
+    this.enemies.push(enemy);return enemy;
+  }
+
+  pointInBeachWater(x,y) {
+    if(this.currentMap.id!=="beach")return false;
+    return this.activeObstacles.some(o=>o.kind==="shallow-water"&&x>=o.x&&x<=o.x+o.width&&y>=o.y&&y<=o.y+o.height);
+  }
+
+  updateBeach(dt) {
+    if(this.currentMap.id!=="beach")return;
+    this.beachTideTime+=dt;const tide=beachTideState(this.beachTideTime);this.beachTidePhase=tide.phase;
+    // A gentle secondary wash keeps the water moving even during the low/high
+    // portions of the larger tide cycle.
+    this.beachWaterCoverage=clamp(tide.coverage+Math.sin(this.beachTideTime*.34)*.022,.125,.675);
+    this.temporaryBeachWater=this.temporaryBeachWater.filter(strip=>(strip.lifetime-=dt)>0);
+    this.activeObstacles=this.activeObstacles.filter(o=>o.kind!=="shallow-water");
+    const start=this.world.width*(1-this.beachWaterCoverage);
+    this.activeObstacles.push({kind:"shallow-water",x:start,y:0,width:this.world.width-start,height:this.world.height,solid:false,natural:true});
+    for(const strip of this.temporaryBeachWater)this.activeObstacles.push({kind:"shallow-water",x:strip.x-strip.width/2,y:strip.y-50,width:strip.width,height:100,solid:false});
+    for(const warning of this.beachWarnings)warning.lifetime-=dt;this.beachWarnings=this.beachWarnings.filter(w=>w.lifetime>0);
+    for(const ring of this.rescueRings){ring.lifetime-=dt;ring.progress=Math.min(1,ring.progress+dt*2.8);}
+    this.rescueRings=this.rescueRings.filter(r=>r.lifetime>0);
+    for(const enemy of this.enemies){
+      if(enemy.rescuePullTime>0){enemy.rescuePullTime-=dt;const dx=enemy.rescueSource.x-enemy.x,dy=enemy.rescueSource.y-enemy.y,d=Math.hypot(dx,dy)||1;enemy.x+=dx/d*430*dt;enemy.y+=dy/d*430*dt;}
+      if(enemy.rescueShieldTime>0){enemy.rescueShieldTime-=dt;if(enemy.rescueShieldTime<=0)enemy.shield=Math.max(0,(enemy.shield??0)-(enemy.rescueShieldAmount??0));}
+    }
+  }
+
+  startBeachRescue(source,target){target.rescueSource=source;target.rescuePullTime=1;target.rescueShieldTime=4;target.rescueShieldAmount=100;target.shield=(target.shield??0)+100;target.maxShield=Math.max(target.maxShield??0,target.shield);this.rescueRings.push({source,target,lifetime:1,progress:0});}
+  addTemporaryBeachWater(event){const last=this.temporaryBeachWater.at(-1);if(last&&Math.hypot(last.x-event.x,last.y-event.y)<45){last.lifetime=6;return;}this.temporaryBeachWater.push({...event,lifetime:6});if(this.temporaryBeachWater.length>80)this.temporaryBeachWater.shift();}
+  performKingCrabSlam(source,event){for(const side of[-1,1]){const x=clamp(source.x+side*120,35,this.world.width-35),y=clamp(source.y,35,this.world.height-35),dx=this.player.x-x,dy=this.player.y-y,d=Math.hypot(dx,dy)||1;if(d<=event.radius+this.player.radius){this.damagePlayer(event.damage);this.player.x=clamp(this.player.x+dx/d*event.pushback,this.player.radius,this.world.width-this.player.radius);this.player.y=clamp(this.player.y+dy/d*event.pushback,this.player.radius,this.world.height-this.player.radius);}this.explosions.push({x,y,radius:event.radius,lifetime:.45,maxLifetime:.45,color:"#e66a4b",ring:true});if(this.enemies.length<(this.currentMap.enemyCap??100)){const crab=new Crab({x,y});crab.bossMinion=true;this.enemies.push(crab);}}}
+  fireBeachBubbles(source,event){for(let i=0;i<event.count;i++){const angle=event.angle+(i-(event.count-1)/2)*.12;this.bossProjectiles.push(new BeachBubble({x:source.x,y:source.y,velocityX:Math.cos(angle)*150,velocityY:Math.sin(angle)*150,damage:24}));}}
+
+  updatePlayerMovementEffects(dt,previousX,previousY){
+    for(const effect of this.movementEffects){effect.lifetime-=dt;effect.radius+=effect.growth*dt;effect.x+=effect.velocityX*dt;effect.y+=effect.velocityY*dt;}
+    this.movementEffects=this.movementEffects.filter(effect=>effect.lifetime>0);
+    const distance=Math.hypot(this.player.x-previousX,this.player.y-previousY);if(distance<.1)return;
+    this.movementEffectDistance+=distance;const reduced=this.progress.settings.reducedMotion,step=reduced?34:18;
+    if(this.movementEffectDistance<step)return;this.movementEffectDistance%=step;
+    const water=this.activeObstacles.some(obstacle=>(obstacle.kind==="river"||obstacle.kind==="shallow-water")&&this.player.x>=obstacle.x&&this.player.x<=obstacle.x+obstacle.width&&this.player.y>=obstacle.y&&this.player.y<=obstacle.y+obstacle.height);
+    const angle=Math.atan2(this.player.y-previousY,this.player.x-previousX),backX=this.player.x-Math.cos(angle)*10,backY=this.player.y-Math.sin(angle)*10;
+    if(water){
+      this.movementEffects.push({type:"ripple",x:backX,y:backY,radius:5,growth:34,velocityX:0,velocityY:0,lifetime:.65,maxLifetime:.65,color:"#bceeff"});
+      if(!reduced)this.movementEffects.push({type:"droplet",x:backX+(Math.random()-.5)*15,y:backY, radius:3,growth:-1,velocityX:(Math.random()-.5)*22,velocityY:-18-Math.random()*18,lifetime:.45,maxLifetime:.45,color:"#d8f7ff"});
+    }else{
+      const colors=this.currentMap.id==="campground"||this.currentMap.id==="redwood-trail"?["#806b48","#a38a57","#687448"]:this.currentMap.id.includes("garden")?["#75a455","#a3bd68","#80653d"]:["#b8a66d","#789353","#d7c892"];
+      const count=reduced?1:2;for(let i=0;i<count;i++)this.movementEffects.push({type:"speck",x:backX+(Math.random()-.5)*16,y:backY+(Math.random()-.5)*8,radius:2+Math.random()*2,growth:-1.5,velocityX:-Math.cos(angle)*(12+Math.random()*20)+(Math.random()-.5)*20,velocityY:-16-Math.random()*22,lifetime:.38,maxLifetime:.38,color:colors[Math.floor(Math.random()*colors.length)]});
+    }
+    if(this.movementEffects.length>90)this.movementEffects.splice(0,this.movementEffects.length-90);
+  }
+
+  renderPlayerMovementEffects(context){for(const effect of this.movementEffects){const alpha=Math.max(0,effect.lifetime/effect.maxLifetime),x=effect.x-this.camera.x,y=effect.y-this.camera.y;context.save();context.globalAlpha=alpha;context.strokeStyle=effect.color;context.fillStyle=effect.color;if(effect.type==="ripple"){context.lineWidth=2;context.beginPath();context.ellipse(x,y,effect.radius,effect.radius*.42,0,0,Math.PI*2);context.stroke();}else{context.beginPath();context.arc(x,y,Math.max(.5,effect.radius),0,Math.PI*2);context.fill();}context.restore();}}
+
+  spawnCampgroundEnemy(forcedAngle=Math.random()*Math.PI*2){if(this.enemies.length>=(this.currentMap.enemyCap??100))return null;const d=Math.max(this.camera.viewWidth,this.camera.viewHeight)*.52+90,x=clamp(this.player.x+Math.cos(forcedAngle)*d,50,this.world.width-50),y=clamp(this.player.y+Math.sin(forcedAngle)*d,50,this.world.height-50),w=this.currentMap.campgroundSpawnWeights,r=(this.random??Math.random)();const e=r<w.raccoon?new Raccoon({x,y}):r<w.raccoon+w.skunk?new Skunk({x,y}):r<w.raccoon+w.skunk+w.bear?new CampBear({x,y}):new CampOwl({x,y});this.enemies.push(e);return e;}
+  activeCampfires(){return this.campfires.filter(f=>f.lit);}
+  pointInCampfireLight(x,y){return this.activeCampfires().some(f=>Math.hypot(x-f.x,y-f.y)<=f.lightRadius);}
+  lightDifferentCampfire(){if(!this.campfires.length)return;const previous=new Set(this.campfires.filter(f=>f.lit).map(f=>f.index));if(!previous.size&&this.lastCampfireIndex!=null)previous.add(this.lastCampfireIndex);for(const f of this.campfires)f.lit=false;const desired=this.boss instanceof CampgroundRangerBoss&&this.boss.active?2:1,pool=this.campfires.filter(f=>!previous.has(f.index));while(pool.length&&this.activeCampfires().length<desired){const index=Math.floor((this.random??Math.random)()*pool.length),selected=pool.splice(index,1)[0];selected.lit=true;this.lastCampfireIndex=selected.index;}while(this.activeCampfires().length<desired){const selected=this.campfires.find(f=>!f.lit);if(!selected)break;selected.lit=true;}this.campfireLitTimer=20;this.campfireCycleTimer=30;}
+  updateCampground(dt){if(this.currentMap.id!=="campground")return;this.campgroundClosedTime=Math.max(0,this.campgroundClosedTime-dt);if(this.campgroundClosedTime<=0){if(this.campfireRelightTimer>0){this.campfireRelightTimer-=dt;if(this.campfireRelightTimer<=0)this.lightDifferentCampfire();}else{this.campfireCycleTimer-=dt;this.campfireLitTimer-=dt;if(this.campfireLitTimer<=0)for(const f of this.campfires)f.lit=false;if(this.campfireCycleTimer<=0)this.lightDifferentCampfire();}}else for(const f of this.campfires)f.lit=true;
+    const ranger=this.boss instanceof CampgroundRangerBoss?this.boss:null;if(ranger?.searchlightVisual)ranger.searchlightVisual.lifetime=Math.max(0,ranger.searchlightVisual.lifetime-dt);if(ranger?.active&&this.campfireRelightTimer<=0&&this.campgroundClosedTime<=0&&this.activeCampfires().length<2){const available=this.campfires.filter(f=>!f.lit);const selected=available[Math.floor((this.random??Math.random)()*available.length)];if(selected)selected.lit=true;}
+    this.player.inCampfireLight=this.pointInCampfireLight(this.player.x,this.player.y);
+    for(const enemy of this.enemies){enemy.inCampfireLight=this.pointInCampfireLight(enemy.x,enemy.y);if(enemy.inCampfireLight){const fire=this.activeCampfires().find(f=>Math.hypot(enemy.x-f.x,enemy.y-f.y)<32);if(fire)applyFire(enemy,12,2,1);}}
+    for(const h of this.campgroundHazards){h.lifetime-=dt;h.hitTimer=Math.max(0,(h.hitTimer??0)-dt);if(h.type==="gas"&&h.hitTimer<=0){const dx=this.player.x-h.x,dy=this.player.y-h.y,d=Math.hypot(dx,dy),a=Math.atan2(dy,dx),spread=Math.abs(Math.atan2(Math.sin(a-h.angle),Math.cos(a-h.angle)));if(d<=h.radius&&spread<.8){this.damagePlayer(h.damage);h.hitTimer=.5;}}if(h.type==="fire")for(const e of this.enemies)if(e.active&&Math.hypot(e.x-h.x,e.y-h.y)<=h.radius)applyFire(e,15,2,1);}
+    this.campgroundHazards=this.campgroundHazards.filter(h=>h.lifetime>0);for(const w of this.campgroundWarnings)w.lifetime-=dt;this.campgroundWarnings=this.campgroundWarnings.filter(w=>w.lifetime>0);
+    for(const p of this.bossProjectiles.filter(p=>p instanceof CampgroundProjectile&&p.kind==="burning-log")){p.patchTimer=(p.patchTimer??0)-dt;if(p.patchTimer<=0){p.patchTimer=.22;this.campgroundHazards.push({type:"fire",x:p.x,y:p.y,radius:35,lifetime:4,maxLifetime:4});}}
+  }
+  handleRangerSearchlight(source,event){source.searchlightVisual={angle:event.angle,lifetime:event.lifetime};const a=Math.atan2(this.player.y-source.y,this.player.x-source.x),diff=Math.abs(Math.atan2(Math.sin(a-event.angle),Math.cos(a-event.angle))),d=Math.hypot(this.player.x-source.x,this.player.y-source.y);if(d<620&&diff<.42)this.player.searchlightSlowTime=.3;}
+  rangerLogToss(source,count){for(let i=0;i<count;i++){const offset=(i-(count-1)/2)*70,tx=clamp(this.player.x+offset,30,this.world.width-30),ty=clamp(this.player.y+(i%2?25:-25),30,this.world.height-30),dx=tx-source.x,dy=ty-source.y,d=Math.hypot(dx,dy)||1;this.campgroundWarnings.push({type:"log",x:tx,y:ty,radius:38,lifetime:.7,maxLifetime:.7});this.bossProjectiles.push(new CampgroundProjectile({x:source.x,y:source.y,velocityX:dx/d*330,velocityY:dy/d*330,damage:60,knockback:150,kind:"log",rolling:true,lifetime:3.2,bounces:1}));}}
+  rangerCampfireKick(){const active=this.campfires.find(f=>f.lit);if(!active)return;active.lit=false;this.lastCampfireIndex=active.index;this.campfireRelightTimer=2;this.campfireLitTimer=0;for(let i=0;i<6;i++){const a=i/6*Math.PI*2;this.bossProjectiles.push(new CampgroundProjectile({x:active.x,y:active.y,velocityX:Math.cos(a)*260,velocityY:Math.sin(a)*260,damage:35,knockback:80,kind:"burning-log",rolling:true,lifetime:2.2,bounces:1,color:"#e47731"}));}}
+  rangerBackpackDump(source,count){const random=this.random??Math.random,kinds=["cooler","thermos","boot","flashlight","sleeping-bag"];for(let i=0;i<count;i++){const lamp=random()<.45,kind=lamp?"lamp":kinds[Math.floor(random()*kinds.length)],a=i/count*Math.PI*2+random()*.7,speed=110+random()*360,radius=lamp?15+random()*7:8+random()*20,lifetime=1.8+random()*4.8,bounces=random()<.42?1+Math.floor(random()*4):0;this.bossProjectiles.push(new CampgroundProjectile({x:source.x,y:source.y,velocityX:Math.cos(a)*speed,velocityY:Math.sin(a)*speed,damage:18+radius*.7,knockback:30+radius*2,kind,radius,lifetime,bounces,spin:2+random()*10,lightRadius:lamp?230+random()*100:0,color:lamp?"#e2cb62":["#58869b","#bca16d","#815539","#e2c653","#8b668e"][Math.floor(random()*5)]}));}}
+  startCampgroundClosed(){this.campgroundClosedTime=5;for(const f of this.campfires)f.lit=true;this.explosions.push({x:this.world.width/2,y:this.world.height/2,radius:300,lifetime:1,maxLifetime:1,ring:true,color:"#ff7a34"});}
+
+  spawnMountainEnemy(forcedAngle=Math.random()*Math.PI*2){if(this.enemies.length>=(this.currentMap.enemyCap??100))return null;const distance=Math.max(this.camera.viewWidth,this.camera.viewHeight)*.53+100,x=clamp(this.player.x+Math.cos(forcedAngle)*distance,55,this.world.width-55),y=clamp(this.player.y+Math.sin(forcedAngle)*distance,55,this.world.height-55),weights=this.currentMap.mountainSpawnWeights,roll=(this.random??Math.random)();let enemy;if(roll<weights.goat)enemy=new MountainGoat({x,y,world:this.world});else if(roll<weights.goat+weights.acornSquirrel)enemy=new AcornSquirrel({x,y});else if(roll<weights.goat+weights.acornSquirrel+weights.eagle)enemy=new MountainEagle({x,y,world:this.world});else enemy=new MountainRam({x,y,world:this.world});this.enemies.push(enemy);return enemy;}
+  spawnBlockPartyEnemy(forcedAngle=Math.random()*Math.PI*2,forcedType=null,bossMinion=false){
+    if(this.enemies.length>=(this.currentMap.enemyCap??100))return null;
+    const distance=Math.max(this.camera.viewWidth,this.camera.viewHeight)*.53+90;
+    const x=clamp(this.player.x+Math.cos(forcedAngle)*distance,45,this.world.width-45),y=clamp(this.player.y+Math.sin(forcedAngle)*distance,45,this.world.height-45);
+    const weights=this.currentMap.blockPartySpawnWeights,roll=(this.random??Math.random)();
+    let type=forcedType;
+    if(!type){let total=0;for(const candidate of["partygoer","hype","grill","cooler","dj","coach","firstAid"]){total+=weights[candidate];if(roll<total){type=candidate;break;}}}
+    const EnemyType=BLOCK_PARTY_ENEMY_TYPES[type??"partygoer"]??Partygoer,enemy=new EnemyType({x,y});enemy.bossMinion=bossMinion;this.enemies.push(enemy);return enemy;
+  }
+  spawnBlockPartyEnemyAt(x,y,type="partygoer",bossMinion=false){if(this.enemies.length>=(this.currentMap.enemyCap??100))return null;const EnemyType=BLOCK_PARTY_ENEMY_TYPES[type]??Partygoer,angle=(this.random??Math.random)()*Math.PI*2,enemy=new EnemyType({x:clamp(x+Math.cos(angle)*75,35,this.world.width-35),y:clamp(y+Math.sin(angle)*75,35,this.world.height-35)});enemy.bossMinion=bossMinion;this.enemies.push(enemy);return enemy;}
+  spawnMountainRockToward(x,y,targetX,targetY,options={}){const dx=targetX-x,dy=targetY-y,d=Math.hypot(dx,dy)||1,speed=options.speed??430,rock=new MountainRock({x,y,velocityX:dx/d*speed,velocityY:dy/d*speed,radius:options.radius??38,warning:options.warning??0,playerDamage:options.playerDamage??40,enemyDamage:options.enemyDamage??650,knockback:options.knockback??150,color:options.color});this.mountainRocks.push(rock);return rock;}
+  queueMountainBoulder(warning=1,small=false,index=null){const entries=this.currentMap.boulderEntries??[],entry=entries[index??Math.floor((this.random??Math.random)()*entries.length)];if(!entry)return;const x=entry.x<=1?entry.x*this.world.width:entry.x,y=entry.y<=1?entry.y*this.world.height:entry.y,span=Math.max(this.world.width,this.world.height)*1.4;this.spawnMountainRockToward(x,y,x+entry.dx*span,y+entry.dy*span,{radius:small?22:44,speed:small?510:390,warning,playerDamage:small?22:40,enemyDamage:small?430:850,knockback:small?85:180,color:small?"#847b6c":"#5d574e"});}
+  updateMountainTrail(dt){if(this.currentMap.id!=="mountain-trail")return;this.mountainShakeTime=Math.max(0,this.mountainShakeTime-dt);this.mountainBoulderTimer-=dt;this.mountainRockslideTimer-=dt;if(this.mountainBoulderTimer<=0){this.mountainBoulderTimer=10+(this.random??Math.random)()*5;this.queueMountainBoulder(1,false);this.mountainShakeTime=1;}if(this.mountainRockslideTimer<=0){this.mountainRockslideTimer=30;this.mountainShakeTime=1.5;const entries=this.currentMap.boulderEntries??[];for(let i=0;i<5;i++)this.queueMountainBoulder(1.5,true,i%entries.length);}
+    for(const warning of this.mountainWarnings){warning.lifetime-=dt;if(warning.spawnRock&&warning.lifetime<=0&&!warning.resolved){warning.resolved=true;const dx=this.player.x-warning.x,dy=this.player.y-warning.y,d=Math.hypot(dx,dy)||1;if(Math.hypot(dx,dy)<=warning.radius+this.player.radius){this.damagePlayer(warning.damage);this.player.x=clamp(this.player.x+dx/d*warning.knockback,this.player.radius,this.world.width-this.player.radius);this.player.y=clamp(this.player.y+dy/d*warning.knockback,this.player.radius,this.world.height-this.player.radius);}this.explosions.push({x:warning.x,y:warning.y,radius:warning.radius,lifetime:.4,maxLifetime:.4,color:"#817765",ring:true});}}
+    this.mountainWarnings=this.mountainWarnings.filter(w=>w.lifetime>0);for(const rock of this.mountainRocks){rock.update(dt,this.world);if(rock.warning>0)continue;if(!rock.playerHit&&circlesOverlap(rock,this.player)){this.damagePlayer(rock.playerDamage);const d=Math.hypot(rock.velocityX,rock.velocityY)||1;this.player.x=clamp(this.player.x+rock.velocityX/d*rock.knockback,this.player.radius,this.world.width-this.player.radius);this.player.y=clamp(this.player.y+rock.velocityY/d*rock.knockback,this.player.radius,this.world.height-this.player.radius);rock.hitPlayer();}for(const enemy of this.enemies){if(!enemy.active||enemy.isBoss||rock.hitEnemies.has(enemy)||!circlesOverlap(rock,enemy))continue;rock.hitEnemies.add(enemy);this.damageEnemy(enemy,rock.enemyDamage);}}
+    this.mountainRocks=this.mountainRocks.filter(r=>r.active);for(const charger of this.enemies){const charging=charger.charge>0&&(charger instanceof MountainRam||charger instanceof BillyMountainKingBoss);if(charging&&!charger.wasFriendlyCharging)charger.friendlyHits=new WeakSet();charger.wasFriendlyCharging=charging;if(!charging)continue;for(const target of this.enemies){if(target===charger||target.isBoss||!target.active||charger.friendlyHits.has(target)||!circlesOverlap(charger,target))continue;charger.friendlyHits.add(target);this.damageEnemy(target,charger instanceof BillyMountainKingBoss?700:480);}}
+  }
+
+  updateBlockPartySupport(deltaTime){
+    if(this.currentMap.id!=="neighborhood-block-party")return;
+    for(const effect of this.partyEffects??[])effect.lifetime-=deltaTime;
+    this.partyEffects=(this.partyEffects??[]).filter(effect=>effect.lifetime>0);
+    const normals=this.enemies.filter(enemy=>enemy.active&&!enemy.isBoss);
+    for(const enemy of normals){
+      enemy.partyDamageResistance=enemy.partyResistanceTime>0?.25:0;
+      enemy.partyAttackSpeedMultiplier=1+(enemy.partyRallyAttackTime>0?.25:0)+(enemy.partyDjBoostTime>0?.25:0);
+    }
+    for(const source of normals){
+      if(source instanceof CoolerCarrier){for(const target of normals)if(!(target instanceof CoolerCarrier)&&Math.hypot(target.x-source.x,target.y-source.y)<=source.auraRadius)target.partyDamageResistance=Math.max(target.partyDamageResistance,.25);}
+      if(source instanceof PartyDJ){for(const target of normals)if(Math.hypot(target.x-source.x,target.y-source.y)<=source.auraRadius)target.partyAttackSpeedMultiplier=Math.max(target.partyAttackSpeedMultiplier,1.25+(target.partyRallyAttackTime>0?.25:0));}
+    }
+  }
+
+  nearbyPartyEnemies(source,radius){return this.enemies.filter(enemy=>enemy!==source&&enemy.active&&!enemy.isBoss&&Math.hypot(enemy.x-source.x,enemy.y-source.y)<=radius);}
+  addPartyEffect(effect){(this.partyEffects??=[]).push({...effect,maxLifetime:effect.lifetime});}
+  healPartyTargets(source,count,amount,radius,kind){const targets=this.nearbyPartyEnemies(source,radius).filter(enemy=>enemy.health<enemy.maxHealth).sort((a,b)=>a.health-b.health).slice(0,count);for(const target of targets){target.health=Math.min(target.maxHealth,target.health+amount);target.healFlashTime=.65;target.healEffectKind=kind;this.addPartyEffect({type:"travel",kind,x1:source.x,y1:source.y,x2:target.x,y2:target.y,lifetime:.7});}return targets;}
+  shieldPartyTargets(source,count,amount,duration,kind){const targets=this.nearbyPartyEnemies(source,420).filter(enemy=>enemy.shield<=0).sort((a,b)=>Math.hypot(a.x-source.x,a.y-source.y)-Math.hypot(b.x-source.x,b.y-source.y)).slice(0,count);for(const target of targets){target.shield=amount;target.supportShieldTime=duration;target.balloonShield=kind==="balloon";if(kind==="aid")target.aidFlashTime=.5;this.addPartyEffect({type:"travel",kind,x1:source.x,y1:source.y,x2:target.x,y2:target.y,lifetime:.7});}return targets;}
+  coachPartyDash(source,count=5){for(const target of this.nearbyPartyEnemies(source,360).slice(0,count)){const angle=Math.atan2(this.player.y-target.y,this.player.x-target.x);target.x=clamp(target.x+Math.cos(angle)*105,target.radius,this.world.width-target.radius);target.y=clamp(target.y+Math.sin(angle)*105,target.radius,this.world.height-target.radius);target.coachBoostTime=.55;this.addPartyEffect({type:"dash",x1:target.x-Math.cos(angle)*105,y1:target.y-Math.sin(angle)*105,x2:target.x,y2:target.y,lifetime:.45});}}
+  firePartyConfetti(source,event){const aim=Math.atan2(this.player.y-source.y,this.player.x-source.x),colors=["#ff5f77","#ffd45a","#55d7de","#73d16d","#b679e7"];for(let lane=0;lane<event.lanes;lane++){const offset=(lane-(event.lanes-1)/2)/(event.lanes-1)*event.spread;this.bossProjectiles.push(new PartyConfetti({x:source.x,y:source.y,velocityX:Math.cos(aim+offset)*event.speed,velocityY:Math.sin(aim+offset)*event.speed,damage:event.damage,knockback:event.knockback,color:colors[lane%colors.length]}));}}
+  applySupportOverload(source,type){const normals=this.enemies.filter(enemy=>enemy.active&&!enemy.isBoss);if(type==="hype")for(const enemy of normals)enemy.partySpeedBuffTime=Math.max(enemy.partySpeedBuffTime??0,3);else if(type==="grill")this.healPartyTargets(source,5,150,9999,"food");else if(type==="cooler")for(const enemy of normals)enemy.partyResistanceTime=Math.max(enemy.partyResistanceTime??0,4);else if(type==="dj")for(const enemy of normals)enemy.partyDjBoostTime=Math.max(enemy.partyDjBoostTime??0,4);else if(type==="coach")this.coachPartyDash(source,5);else this.shieldPartyTargets(source,5,400,7,"aid");this.addPartyEffect({type:"label",label:type.toUpperCase(),x1:source.x,y1:source.y,lifetime:1.4});}
+
+  createShoppingCarts(){const carts=[];for(let i=0;i<9;i++)carts.push({x:180+(i%3)*(this.world.width-360)/2,y:370+Math.floor(i/3)*330,vx:0,vy:0,rolling:false,bounces:1,radius:30,hitPlayer:0,hitEnemies:new Map(),warning:0});return carts;}
+  spawnSupermarketEnemy(forcedAngle=Math.random()*Math.PI*2){if(this.enemies.length>=(this.currentMap.enemyCap??100))return null;const d=Math.max(this.camera.viewWidth,this.camera.viewHeight)*.52+90,x=clamp(this.player.x+Math.cos(forcedAngle)*d,45,this.world.width-45),y=clamp(this.player.y+Math.sin(forcedAngle)*d,45,this.world.height-45),w=this.currentMap.supermarketSpawnWeights,r=(this.random??Math.random)(),o={x,y,world:this.world};const e=r<w.bagGremlin?new BagGremlin(o):r<w.bagGremlin+w.canStack?new CanStack(o):r<w.bagGremlin+w.canStack+w.baguette?new BaguetteBandit(o):r<w.bagGremlin+w.canStack+w.baguette+w.frozenDinner?new FrozenDinner(o):new CartGoblin(o);this.enemies.push(e);return e;}
+  launchShoppingCart(cart,vx,vy,{playerSafe=false}={}){const speed=Math.hypot(vx,vy),boost=speed>0&&speed<300?2.4:1;cart.vx=vx*boost;cart.vy=vy*boost;cart.rolling=true;cart.bounces=1;cart.hitEnemies.clear();cart.hitPlayer=playerSafe||Math.abs(speed-180)<1?Number.POSITIVE_INFINITY:0;cart.warning=0;}
+  createMarketProjectile(source,target,{kind="grocery",speed=360,damage=30,freeze=0,lane=0}={}){const a=Math.atan2(target.y-source.y,target.x-source.x),offset=lane*34;this.supermarketProjectiles.push({x:source.x-Math.sin(a)*offset,y:source.y+Math.cos(a)*offset,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,damage,freeze,kind,radius:kind==="crate"?38:15,lifetime:4,hit:new Set()});}
+  updateSupermarket(dt){if(this.currentMap.id!=="supermarket")return;this.supermarketAnnouncementTime=Math.max(0,this.supermarketAnnouncementTime-dt);this.supermarketSpillTimer-=dt;if(this.supermarketSpillTimer<=0){this.supermarketSpillTimer=25;const x=240+(this.random??Math.random)()*(this.world.width-480),y=190+(this.random??Math.random)()*(this.world.height-380);this.supermarketWarnings.push({type:"spill",x,y,radius:220,lifetime:1.5,maxLifetime:1.5});this.supermarketAnnouncement="CLEANUP ON AISLE!";this.supermarketAnnouncementTime=2;}
+    for(const warning of this.supermarketWarnings){warning.lifetime-=dt;if(warning.type==="spill"&&warning.lifetime<=0&&!warning.done){warning.done=true;this.supermarketSpills.push({x:warning.x,y:warning.y,radius:warning.radius,lifetime:12,maxLifetime:12});}if(warning.type==="crate"&&warning.lifetime<=0&&!warning.done){warning.done=true;const dx=this.player.x-warning.x,dy=this.player.y-warning.y,d=Math.hypot(dx,dy)||1;if(d<=warning.radius+this.player.radius){this.damagePlayer(85);this.player.x=clamp(this.player.x+dx/d*180,this.player.radius,this.world.width-this.player.radius);this.player.y=clamp(this.player.y+dy/d*180,this.player.radius,this.world.height-this.player.radius);}for(const cart of this.shoppingCarts)if(!cart.rolling&&Math.hypot(cart.x-warning.x,cart.y-warning.y)<warning.radius+cart.radius)this.launchShoppingCart(cart,(cart.x-warning.x)/Math.max(1,Math.hypot(cart.x-warning.x,cart.y-warning.y))*500,(cart.y-warning.y)/Math.max(1,Math.hypot(cart.x-warning.x,cart.y-warning.y))*500);this.explosions.push({x:warning.x,y:warning.y,radius:warning.radius,lifetime:.5,maxLifetime:.5,color:"#9b7047"});}}
+    this.supermarketWarnings=this.supermarketWarnings.filter(w=>w.lifetime>0||!w.done);for(const spill of this.supermarketSpills)spill.lifetime-=dt;this.supermarketSpills=this.supermarketSpills.filter(s=>s.lifetime>0);
+    for(const enemy of this.enemies){const previousX=enemy.marketPreviousX??enemy.x,previousY=enemy.marketPreviousY??enemy.y;enemy.marketPreviousX=enemy.x;enemy.marketPreviousY=enemy.y;if(this.supermarketSpills.some(spill=>Math.hypot(enemy.x-spill.x,enemy.y-spill.y)<=spill.radius)){enemy.x=clamp(enemy.x+(enemy.x-previousX)*.72,enemy.radius,this.world.width-enemy.radius);enemy.y=clamp(enemy.y+(enemy.y-previousY)*.72,enemy.radius,this.world.height-enemy.radius);}}
+    for(const cart of this.shoppingCarts){const nextWarning=Math.max(0,cart.warning-dt);if(cart.warning>0&&nextWarning<=0&&cart.pendingLaunch){const launch=cart.pendingLaunch;cart.pendingLaunch=null;this.launchShoppingCart(cart,launch.vx,launch.vy);}else cart.warning=nextWarning;}
+    for(const cart of this.shoppingCarts){cart.warning=Math.max(0,cart.warning-dt);cart.hitPlayer=Math.max(0,cart.hitPlayer-dt);for(const [enemy,time] of cart.hitEnemies)cart.hitEnemies.set(enemy,Math.max(0,time-dt));if(!cart.rolling){const pd=Math.hypot(this.player.x-cart.x,this.player.y-cart.y);if(pd<this.player.radius+cart.radius){const dx=cart.x-this.player.x,dy=cart.y-this.player.y,d=Math.hypot(dx,dy)||1;this.launchShoppingCart(cart,dx/d*180,dy/d*180);}for(const enemy of this.enemies)if(enemy.active&&!enemy.isBoss&&Math.hypot(enemy.x-cart.x,enemy.y-cart.y)<enemy.radius+cart.radius){const dx=cart.x-enemy.x,dy=cart.y-enemy.y,d=Math.hypot(dx,dy)||1;this.launchShoppingCart(cart,dx/d*160,dy/d*160);break;}}else{cart.x+=cart.vx*dt;cart.y+=cart.vy*dt;let bounced=false;if(cart.x<cart.radius||cart.x>this.world.width-cart.radius){cart.vx*=-1;bounced=true;}if(cart.y<cart.radius||cart.y>this.world.height-cart.radius){cart.vy*=-1;bounced=true;}cart.x=clamp(cart.x,cart.radius,this.world.width-cart.radius);cart.y=clamp(cart.y,cart.radius,this.world.height-cart.radius);if(bounced){if(cart.bounces>0)cart.bounces--;else{cart.vx*=.2;cart.vy*=.2;}}const speed=Math.hypot(cart.vx,cart.vy);if(speed>85&&cart.hitPlayer<=0&&Math.hypot(this.player.x-cart.x,this.player.y-cart.y)<this.player.radius+cart.radius){this.damagePlayer(20);cart.hitPlayer=.6;}for(const enemy of this.enemies)if(enemy.active&&!enemy.isBoss&&(cart.hitEnemies.get(enemy)??0)<=0&&Math.hypot(enemy.x-cart.x,enemy.y-cart.y)<enemy.radius+cart.radius){this.damageEnemy(enemy,120,0,"shopping-cart");const d=Math.hypot(cart.vx,cart.vy)||1;enemy.x=clamp(enemy.x+cart.vx/d*85,enemy.radius,this.world.width-enemy.radius);enemy.y=clamp(enemy.y+cart.vy/d*85,enemy.radius,this.world.height-enemy.radius);cart.hitEnemies.set(enemy,.5);}const friction=Math.max(0,1-dt*.52);cart.vx*=friction;cart.vy*=friction;if(Math.hypot(cart.vx,cart.vy)<28){cart.vx=cart.vy=0;cart.rolling=false;}}}
+    for(const projectile of this.supermarketProjectiles){projectile.lifetime-=dt;projectile.x+=projectile.vx*dt;projectile.y+=projectile.vy*dt;if(Math.hypot(projectile.x-this.player.x,projectile.y-this.player.y)<projectile.radius+this.player.radius&&!projectile.hit.has(this.player)){this.damagePlayer(projectile.damage);projectile.hit.add(this.player);if(projectile.freeze)this.player.freezeTime=Math.max(this.player.freezeTime??0,projectile.freeze);if(projectile.kind!=="frozen")projectile.lifetime=0;}if(projectile.kind==="frozen")for(const enemy of this.enemies)if(enemy.active&&!enemy.isBoss&&!projectile.hit.has(enemy)&&Math.hypot(projectile.x-enemy.x,projectile.y-enemy.y)<projectile.radius+enemy.radius){this.damageEnemy(enemy,projectile.damage,0,"frozen-dinner");enemy.freezeTime=Math.max(enemy.freezeTime??0,1);projectile.hit.add(enemy);}}
+    this.supermarketProjectiles=this.supermarketProjectiles.filter(p=>p.lifetime>0&&p.x>-80&&p.y>-80&&p.x<this.world.width+80&&p.y<this.world.height+80);
+  }
+  applySupermarketTraction(dt,oldX,oldY){if(this.currentMap.id!=="supermarket")return;const spill=this.supermarketSpills.some(s=>Math.hypot(this.player.x-s.x,this.player.y-s.y)<=s.radius);if(spill){const dx=this.player.x-oldX,dy=this.player.y-oldY;this.marketMomentumX=(this.marketMomentumX??0)*.94+dx/dt*.06;this.marketMomentumY=(this.marketMomentumY??0)*.94+dy/dt*.06;this.player.x=clamp(this.player.x+(this.marketMomentumX-dx/dt)*dt*.68,this.player.radius,this.world.width-this.player.radius);this.player.y=clamp(this.player.y+(this.marketMomentumY-dy/dt)*dt*.68,this.player.radius,this.world.height-this.player.radius);}else{this.marketMomentumX=0;this.marketMomentumY=0;}}
+
   spawnBoss() {
     this.bossSpawned = true;
     this.bossNextSpawnTimer = null;
     this.bossIntroTime = 1;
     const angle = -Math.PI / 2;
     const distance = Math.max(this.camera.viewWidth, this.camera.viewHeight) * 0.45;
-    const bossConfig = this.currentMap.bosses?.[this.bossIndex] ?? this.currentMap.boss;
+    const rawBossConfig = this.currentMap.bosses?.[this.bossIndex] ?? this.currentMap.boss;
+    const tutorialScale = this.tutorial?.active && this.tutorial.stage === "first-run" ? this.tutorial.enemyScale : 1;
+    const bossConfig = tutorialScale < 1
+      ? { ...rawBossConfig, health: Math.max(1, Math.round(rawBossConfig.health * tutorialScale)), speed: (rawBossConfig.speed ?? 42) * .65, damage: Math.max(1, Math.round((rawBossConfig.damage ?? 50) * tutorialScale)) }
+      : rawBossConfig;
     const BossType = bossConfig.type === "dandelion"
       ? DandelionBoss
       : bossConfig.type === "groundskeeper" ? GroundskeeperBoss
@@ -2008,18 +2609,32 @@ export class Game {
               : bossConfig.type === "ancient-snail" ? AncientSnailBoss
                 : bossConfig.type === "pe-teacher" ? PeTeacherBoss
                   : bossConfig.type === "ball-launcher" ? BallLauncherBoss
-                  : bossConfig.type === "excavator" ? ExcavatorBoss : Boss;
+                  : bossConfig.type === "excavator" ? ExcavatorBoss
+                    : bossConfig.type === "queen-rose" ? QueenRoseBoss
+                      : bossConfig.type === "king-crab" ? KingCrabBoss
+                        : bossConfig.type === "campground-ranger" ? CampgroundRangerBoss
+                          : bossConfig.type === "billy-mountain-king" ? BillyMountainKingBoss
+                            : bossConfig.type === "party-planner" ? PartyPlannerBoss
+                              : bossConfig.type === "store-manager" ? StoreManagerBoss : Boss;
     const ResolvedBossType = bossConfig.type === "mother-hen" ? MotherHenBoss : bossConfig.type === "combine" ? CombineBoss : BossType;
     const pond = this.currentMap.obstacles?.find((obstacle) => obstacle.kind === "lake");
+    const centeredBoss = ["lily-queen", "ball-launcher", "queen-rose"].includes(bossConfig.type);
+    const desiredBossX = bossConfig.type === "pondfather" && pond ? pond.x + pond.width / 2
+      : centeredBoss ? this.world.width / 2
+        : clamp(this.player.x + Math.cos(angle) * distance, 80, this.world.width - 80);
+    const desiredBossY = bossConfig.type === "pondfather" && pond ? pond.y + pond.height / 2
+      : centeredBoss ? this.world.height / 2
+        : clamp(this.player.y + Math.sin(angle) * distance, 80, this.world.height - 80);
+    const bossSpawnPoint = safeBossSpawnPoint({
+      desiredX: desiredBossX,
+      desiredY: desiredBossY,
+      player: this.player,
+      world: this.world,
+      bounds: bossConfig.type === "pondfather" ? pond : null,
+    });
     this.boss = new ResolvedBossType({
-      x: bossConfig.type === "pondfather" && pond ? pond.x + pond.width / 2
-        : bossConfig.type === "lily-queen" ? this.world.width / 2
-          : bossConfig.type === "ball-launcher" ? this.world.width / 2
-          : clamp(this.player.x + Math.cos(angle) * distance, 80, this.world.width - 80),
-      y: bossConfig.type === "pondfather" && pond ? pond.y + pond.height / 2
-        : bossConfig.type === "lily-queen" ? this.world.height / 2
-          : bossConfig.type === "ball-launcher" ? this.world.height / 2
-          : clamp(this.player.y + Math.sin(angle) * distance, 80, this.world.height - 80),
+      x: bossSpawnPoint.x,
+      y: bossSpawnPoint.y,
       config: bossConfig,
       world: this.world,
     });
@@ -2029,12 +2644,51 @@ export class Game {
       }
     }
     this.enemies.push(this.boss);
+    if (this.tutorial?.active && this.tutorial.stage === "first-run" && !this.tutorial.bossExplained
+      && bossConfig.type === "king-gnomulus") {
+      this.tutorial.bossExplained = true;
+      this.openInfoTutorial("boss", BOSS_TUTORIAL_PAGES);
+    }
   }
 
   applyBossIntroSlowdown(deltaTime) {
     if (this.bossIntroTime <= 0) return deltaTime;
     this.bossIntroTime = Math.max(0, this.bossIntroTime - deltaTime);
     return deltaTime * 0.2;
+  }
+
+  beginEnemyDiscovery(enemyType) {
+    const entry = ENEMY_GLOSSARY.find((candidate) => candidate.id === enemyType);
+    if (!entry) return;
+    const queue = (this.enemyDiscoveryQueue ??= []);
+    if (this.enemyDiscovery?.entry.id === enemyType || queue.some((item) => item.id === enemyType)) return;
+    if (this.enemyDiscovery) {
+      queue.push(entry);
+      return;
+    }
+    this.enemyDiscovery = { entry, remaining: 5, duration: 5 };
+    if (this.input?.pointer) this.input.pointer.down = false;
+    this.screenShakeTime = 0;
+    this.screenShakeDuration = 0;
+    this.screenShakeStrength = 0;
+    this.screenShakeFrame = 0;
+    this.screenKickX = 0;
+    this.screenKickY = 0;
+  }
+
+  applyEnemyDiscoverySlowdown(deltaTime) {
+    if (!this.enemyDiscovery) return deltaTime;
+    const discovery = this.enemyDiscovery;
+    discovery.remaining = Math.max(0, discovery.remaining - deltaTime);
+    const elapsed = discovery.duration - discovery.remaining;
+    const transition = Math.min(1, elapsed / 1.25, discovery.remaining / 1.25);
+    const smoothTransition = transition * transition * (3 - 2 * transition);
+    const scaledDelta = deltaTime * (1 - smoothTransition) ** 2;
+    if (discovery.remaining <= 0) {
+      const next = (this.enemyDiscoveryQueue ??= []).shift();
+      this.enemyDiscovery = next ? { entry: next, remaining: 5, duration: 5 } : null;
+    }
+    return scaledDelta;
   }
 
   fireDandelionSpores(boss) {
@@ -2224,6 +2878,9 @@ export class Game {
   damageEnemy(enemy, damage, lifestealRatio = 0, weaponId = null) {
     const healthBefore = Number.isFinite(enemy.health) ? enemy.health : 0;
     const shieldBefore = Number.isFinite(enemy.shield) ? enemy.shield : 0;
+    if ((enemy.paintEffects?.yellow ?? 0) > 0) damage *= 2;
+    if ((enemy.paintEffects?.blue ?? 0) > 0) damage *= .5;
+    if ((enemy.partyDamageResistance ?? 0) > 0) damage *= 1 - enemy.partyDamageResistance;
     if (this.bossSpawned && this.boss?.active && !enemy.isBoss && !enemy.bossMinion) damage *= 3;
     const defeated = enemy.takeDamage(damage);
     const healthDamage = Math.max(0, healthBefore - (Number.isFinite(enemy.health) ? enemy.health : healthBefore));
@@ -2272,6 +2929,13 @@ export class Game {
       });
     }
     if (lifestealRatio > 0 && healthDamage > 0) this.addLifesteal(healthDamage * lifestealRatio);
+    if (impactDamage > 0 && weaponId && weaponId !== "red-paint-share" && weaponId !== "paint-status") {
+      for (const painted of this.enemies) {
+        if (painted !== enemy && painted.active && (painted.paintEffects?.red ?? 0) > 0) {
+          this.damageEnemy(painted, impactDamage * .02, 0, "red-paint-share");
+        }
+      }
+    }
     if (defeated) {
       if (enemy instanceof Chicken && !enemy.isBoss && this.currentMap.id === "chicken-farm"
         && (this.random ?? Math.random)() < (this.currentMap.chickenEggDeathChance ?? 0.5)) {
@@ -2315,7 +2979,7 @@ export class Game {
         color: enemy.isBoss ? "#ffe07a" : "#f4c85d",
       });
       const random = this.random ?? Math.random;
-      const deathLifetime = enemy.isBoss ? 1.3 : 0.9;
+      const deathLifetime = enemy.isBoss ? 2.2 : 0.9;
       (this.deathEffects ??= []).push({
         enemy,
         originX: enemy.x,
@@ -2329,8 +2993,13 @@ export class Game {
         maxLifetime: deathLifetime,
       });
       const enemyType = enemy.enemyType ?? (enemy.isBoss ? "king-gnomulus" : "gnome");
+      const firstDefeat = (this.progress.defeatedEnemies[enemyType] ?? 0) === 0;
       if (enemyType in this.progress.defeatedEnemies) {
         this.progress.defeatedEnemies[enemyType] += 1;
+      }
+      if (firstDefeat) {
+        this.beginEnemyDiscovery(enemyType);
+        if (this.canvas) this.savePermanentProgress();
       }
       const killQuestCoins = updateDailyQuestProgress(this.progress, { type: "enemy-kill", enemyType, weaponId });
       updateSeasonQuestProgress(this.progress, { type: "enemy-kill", enemyType, weaponId });
@@ -2345,15 +3014,7 @@ export class Game {
           this.activeObstacles = this.activeObstacles.filter((obstacle) => obstacle.kind !== "slime");
           this.progress.shieldUnlocked = true;
         }
-        if (this.currentMap.bosses && this.bossIndex < this.currentMap.bosses.length - 1) {
-          this.bossIndex += 1;
-          this.firstBossDefeated = true;
-          this.bossSpawned = false;
-          this.boss = null;
-          this.bossNextSpawnTimer = this.currentMap.nextBossSpawnDelay ?? 60;
-        } else {
-          this.finishVictory();
-        }
+        this.beginBossDeathCinematic(enemy);
         return;
       }
       if ((this.random ?? Math.random)() < 0.01) {
@@ -2376,6 +3037,116 @@ export class Game {
       }
     }
     return healthDamage;
+  }
+
+  beginBossDeathCinematic(enemy) {
+    const hasNextBoss = Boolean(this.currentMap.bosses && this.bossIndex < this.currentMap.bosses.length - 1);
+    this.bossDeathCinematic = { enemy, time: 1.8, hasNextBoss };
+    this.input.pointer.down = false;
+    this.addScreenShake(.2, .5);
+    for (let ring = 0; ring < 4; ring += 1) {
+      this.explosions.push({
+        x: enemy.x, y: enemy.y,
+        radius: (enemy.radius ?? 30) * (2.2 + ring * .75),
+        lifetime: 1.1 + ring * .18, maxLifetime: 1.1 + ring * .18,
+        ring: true, color: ring % 2 ? "#fff0a0" : "#f2b85d",
+      });
+    }
+  }
+
+  updateBossDeathCinematic(deltaTime) {
+    const cinematic = this.bossDeathCinematic;
+    if (!cinematic) return;
+    cinematic.time -= deltaTime;
+    this.camera.follow(cinematic.enemy, Math.min(.08, deltaTime * 3));
+    const slowed = deltaTime * .28;
+    for (const effect of this.deathEffects ?? []) {
+      effect.lifetime -= slowed;
+      effect.angle += effect.angularVelocity * slowed;
+      const progress = 1 - Math.max(0, effect.lifetime) / effect.maxLifetime;
+      const distance = effect.spiralDistance * progress;
+      const fall = progress * progress;
+      effect.enemy.x = effect.originX + Math.cos(effect.angle) * distance + effect.fallX * fall;
+      effect.enemy.y = effect.originY + Math.sin(effect.angle) * distance + effect.fallY * fall;
+    }
+    for (const explosion of this.explosions ?? []) explosion.lifetime -= slowed;
+    if (cinematic.time > 0) return;
+    if (cinematic.hasNextBoss) {
+      this.bossIndex += 1;
+      this.firstBossDefeated = true;
+      this.bossSpawned = false;
+      this.boss = null;
+      this.bossNextSpawnTimer = this.currentMap.nextBossSpawnDelay ?? 60;
+    } else {
+      this.bossDeathCinematic = null;
+      if (this.tutorial.active && this.tutorial.stage === "first-run") this.tutorial.stage = "victory";
+      this.finishVictory();
+      return;
+    }
+    this.bossDeathCinematic = null;
+    this.camera.follow(this.player);
+  }
+
+  applyPaint(enemy, color, duration) {
+    if (!enemy?.active || !color || duration <= 0) return;
+    enemy.paintEffects ??= {};
+    enemy.paintEffects[color] = Math.max(enemy.paintEffects[color] ?? 0, duration);
+    if (color === "black") enemy.blackPaintTick = Math.min(enemy.blackPaintTick ?? .5, .5);
+    if (color === "white") {
+      const interval = weaponById("white-paintball-gun").paintLightningInterval;
+      enemy.whitePaintTimer = Math.min(enemy.whitePaintTimer ?? interval, interval);
+    }
+  }
+
+  whitePaintLightningDamage() {
+    const baseWeapon = weaponById("white-paintball-gun");
+    const effectiveLevel = weaponLevelWithLoadoutBonus(
+      baseWeapon.id,
+      this.progress?.weaponLevels?.[baseWeapon.id] ?? 1,
+      this.progress?.equippedWeapons ?? {},
+    );
+    const effectiveWeapon = applyRunWeaponBonuses(weaponStatsAtLevel(baseWeapon, effectiveLevel), this.player);
+    return scaledWeaponSideDamage(effectiveWeapon, "paintLightningDamage", this.player.damageMultiplier ?? 1);
+  }
+
+  updatePaintEffects(enemy, deltaTime) {
+    if (!enemy.paintEffects) return;
+    for (const color of Object.keys(enemy.paintEffects)) {
+      enemy.paintEffects[color] = Math.max(0, enemy.paintEffects[color] - deltaTime);
+      if (enemy.paintEffects[color] === 0) delete enemy.paintEffects[color];
+    }
+    if ((enemy.paintEffects.blue ?? 0) > 0) enemy.freezeTime = Math.max(enemy.freezeTime ?? 0, .12);
+    if ((enemy.paintEffects.black ?? 0) > 0) {
+      const blackPaint = weaponById("black-paintball-gun");
+      const effectiveLevel = weaponLevelWithLoadoutBonus(blackPaint.id, this.progress?.weaponLevels?.[blackPaint.id] ?? 1, this.progress?.equippedWeapons ?? {});
+      const effectiveWeapon = applyRunWeaponBonuses(weaponStatsAtLevel(blackPaint, effectiveLevel), this.player);
+      const burnDamagePerSecond = scaledWeaponSideDamage(effectiveWeapon, "paintBurnDamagePerSecond", this.player.damageMultiplier ?? 1);
+      enemy.blackPaintTick = (enemy.blackPaintTick ?? .5) - deltaTime;
+      while (enemy.blackPaintTick <= 0) {
+        this.damageEnemy(enemy, burnDamagePerSecond * .5, 0, "paint-status");
+        enemy.blackPaintTick += .5;
+      }
+    }
+    if ((enemy.paintEffects.white ?? 0) > 0) {
+      const whitePaint = weaponById("white-paintball-gun");
+      enemy.whitePaintTimer = (enemy.whitePaintTimer ?? whitePaint.paintLightningInterval) - deltaTime;
+      if (enemy.whitePaintTimer <= 0) {
+        enemy.whitePaintTimer += whitePaint.paintLightningInterval;
+        const lightningDamage = this.whitePaintLightningDamage();
+        this.damageEnemy(enemy, lightningDamage, 0, "white-paintball-gun");
+        const chained = this.enemies
+          .filter((other) => other !== enemy && other.active
+            && Math.hypot(other.x - enemy.x, other.y - enemy.y) <= 240)
+          .sort((left, right) => Math.hypot(left.x - enemy.x, left.y - enemy.y) - Math.hypot(right.x - enemy.x, right.y - enemy.y))
+          .slice(0, whitePaint.paintLightningChainCount);
+        let previous = enemy;
+        for (const target of chained) {
+          this.damageEnemy(target, lightningDamage, 0, "white-paintball-gun");
+          this.lightningArcs.push({ x1: previous.x, y1: previous.y, x2: target.x, y2: target.y, lifetime: .2, color: "#f8fbff" });
+          previous = target;
+        }
+      }
+    }
   }
 
   damagePlayer(amount) {
@@ -2520,6 +3291,7 @@ export class Game {
       this.victoryReward = this.runCoins * 2 + this.currentMap.victoryCoinBonus;
       this.bankCoins += this.victoryReward;
       if (this.currentMap.unlocks) this.unlockedMaps.add(this.currentMap.unlocks);
+      if (this.currentMap.id === "botanical-garden") this.progress.autoFireUnlocked = true;
       this.savePermanentProgress();
       this.runRewardsBanked = true;
     }
@@ -2593,7 +3365,7 @@ export class Game {
               for (const otherEnemy of this.enemies) {
                 if (otherEnemy !== enemy && otherEnemy.active && otherEnemy.targetable !== false
                   && circlesOverlap(enemy, otherEnemy)) {
-                  this.damageEnemy(otherEnemy, Math.round(weapon.knockbackCollisionDamage * this.player.damageMultiplier));
+                  this.damageEnemy(otherEnemy, Math.round(scaledWeaponSideDamage(weapon, "knockbackCollisionDamage", this.player.damageMultiplier)));
                 }
               }
             }
@@ -2622,9 +3394,10 @@ export class Game {
       this.fireSurveyor(weapon, aimPoint);
       return;
     }
+    if (weapon.projectileKind === "laser-measure") { this.fireLaserMeasure(weapon, aimPoint); return; }
     if (weapon.projectileKind === "rc-car") {
       const count = weapon.rcCount ?? 1;
-      for (let index = 0; index < count; index += 1) this.rcCars.push({ x: this.player.x + (index - (count - 1) / 2) * 22, y: this.player.y, angle: aimAngle, speed: weapon.projectileSpeed, lifetime: weapon.rcDuration, damage: weapon.damage * this.player.damageMultiplier, explosionDamage: weapon.rcExplosionDamage * this.player.damageMultiplier, explosionRadius: weapon.rcExplosionRadius, radius: weapon.projectileRadius, color: weapon.color, hitEnemies: new Set(), wheelSpin: 0, active: true });
+      for (let index = 0; index < count; index += 1) this.rcCars.push({ x: this.player.x + (index - (count - 1) / 2) * 22, y: this.player.y, angle: aimAngle, speed: weapon.projectileSpeed, lifetime: weapon.rcDuration, damage: weapon.damage * this.player.damageMultiplier, explosionDamage: scaledWeaponSideDamage(weapon, "rcExplosionDamage", this.player.damageMultiplier), explosionRadius: weapon.rcExplosionRadius, radius: weapon.projectileRadius, color: weapon.color, hitEnemies: new Set(), wheelSpin: 0, active: true });
       return;
     }
     if (weapon.projectileKind === "vacuum") {
@@ -2637,7 +3410,7 @@ export class Game {
       return;
     }
     if (weapon.projectileKind === "rain-cloud") {
-      this.rainClouds.push({ x: aimPoint.x, y: aimPoint.y, lifetime: weapon.cloudDuration, radius: weapon.cloudRadius, tick: 0, tickInterval: weapon.cloudTickInterval, damage: weapon.damage * this.player.damageMultiplier, thunderstorm: weapon.thunderstorm, lightningTimer: 1.2, lightningDamage: weapon.lightningDamage * this.player.damageMultiplier, color: weapon.color, active: true });
+      this.rainClouds.push({ x: aimPoint.x, y: aimPoint.y, lifetime: weapon.cloudDuration, radius: weapon.cloudRadius, tick: 0, tickInterval: weapon.cloudTickInterval, damage: weapon.damage * this.player.damageMultiplier, thunderstorm: weapon.thunderstorm, lightningTimer: 1.2, lightningDamage: scaledWeaponSideDamage(weapon, "lightningDamage", this.player.damageMultiplier), color: weapon.color, active: true });
       return;
     }
     if (weapon.projectileKind === "homing-pigeon") {
@@ -2645,18 +3418,67 @@ export class Game {
       for (let index = 0; index < count; index += 1) this.homingPigeons.push({ x: this.player.x, y: this.player.y, speed: weapon.projectileSpeed, damage: weapon.damage * this.player.damageMultiplier, hitsRemaining: weapon.pigeonHits, hitEnemies: new Set(), returning: false, active: true, color: weapon.color });
       return;
     }
+    if (weapon.projectileKind === "beehive") {
+      const hive = { x: this.player.x, y: this.player.y, lifetime: weapon.hiveDuration, radius: 18, color: weapon.color, active: true, bees: [] };
+      for (let index = 0; index < weapon.hiveBeeCount; index += 1) {
+        const angle = index / weapon.hiveBeeCount * Math.PI * 2;
+        hive.bees.push({ x: hive.x + Math.cos(angle) * 20, y: hive.y + Math.sin(angle) * 20, angle, speed: weapon.projectileSpeed, turnSpeed: weapon.beeTurnSpeed, searchRadius: weapon.beeSearchRadius, damage: weapon.damage * this.player.damageMultiplier, hitsRemaining: weapon.beeHits, maxHits: weapon.beeHits, hitEnemies: new Set(), target: null, returning: false, active: true });
+      }
+      this.beehives.push(hive);
+      return;
+    }
+    if (weapon.projectileKind === "heat-lamp") {
+      this.fireHeatLamp(weapon, aimPoint);
+      return;
+    }
+    if (weapon.projectileKind === "firefly-jar") {
+      this.homingShots.push({ kind: "firefly-jar", x: this.player.x, y: this.player.y - 8, angle: aimAngle, speed: weapon.projectileSpeed, lifetime: weapon.projectileLifetime, radius: 10, color: weapon.color, weapon, active: true, phase: "jar" });
+      return;
+    }
+    if (weapon.projectileKind === "homing-dart") {
+      const targets = this.homingTargetsInFront(aimAngle, weapon.homingFrontArc);
+      for (let index = 0; index < weapon.projectileCount; index += 1) {
+        const angle = aimAngle + (index - (weapon.projectileCount - 1) / 2) * weapon.fanSpacing;
+        this.homingShots.push({ kind: "homing-dart", x: this.player.x, y: this.player.y - 8, angle, speed: weapon.projectileSpeed, lifetime: weapon.projectileLifetime, radius: 5, color: weapon.color, damage: weapon.damage * this.player.damageMultiplier, turnSpeed: weapon.homingTurnSpeed, target: targets[index % Math.max(1, targets.length)] ?? null, active: true, weaponId });
+      }
+      return;
+    }
+    if (weapon.projectileKind === "bottle-rocket") {
+      for (let index = 0; index < weapon.projectileCount; index += 1) {
+        const angle = aimAngle + (index - (weapon.projectileCount - 1) / 2) * 0.11;
+        this.homingShots.push({ kind: "bottle-rocket", x: this.player.x, y: this.player.y - 8, angle, speed: weapon.projectileSpeed, lifetime: weapon.projectileLifetime, maxLifetime: weapon.projectileLifetime, radius: weapon.projectileRadius, color: weapon.color, damage: weapon.damage * this.player.damageMultiplier, turnSpeed: weapon.homingTurnSpeed, guidanceDelay: weapon.guidanceDelay, target: null, active: true, splashRadius: weapon.splashRadius, splashDamageMultiplier: weapon.splashDamageMultiplier, weaponId });
+      }
+      return;
+    }
     if (weapon.projectileKind === "lawn-sprinkler") {
       this.lawnSprinklers.push({ x: this.player.x, y: this.player.y, lifetime: weapon.sprinklerDuration, angle: 0, rotationSpeed: weapon.sprinklerRotationSpeed, tick: 0, tickInterval: weapon.sprinklerFireInterval, directions: weapon.sprinklerDirections, speed: weapon.projectileSpeed, projectileLifetime: weapon.projectileLifetime, damage: weapon.damage * this.player.damageMultiplier, color: weapon.color, active: true });
       return;
     }
     if (weapon.projectileKind === "pressure-plate") {
-      this.pressurePlates.push({ x: this.player.x, y: this.player.y, radius: weapon.plateRadius, charge: 0, threshold: weapon.plateChargeThreshold, baseDamage: weapon.damage * this.player.damageMultiplier, maxDamage: weapon.plateMaxStoredDamage * this.player.damageMultiplier, chainReaction: weapon.chainReaction, color: weapon.color, active: true });
+      this.pressurePlates.push({ x: this.player.x, y: this.player.y, radius: weapon.plateRadius, charge: 0, threshold: weapon.plateChargeThreshold, baseDamage: weapon.damage * this.player.damageMultiplier, maxDamage: scaledWeaponSideDamage(weapon, "plateMaxStoredDamage", this.player.damageMultiplier), chainReaction: weapon.chainReaction, color: weapon.color, active: true });
       return;
     }
     if (weapon.projectileKind === "fart-gun") {
-      this.createFertilizerCloud(this.player.x + Math.cos(aimAngle) * 45, this.player.y + Math.sin(aimAngle) * 45, { fertilizerCloudRadius: weapon.fertilizerCloudRadius, fertilizerCloudDuration: weapon.fertilizerCloudDuration, fertilizerTickInterval: weapon.fertilizerTickInterval, damage: weapon.damage * this.player.damageMultiplier, color: weapon.color, cloudExpands: weapon.cloudExpands, cloudStartScale: weapon.cloudStartScale, cloudExpansionDuration: weapon.cloudExpansionDuration });
+      this.createFertilizerCloud(this.player.x + Math.cos(aimAngle) * 38, this.player.y + Math.sin(aimAngle) * 38, { fertilizerCloudRadius: weapon.fertilizerCloudRadius, fertilizerCloudDuration: weapon.fertilizerCloudDuration, fertilizerTickInterval: weapon.fertilizerTickInterval, damage: weapon.damage * this.player.damageMultiplier, color: weapon.color, cloudExpands: weapon.cloudExpands, cloudStartScale: weapon.cloudStartScale, cloudExpansionDuration: weapon.cloudExpansionDuration });
       return;
     }
+    if (weapon.projectileKind === "flare") {
+      this.flareShots.push({ x:this.player.x,y:this.player.y-8,velocityX:Math.cos(aimAngle)*weapon.projectileSpeed,velocityY:Math.sin(aimAngle)*weapon.projectileSpeed,lifetime:weapon.projectileLifetime,radius:weapon.projectileRadius,damage:weapon.damage*this.player.damageMultiplier,patchRadius:weapon.firePatchRadius,patchDuration:weapon.firePatchDuration,patchTick:weapon.firePatchTickInterval,patchDamage:scaledWeaponSideDamage(weapon,"firePatchDamage",this.player.damageMultiplier),fireDps:scaledWeaponSideDamage(weapon,"fireDamagePerSecond",this.player.damageMultiplier),fireDuration:weapon.fireDuration,fireMaxStacks:weapon.fireMaxStacks,spreading:weapon.spreadingFlames,color:weapon.color,active:true}); return;
+    }
+    if (weapon.projectileKind === "magnifying-glass") {
+      const count=weapon.sunlightCount??1; for(let index=0;index<count;index+=1){const offset=(index-(count-1)/2)*weapon.sunlightRadius*1.5;this.sunlightPoints.push({x:clamp(aimPoint.x+offset,0,this.world.width),y:clamp(aimPoint.y,0,this.world.height),radius:weapon.sunlightRadius,lifetime:weapon.sunlightLifetime,tick:0,damage:weapon.damage*this.player.damageMultiplier,fireDps:scaledWeaponSideDamage(weapon,"fireDamagePerSecond",this.player.damageMultiplier),fireDuration:weapon.fireDuration,fireMaxStacks:weapon.fireMaxStacks,color:weapon.color,active:true});} return;
+    }
+    if (weapon.projectileKind === "lawn-flamingo") {
+      const count=weapon.flamingoCount??1;for(let index=0;index<count;index+=1){const angle=index/count*Math.PI*2,offset=count>1?28:0;this.lawnFlamingos.push({x:clamp(this.player.x+Math.cos(angle)*offset,18,this.world.width-18),y:clamp(this.player.y+Math.sin(angle)*offset,18,this.world.height-18),lifetime:weapon.flamingoDuration,tick:.25,interval:weapon.flamingoAttackInterval,range:weapon.flamingoRange,damage:weapon.damage*this.player.damageMultiplier,speed:weapon.projectileSpeed,projectileLifetime:weapon.projectileLifetime,pierces:weapon.flamingoPierce,waveRadius:weapon.flamingoWaveRadius,waveDamage:scaledWeaponSideDamage(weapon,"flamingoWaveDamage",this.player.damageMultiplier),waveKnockback:weapon.flamingoWaveKnockback,waveCooldown:weapon.flamingoWaveCooldown,waveTick:0,waveActivations:0,waveLimit:weapon.flamingoWaveLimit??2,touchLimit:weapon.flamingoTouchLimit??1,touches:0,radius:18,color:weapon.color,angle:0,active:true});} return;
+    }
+    if (weapon.projectileKind === "grill") {
+      this.weaponGrills.push({x:aimPoint.x,y:aimPoint.y,lifetime:weapon.grillDuration,tick:.35,interval:weapon.grillAttackInterval,directions:weapon.grillDirections,range:weapon.grillBurstRange,speed:weapon.projectileSpeed,damage:weapon.damage*this.player.damageMultiplier,fireDps:scaledWeaponSideDamage(weapon,"fireDamagePerSecond",this.player.damageMultiplier),fireDuration:weapon.fireDuration,fireMaxStacks:weapon.fireMaxStacks,color:weapon.color,heat:0,active:true});return;
+    }
+    if(weapon.projectileKind==="kite"){this.kites.push({x:this.player.x,y:this.player.y-30,lifetime:weapon.kiteDuration,range:weapon.kiteRange,followSpeed:weapon.kiteFollowSpeed,tick:0,tickInterval:weapon.kiteTickInterval,damage:weapon.damage*this.player.damageMultiplier,stringCount:weapon.kiteStringCount,color:weapon.color,active:true});return;}
+    if(weapon.projectileKind==="leaf-rake-trap"){const count=weapon.rakeTrapCount??1;for(let i=0;i<count;i++){const offset=(i-(count-1)/2)*44;this.rakeTraps.push({x:this.player.x-offset*Math.sin(aimAngle),y:this.player.y+offset*Math.cos(aimAngle),radius:weapon.rakeTrapRadius,damage:weapon.damage*this.player.damageMultiplier,knockback:weapon.rakeTrapKnockback,triggers:weapon.rakeTrapTriggers,snap:0,color:weapon.color,active:true});}return;}
+    if(weapon.projectileKind==="ceiling-fan"){this.ceilingFans.push({x:this.player.x,y:this.player.y,lifetime:weapon.fanDuration,angle:0,rotationSpeed:weapon.fanRotationSpeed,bladeCount:weapon.fanBladeCount,bladeLength:weapon.fanBladeLength,bladeWidth:weapon.fanBladeWidth,hitInterval:weapon.fanHitInterval,damage:weapon.damage*this.player.damageMultiplier,hitTimers:new Map(),color:weapon.color,active:true});return;}
+    if(weapon.projectileKind==="wind-up-frog"){const count=weapon.frogCount??1;for(let i=0;i<count;i++){const angle=i/count*Math.PI*2;this.windUpFrogs.push({x:this.player.x+Math.cos(angle)*24,y:this.player.y+Math.sin(angle)*24,lifetime:weapon.frogDuration,state:"waiting",timer:0,windup:weapon.frogWindup,jumpSpeed:weapon.frogJumpSpeed,landingRadius:weapon.frogLandingRadius,damage:weapon.damage*this.player.damageMultiplier,color:weapon.color,active:true});}return;}
+    if(weapon.projectileKind==="lawn-roller"){const count=weapon.rollerCount??1;for(let i=0;i<count;i++){const side=(i-(count-1)/2)*weapon.rollerWidth*.75;this.lawnRollers.push({x:this.player.x-side*Math.sin(aimAngle),y:this.player.y+side*Math.cos(aimAngle),angle:aimAngle,speed:weapon.projectileSpeed,lifetime:weapon.projectileLifetime,width:weapon.rollerWidth,length:weapon.rollerLength,push:weapon.rollerPushForce,hitInterval:weapon.rollerHitInterval,damage:weapon.damage*this.player.damageMultiplier,hitTimers:new Map(),wheel:0,color:weapon.color,active:true});}return;}
     if (weapon.projectileKind === "bug-zapper") {
       this.bugZappers.push({ x: this.player.x, y: this.player.y, active: true, lifetime: weapon.zapperDuration, cooldown: 0, zapCooldown: weapon.zapCooldown, range: weapon.zapperRange, damage: weapon.damage * this.player.damageMultiplier, chainCount: weapon.chainCount, chainDamageMultiplier: weapon.chainDamageMultiplier, color: weapon.color });
       return;
@@ -2665,7 +3487,7 @@ export class Game {
       const count = weapon.decoyCount ?? 1;
       for (let index = 0; index < count; index += 1) {
         const angle = count === 1 ? 0 : index / count * Math.PI * 2;
-        this.gardenDecoys.push({ x: this.player.x + Math.cos(angle) * 28, y: this.player.y + Math.sin(angle) * 28, radius: weapon.projectileRadius, health: weapon.decoyHealth, maxHealth: weapon.decoyHealth, lifetime: weapon.decoyDuration, explosionDamage: weapon.decoyExplosionDamage * this.player.damageMultiplier, explosionRadius: weapon.decoyExplosionRadius, color: weapon.color, pinata: weapon.pinata === true, confettiCount: weapon.pinataConfettiCount ?? 0, confettiDamage: (weapon.pinataConfettiDamage ?? 0) * this.player.damageMultiplier, confettiSpeed: weapon.pinataConfettiSpeed ?? 0, confettiLifetime: weapon.pinataConfettiLifetime ?? 0, active: true });
+        this.gardenDecoys.push({ x: this.player.x + Math.cos(angle) * 28, y: this.player.y + Math.sin(angle) * 28, radius: weapon.projectileRadius, health: weapon.decoyHealth, maxHealth: weapon.decoyHealth, lifetime: weapon.decoyDuration, explosionDamage: scaledWeaponSideDamage(weapon, "decoyExplosionDamage", this.player.damageMultiplier), explosionRadius: weapon.decoyExplosionRadius, color: weapon.color, pinata: weapon.pinata === true, confettiCount: weapon.pinataConfettiCount ?? 0, confettiDamage: scaledWeaponSideDamage(weapon, "pinataConfettiDamage", this.player.damageMultiplier), confettiSpeed: weapon.pinataConfettiSpeed ?? 0, confettiLifetime: weapon.pinataConfettiLifetime ?? 0, active: true });
       }
       return;
     }
@@ -2697,7 +3519,7 @@ export class Game {
               explosive: true, splashRadius: weapon.splashRadius,
               bounces: weapon.bounces, pierces: weapon.pierces,
               knockback: weapon.knockback, weaponId: weapon.id,
-              fireDamagePerSecond: weapon.fireDamagePerSecond,
+              fireDamagePerSecond: scaledWeaponSideDamage(weapon, "fireDamagePerSecond", this.player.damageMultiplier),
               fireDuration: weapon.fireDuration,
               fireMaxStacks: weapon.fireMaxStacks,
               freezeDuration: weapon.freezeDuration,
@@ -2798,7 +3620,7 @@ export class Game {
       return;
     }
     if (weapon.projectileKind === "orbital-sprinkler") {
-      this.orbitalStrikes.push({ x: aimPoint.x, y: aimPoint.y, active: true, delay: weapon.orbitalDelay, radius: weapon.orbitalRadius, damage: weapon.damage * this.player.damageMultiplier, radialCount: weapon.radialCount, radialDamage: weapon.radialDamage * this.player.damageMultiplier, radialSpeed: weapon.radialSpeed, radialLifetime: weapon.radialLifetime, bossDamageMultiplier: 0.3, color: weapon.color, second: weapon.orbitalSecondStrike, didSecond: false });
+      this.orbitalStrikes.push({ x: aimPoint.x, y: aimPoint.y, active: true, delay: weapon.orbitalDelay, radius: weapon.orbitalRadius, damage: weapon.damage * this.player.damageMultiplier, radialCount: weapon.radialCount, radialDamage: scaledWeaponSideDamage(weapon, "radialDamage", this.player.damageMultiplier), radialSpeed: weapon.radialSpeed, radialLifetime: weapon.radialLifetime, bossDamageMultiplier: 0.3, color: weapon.color, second: weapon.orbitalSecondStrike, didSecond: false });
       return;
     }
     const bonusAppleProjectiles = (weaponId === "apples" || weaponId === "rainbow-apples") ? this.player.appleCount - 1 : 0;
@@ -2836,16 +3658,17 @@ export class Game {
         bounces: weapon.bounces,
         pierces: weapon.pierces + centerPierce,
         knockback: weapon.knockback,
-        fireDamagePerSecond: weapon.fireDamagePerSecond,
+        fireDamagePerSecond: scaledWeaponSideDamage(weapon, "fireDamagePerSecond", this.player.damageMultiplier),
         fireDuration: weapon.fireDuration,
         fireMaxStacks: weapon.fireMaxStacks,
         freezeDuration: weapon.freezeDuration,
-        gravityPull: weapon.gravityPull, splitCount: weapon.splitCount, splitDamage: weapon.splitDamage, splitRadius: weapon.splitRadius,
+        gravityPull: weapon.gravityPull, splitCount: weapon.splitCount, splitDamage: scaledWeaponSideDamage(weapon, "splitDamage", this.player.damageMultiplier), splitRadius: weapon.splitRadius,
         polarity: weapon.polarity, polarityRadius: weapon.polarityRadius, polarityForce: weapon.polarityForce,
         detonateOnExpiry: weapon.detonateOnExpiry,
         puddleDuration: weapon.puddleDuration, puddleRadius: weapon.puddleRadius,
         boomerang: weapon.projectileKind === "trash-can-lid", boomerangRange: weapon.boomerangRange, returnSpeed: weapon.returnSpeed, returnDamageMultiplier: weapon.returnDamageMultiplier,
         fertilizerCloudRadius: weapon.fertilizerCloudRadius, fertilizerCloudDuration: weapon.fertilizerCloudDuration, fertilizerTickInterval: weapon.fertilizerTickInterval,
+        paintColor: weapon.paintColor, paintDuration: weapon.paintDuration,
         boundaryBounces: weapon.boundaryBounces,
         allowRepeatBounces: weapon.allowRepeatBounces,
         weaponId,
@@ -2928,11 +3751,11 @@ export class Game {
       const dx = enemy.x - this.player.x; const dy = enemy.y - this.player.y; const distance = Math.hypot(dx, dy) || 1;
       const difference = Math.atan2(Math.sin(Math.atan2(dy, dx) - angle), Math.cos(Math.atan2(dy, dx) - angle));
       if (distance > weapon.vacuumRange || Math.abs(difference) > weapon.vacuumArc / 2) continue;
-      this.damageEnemy(enemy, weapon.vacuumReleaseDamage * this.player.damageMultiplier, 0, weapon.id);
+      this.damageEnemy(enemy, scaledWeaponSideDamage(weapon, "vacuumReleaseDamage", this.player.damageMultiplier), 0, weapon.id);
       if (!enemy.isBoss) {
         enemy.x = clamp(enemy.x + dx / distance * weapon.vacuumReleaseKnockback, enemy.radius, this.world.width - enemy.radius);
         enemy.y = clamp(enemy.y + dy / distance * weapon.vacuumReleaseKnockback, enemy.radius, this.world.height - enemy.radius);
-        if (weapon.humanCannonball) { enemy.vacuumCollisionDamage = weapon.vacuumCollisionDamage * this.player.damageMultiplier; enemy.vacuumCollisionTime = .45; }
+        if (weapon.humanCannonball) { enemy.vacuumCollisionDamage = scaledWeaponSideDamage(weapon, "vacuumCollisionDamage", this.player.damageMultiplier); enemy.vacuumCollisionTime = .45; }
       }
     }
   }
@@ -2958,8 +3781,154 @@ export class Game {
     return true;
   }
 
+  homingTargetsInFront(angle, arc = Math.PI) {
+    return this.enemies.filter((enemy) => {
+      if (!enemy.active || enemy.targetable === false) return false;
+      const targetAngle = Math.atan2(enemy.y - this.player.y, enemy.x - this.player.x);
+      const difference = Math.atan2(Math.sin(targetAngle - angle), Math.cos(targetAngle - angle));
+      return Math.abs(difference) <= arc / 2;
+    }).sort((left, right) => Math.hypot(left.x - this.player.x, left.y - this.player.y) - Math.hypot(right.x - this.player.x, right.y - this.player.y));
+  }
+
+  nearestHomingTarget(source, excluded = new Set(), radius = Infinity) {
+    let target = null; let bestDistance = radius;
+    for (const enemy of this.enemies) {
+      if (!enemy.active || enemy.targetable === false || excluded.has(enemy)) continue;
+      const distance = Math.hypot(enemy.x - source.x, enemy.y - source.y);
+      if (distance < bestDistance) { bestDistance = distance; target = enemy; }
+    }
+    return target;
+  }
+
+  fireHeatLamp(weapon, aimPoint) {
+    const dx = aimPoint.x - this.player.x; const dy = aimPoint.y - this.player.y; const distance = Math.hypot(dx, dy) || 1;
+    const endpoint = { x: this.player.x + dx / distance * weapon.heatRange, y: this.player.y + dy / distance * weapon.heatRange };
+    let target = null; let best = weapon.heatAssistRadius;
+    for (const enemy of this.enemies) {
+      if (!enemy.active || enemy.targetable === false || Math.hypot(enemy.x - this.player.x, enemy.y - this.player.y) > weapon.heatRange) continue;
+      const cursorDistance = Math.hypot(enemy.x - aimPoint.x, enemy.y - aimPoint.y);
+      if (cursorDistance < best) { best = cursorDistance; target = enemy; }
+    }
+    if (target === this.heatFocusTarget) this.heatFocusTime += weapon.cooldown; else { this.heatFocusTarget = target; this.heatFocusTime = 0; }
+    const focusMultiplier = weapon.focusedHeat && target ? 1 + Math.min(1.5, this.heatFocusTime * 0.35) : 1;
+    const end = target ?? endpoint;
+    const control = { x: (this.player.x + end.x) / 2 + (target ? (aimPoint.x - end.x) * 0.45 : 0), y: (this.player.y + end.y) / 2 + (target ? (aimPoint.y - end.y) * 0.45 : 0) };
+    if (target) this.damageEnemy(target, weapon.damage * this.player.damageMultiplier * focusMultiplier, 0, weapon.id);
+    let branch = null;
+    if (target && weapon.heatSplitBeam) {
+      branch = this.nearestHomingTarget(target, new Set([target]), weapon.heatChainRadius);
+      if (branch) this.damageEnemy(branch, weapon.damage * this.player.damageMultiplier * 0.65, 0, weapon.id);
+    }
+    this.heatBeams.push({ x1: this.player.x, y1: this.player.y - 8, cx: control.x, cy: control.y, x2: end.x, y2: end.y, branch, color: weapon.color, lifetime: 0.15, maxLifetime: 0.15 });
+  }
+
+  turnHomingShot(shot, target, deltaTime) {
+    if (!target) return;
+    const desired = Math.atan2(target.y - shot.y, target.x - shot.x);
+    const difference = Math.atan2(Math.sin(desired - shot.angle), Math.cos(desired - shot.angle));
+    shot.angle += clamp(difference, -shot.turnSpeed * deltaTime, shot.turnSpeed * deltaTime);
+  }
+
+  releaseFireflies(jar) {
+    const count = jar.weapon.fireflyCount; const chosen = [];
+    for (let index = 0; index < count; index += 1) {
+      const target = this.nearestHomingTarget(jar, new Set(chosen));
+      if (target) chosen.push(target);
+      const angle = jar.angle + (index - (count - 1) / 2) * 0.34;
+      this.homingShots.push({ kind: "firefly", x: jar.x, y: jar.y, angle, speed: jar.weapon.fireflySpeed, lifetime: jar.weapon.fireflyLifetime, radius: 5, color: jar.color, damage: jar.weapon.damage * this.player.damageMultiplier, turnSpeed: jar.weapon.fireflyTurnSpeed, target, guidanceDelay: 0.18, hitsRemaining: jar.weapon.fireflyHits, hitEnemies: new Set(), active: true, weaponId: jar.weapon.id });
+    }
+    this.explosions.push({ x: jar.x, y: jar.y, lifetime: 0.22, radius: 28, color: "#d8f5cf" });
+  }
+
+  explodeHomingShot(shot, directTarget = null) {
+    shot.active = false;
+    this.explosions.push({ x: shot.x, y: shot.y, lifetime: 0.32, radius: shot.splashRadius, color: shot.color });
+    for (const enemy of this.enemies) {
+      if (!enemy.active || Math.hypot(enemy.x - shot.x, enemy.y - shot.y) > shot.splashRadius + enemy.radius) continue;
+      const multiplier = enemy === directTarget ? 1 : shot.splashDamageMultiplier;
+      this.damageEnemy(enemy, shot.damage * multiplier, 0, shot.weaponId);
+    }
+  }
+
+  fireLaserMeasure(weapon, aimPoint) {
+    const origin={x:this.player.x,y:this.player.y-8};const dx=aimPoint.x-origin.x,dy=aimPoint.y-origin.y,length=Math.hypot(dx,dy)||1,ux=dx/length,uy=dy/length;
+    const candidates=this.enemies.filter(enemy=>enemy.active&&enemy.targetable!==false).map(enemy=>{const ox=enemy.x-origin.x,oy=enemy.y-origin.y,along=ox*ux+oy*uy,across=Math.abs(ox*uy-oy*ux);return{enemy,along,across};}).filter(hit=>hit.along>=0&&hit.along<=weapon.laserRange&&hit.across<=hit.enemy.radius+3).sort((a,b)=>a.along-b.along);
+    const first=candidates[0];const beamEnd=first?{x:first.enemy.x,y:first.enemy.y}:{x:origin.x+ux*weapon.laserRange,y:origin.y+uy*weapon.laserRange};const distance=first?.along??weapon.laserRange;const ratio=Math.min(1,distance/weapon.laserRange);const damage=weapon.damage*this.player.damageMultiplier*(1+ratio*weapon.distanceDamageBonus);
+    if(first)this.damageEnemy(first.enemy,damage,0,"laser-measure");
+    this.laserEffects.push({x1:origin.x,y1:origin.y,x2:beamEnd.x,y2:beamEnd.y,lifetime:.28,maxLifetime:.28,color:weapon.color,measurement:`${Math.round(distance)} U`});
+    if(first&&weapon.laserDoubleMeasure&&ratio>=.8){const second=candidates[1];const secondEnd=second?{x:second.enemy.x,y:second.enemy.y}:{x:origin.x+ux*weapon.laserRange,y:origin.y+uy*weapon.laserRange};if(second)this.damageEnemy(second.enemy,damage*.8,0,"laser-measure");this.laserEffects.push({x1:first.enemy.x,y1:first.enemy.y,x2:secondEnd.x,y2:secondEnd.y,lifetime:.28,maxLifetime:.28,color:"#ffb05c"});}
+  }
+
+  extendGasolineTrail(weapon) {
+    if (!weapon || this.attackCooldowns[this.weaponSlot] > 0) return;
+    const last=this.gasolineTrail[this.gasolineTrail.length-1];
+    if(!last){this.gasolineTrail.push({x:this.player.x,y:this.player.y});return;}
+    const distance=Math.hypot(this.player.x-last.x,this.player.y-last.y);
+    if(distance>=weapon.gasolineSpacing){this.gasolineTrail.push({x:this.player.x,y:this.player.y});let length=0;for(let index=1;index<this.gasolineTrail.length;index+=1)length+=Math.hypot(this.gasolineTrail[index].x-this.gasolineTrail[index-1].x,this.gasolineTrail[index].y-this.gasolineTrail[index-1].y);while(length>weapon.gasolineMaxLength&&this.gasolineTrail.length>2){const removed=this.gasolineTrail.shift();length-=Math.hypot(this.gasolineTrail[0].x-removed.x,this.gasolineTrail[0].y-removed.y);}}
+  }
+
+  igniteGasolineTrail(weapon) {
+    if(!weapon||this.gasolineTrail.length===0)return;
+    const damage=weapon.damage*this.player.damageMultiplier;const fireDps=scaledWeaponSideDamage(weapon,"fireDamagePerSecond",this.player.damageMultiplier);
+    for(const point of this.gasolineTrail)this.firePatches.push({x:point.x,y:point.y,radius:30,lifetime:weapon.gasolineBurnDuration,maxLifetime:weapon.gasolineBurnDuration,tick:0,tickInterval:weapon.gasolineTickInterval,damage,fireDps,fireDuration:weapon.fireDuration,fireMaxStacks:weapon.fireMaxStacks,spreading:false,didSpread:true,color:weapon.color,weaponId:"gasoline-can",active:true});
+    this.gasolineTrail=[];this.attackCooldowns[this.weaponSlot]=weapon.cooldown*this.player.cooldownMultiplier;
+  }
+
+  releaseSodaBottle(weapon, aimPoint) {
+    if(!weapon)return;const charge=Math.max(.2,this.sodaCharge);const ratio=charge/weapon.sodaMaxCharge;const baseAngle=Math.atan2(aimPoint.y-this.player.y,aimPoint.x-this.player.x);const count=weapon.sodaBottleCount??1;
+    for(let index=0;index<count;index+=1){const angle=baseAngle+(index-(count-1)/2)*.2;this.sodaBottles.push({x:this.player.x,y:this.player.y-8,angle,speed:weapon.projectileSpeed*(.75+ratio*.75),lifetime:weapon.projectileLifetime,radius:weapon.projectileRadius,damage:weapon.damage*this.player.damageMultiplier,sprayDamage:scaledWeaponSideDamage(weapon,"sodaSprayDamage",this.player.damageMultiplier)*(1+ratio*.5),sprayInterval:weapon.sodaSprayInterval,sprayTick:0,erratic:weapon.sodaErraticStrength,wobble:Math.random()*6.28,hitEnemies:new Set(),color:weapon.color,active:true});}
+    this.sodaCharge=0;this.attackCooldowns[this.weaponSlot]=weapon.cooldown*this.player.cooldownMultiplier;
+  }
+
+  createFirePatch(x,y,source){const duration=source.patchDuration??source.firePatchDuration??source.lifetime??6;this.firePatches.push({x,y,radius:source.patchRadius??source.firePatchRadius??80,lifetime:duration,maxLifetime:duration,tick:0,tickInterval:source.patchTick??source.tickInterval??.45,damage:source.patchDamage??source.damage??8,fireDps:source.fireDps??source.fireDamagePerSecond??10,fireDuration:source.fireDuration??3,fireMaxStacks:source.fireMaxStacks??2,spreading:source.spreading===true,didSpread:false,color:source.color??"#ff6a32",weaponId:source.weaponId??"flare-gun",active:true});}
+
   updateWeaponDeployables(deltaTime) {
     const aimPoint = this.camera.screenToWorld(this.input.pointer);
+    for(const flare of this.flareShots){flare.lifetime-=deltaTime;flare.x+=flare.velocityX*deltaTime;flare.y+=flare.velocityY*deltaTime;const hit=this.enemies.find(enemy=>enemy.active&&enemy.targetable!==false&&Math.hypot(enemy.x-flare.x,enemy.y-flare.y)<=enemy.radius+flare.radius);if(hit){this.damageEnemy(hit,flare.damage,0,"flare-gun");this.createFirePatch(flare.x,flare.y,flare);flare.active=false;}else if(flare.lifetime<=0||flare.x<0||flare.y<0||flare.x>this.world.width||flare.y>this.world.height){this.createFirePatch(clamp(flare.x,0,this.world.width),clamp(flare.y,0,this.world.height),flare);flare.active=false;}}
+    this.flareShots=this.flareShots.filter(flare=>flare.active);
+    for(const patch of this.firePatches){patch.lifetime-=deltaTime;patch.tick-=deltaTime;if(patch.spreading&&!patch.didSpread&&patch.lifetime<=patch.maxLifetime/2){patch.didSpread=true;for(const direction of [-1,1])this.createFirePatch(patch.x+direction*patch.radius*.85,patch.y,{...patch,patchRadius:patch.radius*.62,patchDuration:patch.lifetime,spreading:false});}if(patch.tick<=0){for(const enemy of this.enemies)if(enemy.active&&Math.hypot(enemy.x-patch.x,enemy.y-patch.y)<=patch.radius+enemy.radius){this.damageEnemy(enemy,patch.damage,0,patch.weaponId);applyFire(enemy,patch.fireDps,patch.fireDuration,patch.fireMaxStacks);}patch.tick=patch.tickInterval;}if(patch.lifetime<=0)patch.active=false;}
+    this.firePatches=this.firePatches.filter(patch=>patch.active);
+    for(const point of this.sunlightPoints){point.lifetime-=deltaTime;point.tick-=deltaTime;if(point.tick<=0){for(const enemy of this.enemies)if(enemy.active&&Math.hypot(enemy.x-point.x,enemy.y-point.y)<=point.radius+enemy.radius){this.damageEnemy(enemy,point.damage,0,"magnifying-glass");applyFire(enemy,point.fireDps,point.fireDuration,point.fireMaxStacks);}point.tick=.16;}if(point.lifetime<=0)point.active=false;}
+    this.sunlightPoints=this.sunlightPoints.filter(point=>point.active);
+    for(const bottle of this.sodaBottles){bottle.lifetime-=deltaTime;bottle.sprayTick-=deltaTime;bottle.wobble+=deltaTime*bottle.erratic;bottle.angle+=Math.sin(bottle.wobble)*deltaTime*.9;bottle.x+=Math.cos(bottle.angle)*bottle.speed*deltaTime;bottle.y+=Math.sin(bottle.angle)*bottle.speed*deltaTime;if(bottle.sprayTick<=0){const rear=bottle.angle+Math.PI+(Math.random()-.5)*.6;this.projectiles.push(new Projectile({x:bottle.x,y:bottle.y,velocityX:Math.cos(rear)*220,velocityY:Math.sin(rear)*220,damage:bottle.sprayDamage,lifetime:.32,kind:"water",color:"#b8efff",radius:5,weaponId:"soda-bottle"}));bottle.sprayTick=bottle.sprayInterval;}for(const enemy of this.enemies)if(bottle.active&&enemy.active&&!bottle.hitEnemies.has(enemy)&&Math.hypot(enemy.x-bottle.x,enemy.y-bottle.y)<=enemy.radius+bottle.radius){bottle.hitEnemies.add(enemy);this.damageEnemy(enemy,bottle.damage,0,"soda-bottle");}if(bottle.lifetime<=0||bottle.x<0||bottle.y<0||bottle.x>this.world.width||bottle.y>this.world.height)bottle.active=false;}
+    this.sodaBottles=this.sodaBottles.filter(bottle=>bottle.active);
+    for(const flamingo of this.lawnFlamingos){
+      flamingo.lifetime-=deltaTime;
+      flamingo.tick-=deltaTime;
+      flamingo.waveTick=Math.max(0,flamingo.waveTick-deltaTime);
+      const validEnemies=this.enemies.filter(enemy=>enemy.active&&enemy.targetable!==false);
+      const touching=validEnemies.find(enemy=>Math.hypot(enemy.x-flamingo.x,enemy.y-flamingo.y)<=flamingo.radius+enemy.radius);
+      if(touching){
+        flamingo.touches+=1;
+        flamingo.active=flamingo.touches<flamingo.touchLimit;
+        if(!flamingo.active){this.explosions.push({x:flamingo.x,y:flamingo.y,lifetime:.28,maxLifetime:.28,radius:42,color:flamingo.color,ring:true});continue;}
+      }
+      const target=validEnemies.filter(enemy=>Math.hypot(enemy.x-flamingo.x,enemy.y-flamingo.y)<=flamingo.range).sort((a,b)=>Math.hypot(a.x-flamingo.x,a.y-flamingo.y)-Math.hypot(b.x-flamingo.x,b.y-flamingo.y))[0];
+      if(target)flamingo.angle=Math.atan2(target.y-flamingo.y,target.x-flamingo.x);
+      if(target&&flamingo.tick<=0){this.projectiles.push(new Projectile({x:flamingo.x+Math.cos(flamingo.angle)*18,y:flamingo.y+Math.sin(flamingo.angle)*18,velocityX:Math.cos(flamingo.angle)*flamingo.speed,velocityY:Math.sin(flamingo.angle)*flamingo.speed,damage:flamingo.damage,lifetime:flamingo.projectileLifetime,kind:"flamingo-shot",color:flamingo.color,radius:6,pierces:flamingo.pierces,weaponId:"lawn-flamingo"}));flamingo.tick=flamingo.interval;}
+      const nearby=validEnemies.filter(enemy=>Math.hypot(enemy.x-flamingo.x,enemy.y-flamingo.y)<=flamingo.waveRadius+enemy.radius);
+      if(nearby.length&&flamingo.waveTick<=0){
+        this.explosions.push({x:flamingo.x,y:flamingo.y,lifetime:.32,maxLifetime:.32,radius:flamingo.waveRadius,color:flamingo.color,ring:true});
+        for(const enemy of nearby){this.damageEnemy(enemy,flamingo.waveDamage,0,"lawn-flamingo");applyKnockback(enemy,flamingo.x,flamingo.y,flamingo.waveKnockback,this.world);}
+        flamingo.waveActivations+=1;
+        flamingo.waveTick=flamingo.waveCooldown;
+        if(flamingo.waveActivations>=flamingo.waveLimit)flamingo.active=false;
+      }
+      if(flamingo.lifetime<=0)flamingo.active=false;
+    }
+    this.lawnFlamingos=this.lawnFlamingos.filter(item=>item.active);
+    for(const grill of this.weaponGrills){grill.lifetime-=deltaTime;grill.tick-=deltaTime;grill.heat=Math.max(0,1-grill.tick/grill.interval);if(grill.tick<=0){for(let index=0;index<grill.directions;index+=1){const angle=index/grill.directions*Math.PI*2;this.projectiles.push(new Projectile({x:grill.x,y:grill.y,velocityX:Math.cos(angle)*grill.speed,velocityY:Math.sin(angle)*grill.speed,damage:grill.damage,lifetime:grill.range/grill.speed,kind:"flame",color:grill.color,radius:10,fireDamagePerSecond:grill.fireDps,fireDuration:grill.fireDuration,fireMaxStacks:grill.fireMaxStacks,weaponId:"grill"}));}grill.tick=grill.interval;}if(grill.lifetime<=0)grill.active=false;}
+    this.weaponGrills=this.weaponGrills.filter(item=>item.active);
+    for(const kite of this.kites){kite.lifetime-=deltaTime;kite.tick-=deltaTime;const dx=aimPoint.x-this.player.x,dy=aimPoint.y-this.player.y,d=Math.hypot(dx,dy)||1,targetX=this.player.x+dx/d*Math.min(d,kite.range),targetY=this.player.y+dy/d*Math.min(d,kite.range);kite.x+=(targetX-kite.x)*Math.min(1,deltaTime*kite.followSpeed);kite.y+=(targetY-kite.y)*Math.min(1,deltaTime*kite.followSpeed);if(kite.tick<=0){const strings=[{x1:this.player.x,y1:this.player.y,x2:kite.x,y2:kite.y}];if(kite.stringCount>=3){const angle=Math.atan2(kite.y-this.player.y,kite.x-this.player.x),sx=-Math.sin(angle)*55,sy=Math.cos(angle)*55;strings.push({x1:this.player.x+sx,y1:this.player.y+sy,x2:kite.x,y2:kite.y},{x1:this.player.x-sx,y1:this.player.y-sy,x2:kite.x,y2:kite.y});}for(const enemy of this.enemies)if(enemy.active&&strings.some(line=>pointSegmentDistance(enemy.x,enemy.y,line.x1,line.y1,line.x2,line.y2)<=enemy.radius+5))this.damageEnemy(enemy,kite.damage,0,"kite");kite.tick=kite.tickInterval;}if(kite.lifetime<=0)kite.active=false;}
+    this.kites=this.kites.filter(item=>item.active);
+    for(const rake of this.rakeTraps){rake.snap=Math.max(0,rake.snap-deltaTime);if(!rake.active)continue;const enemy=this.enemies.find(target=>target.active&&target.targetable!==false&&Math.hypot(target.x-rake.x,target.y-rake.y)<=rake.radius+target.radius);if(enemy&&rake.snap<=0){this.damageEnemy(enemy,rake.damage,0,"leaf-rake-trap");applyKnockback(enemy,rake.x,rake.y,enemy.isBoss?rake.knockback*.25:rake.knockback,this.world);rake.triggers-=1;rake.snap=.28;if(rake.triggers<=0)rake.active=false;}}
+    this.rakeTraps=this.rakeTraps.filter(item=>item.active||item.snap>0);
+    for(const fan of this.ceilingFans){fan.lifetime-=deltaTime;fan.angle+=fan.rotationSpeed*deltaTime;for(const [enemy,time] of fan.hitTimers)fan.hitTimers.set(enemy,Math.max(0,time-deltaTime));for(const enemy of this.enemies){if(!enemy.active||enemy.targetable===false||(fan.hitTimers.get(enemy)??0)>0)continue;let hit=false;for(let blade=0;blade<fan.bladeCount;blade++){const angle=fan.angle+blade/fan.bladeCount*Math.PI*2,ex=fan.x+Math.cos(angle)*fan.bladeLength,ey=fan.y+Math.sin(angle)*fan.bladeLength;if(pointSegmentDistance(enemy.x,enemy.y,fan.x,fan.y,ex,ey)<=enemy.radius+fan.bladeWidth/2){hit=true;break;}}if(hit){this.damageEnemy(enemy,fan.damage,0,"ceiling-fan");fan.hitTimers.set(enemy,fan.hitInterval);}}if(fan.lifetime<=0)fan.active=false;}
+    this.ceilingFans=this.ceilingFans.filter(item=>item.active);
+    for(const frog of this.windUpFrogs){frog.lifetime-=deltaTime;frog.timer-=deltaTime;if(frog.state==="waiting"){const target=this.enemies.filter(enemy=>enemy.active&&enemy.targetable!==false).sort((a,b)=>Math.hypot(a.x-frog.x,a.y-frog.y)-Math.hypot(b.x-frog.x,b.y-frog.y))[0];if(target){frog.targetX=target.x;frog.targetY=target.y;frog.state="windup";frog.timer=frog.windup;}}else if(frog.state==="windup"&&frog.timer<=0){const dx=frog.targetX-frog.x,dy=frog.targetY-frog.y,d=Math.hypot(dx,dy)||1;frog.velocityX=dx/d*frog.jumpSpeed;frog.velocityY=dy/d*frog.jumpSpeed;frog.jumpTime=d/frog.jumpSpeed;frog.maxJumpTime=frog.jumpTime;frog.state="jumping";}else if(frog.state==="jumping"){frog.x+=frog.velocityX*deltaTime;frog.y+=frog.velocityY*deltaTime;frog.jumpTime-=deltaTime;if(frog.jumpTime<=0){frog.x=frog.targetX;frog.y=frog.targetY;this.explosions.push({x:frog.x,y:frog.y,lifetime:.3,maxLifetime:.3,radius:frog.landingRadius,color:frog.color,ring:true});for(const enemy of this.enemies)if(enemy.active&&Math.hypot(enemy.x-frog.x,enemy.y-frog.y)<=frog.landingRadius+enemy.radius)this.damageEnemy(enemy,frog.damage,0,"wind-up-frog");frog.state="waiting";frog.timer=.35;}}if(frog.lifetime<=0)frog.active=false;}
+    this.windUpFrogs=this.windUpFrogs.filter(item=>item.active);
+    for(const roller of this.lawnRollers){roller.lifetime-=deltaTime;roller.wheel+=roller.speed*deltaTime;roller.x+=Math.cos(roller.angle)*roller.speed*deltaTime;roller.y+=Math.sin(roller.angle)*roller.speed*deltaTime;for(const [enemy,time] of roller.hitTimers)roller.hitTimers.set(enemy,Math.max(0,time-deltaTime));const forwardX=Math.cos(roller.angle),forwardY=Math.sin(roller.angle),sideX=-forwardY,sideY=forwardX;for(const enemy of this.enemies){if(!enemy.active||enemy.targetable===false)continue;const ox=enemy.x-roller.x,oy=enemy.y-roller.y,forward=ox*forwardX+oy*forwardY,side=Math.abs(ox*sideX+oy*sideY);if(Math.abs(forward)<=roller.length/2+enemy.radius&&side<=roller.width/2+enemy.radius){if((roller.hitTimers.get(enemy)??0)<=0){this.damageEnemy(enemy,roller.damage,0,"lawn-roller");roller.hitTimers.set(enemy,roller.hitInterval);}if(!enemy.isBoss){enemy.x+=forwardX*roller.push*deltaTime;enemy.y+=forwardY*roller.push*deltaTime;}}}if(roller.lifetime<=0||roller.x< -100||roller.y< -100||roller.x>this.world.width+100||roller.y>this.world.height+100)roller.active=false;}
+    this.lawnRollers=this.lawnRollers.filter(item=>item.active);
     for (const car of this.rcCars) {
       car.lifetime -= deltaTime; car.wheelSpin += car.speed * deltaTime;
       const desired = Math.atan2(aimPoint.y - car.y, aimPoint.x - car.x);
@@ -3002,6 +3971,63 @@ export class Game {
       }
     }
     this.homingPigeons = this.homingPigeons.filter((pigeon) => pigeon.active);
+    for (const hive of this.beehives) {
+      hive.lifetime -= deltaTime;
+      for (const bee of hive.bees) {
+        if (!bee.active) continue;
+        if (!bee.returning && (!bee.target?.active || bee.target.targetable === false)) bee.target = this.nearestHomingTarget(bee, bee.hitEnemies, bee.searchRadius);
+        if (!bee.returning && !bee.target) bee.returning = true;
+        const target = bee.returning ? hive : bee.target;
+        this.turnHomingShot(bee, target, deltaTime);
+        bee.x += Math.cos(bee.angle) * bee.speed * deltaTime; bee.y += Math.sin(bee.angle) * bee.speed * deltaTime;
+        const distance = Math.hypot(target.x - bee.x, target.y - bee.y);
+        if (distance <= (target.radius ?? 18) + 6) {
+          if (target === hive) {
+            bee.returning = false; bee.target = null; bee.hitEnemies.clear(); bee.hitsRemaining = bee.maxHits;
+          } else {
+            this.damageEnemy(target, bee.damage, 0, "beehive"); bee.hitEnemies.add(target); bee.hitsRemaining -= 1; bee.target = null;
+            if (bee.hitsRemaining <= 0) bee.returning = true;
+          }
+        }
+      }
+      if (hive.lifetime <= 0) hive.active = false;
+    }
+    this.beehives = this.beehives.filter((hive) => hive.active);
+    for (const shot of this.homingShots) {
+      if (!shot.active) continue;
+      shot.lifetime -= deltaTime;
+      if (shot.kind === "firefly-jar") {
+        shot.x += Math.cos(shot.angle) * shot.speed * deltaTime; shot.y += Math.sin(shot.angle) * shot.speed * deltaTime;
+        const collided = this.enemies.some((enemy) => enemy.active && enemy.targetable !== false && Math.hypot(enemy.x - shot.x, enemy.y - shot.y) <= enemy.radius + shot.radius);
+        if (collided || shot.lifetime <= 0) { shot.active = false; this.releaseFireflies(shot); }
+        continue;
+      }
+      shot.guidanceDelay = Math.max(0, (shot.guidanceDelay ?? 0) - deltaTime);
+      if (shot.guidanceDelay <= 0) {
+        if (!shot.target?.active || shot.target.targetable === false || shot.hitEnemies?.has(shot.target)) shot.target = this.nearestHomingTarget(shot, shot.hitEnemies ?? new Set());
+        this.turnHomingShot(shot, shot.target, deltaTime);
+      }
+      shot.x += Math.cos(shot.angle) * shot.speed * deltaTime; shot.y += Math.sin(shot.angle) * shot.speed * deltaTime;
+      let collided = null;
+      for (const enemy of this.enemies) {
+        if (enemy.active && enemy.targetable !== false && !shot.hitEnemies?.has(enemy) && Math.hypot(enemy.x - shot.x, enemy.y - shot.y) <= enemy.radius + shot.radius) { collided = enemy; break; }
+      }
+      if (collided) {
+        if (shot.kind === "bottle-rocket") this.explodeHomingShot(shot, collided);
+        else {
+          this.damageEnemy(collided, shot.damage, 0, shot.weaponId);
+          if (shot.kind === "firefly" && shot.hitsRemaining > 1) { shot.hitEnemies.add(collided); shot.hitsRemaining -= 1; shot.target = null; }
+          else shot.active = false;
+        }
+      }
+      if (shot.lifetime <= 0 && shot.active) {
+        if (shot.kind === "bottle-rocket") this.explodeHomingShot(shot);
+        else shot.active = false;
+      }
+    }
+    this.homingShots = this.homingShots.filter((shot) => shot.active);
+    for (const beam of this.heatBeams) beam.lifetime -= deltaTime;
+    this.heatBeams = this.heatBeams.filter((beam) => beam.lifetime > 0);
     for (const sprinkler of this.lawnSprinklers) {
       sprinkler.lifetime -= deltaTime; sprinkler.tick -= deltaTime; sprinkler.angle += sprinkler.rotationSpeed * deltaTime;
       if (sprinkler.tick <= 0) {
@@ -3163,7 +4189,7 @@ export class Game {
         cloud.radius = Math.min(cloud.targetRadius, cloud.radius + cloud.expansionSpeed * deltaTime);
       }
       if (cloud.tick <= 0) {
-        for (const enemy of this.enemies) if (enemy.active && Math.hypot(enemy.x - cloud.x, enemy.y - cloud.y) <= cloud.radius) this.damageEnemy(enemy, cloud.damage);
+        for (const enemy of this.enemies) {if(!enemy.active)continue;const dx=enemy.x-cloud.x,dy=enemy.y-cloud.y,distance=Math.hypot(dx,dy);if(distance>cloud.radius)continue;if(cloud.gasCone){const angle=Math.atan2(dy,dx),difference=Math.abs(Math.atan2(Math.sin(angle-cloud.angle),Math.cos(angle-cloud.angle)));if(difference>cloud.coneSpread)continue;}this.damageEnemy(enemy, cloud.damage);}
         cloud.tick = cloud.tickInterval;
       }
       if (cloud.lifetime <= 0) cloud.active = false;
@@ -3236,7 +4262,8 @@ export class Game {
       expansionSpeed: targetRadius * (1 - startScale) / expansionDuration,
       lifetime: projectile.fertilizerCloudDuration, tick: 0,
       tickInterval: projectile.fertilizerTickInterval, damage: projectile.damage,
-      color: projectile.color, active: true,
+      color: projectile.color, active: true, gasCone: projectile.gasCone === true,
+      angle: projectile.angle ?? 0, coneSpread: projectile.coneSpread ?? Math.PI,
     });
   }
 
@@ -3468,7 +4495,7 @@ export class Game {
   consumeUiAction() {
     const point = this.input.consumeClickRequest();
     if (!point) return null;
-    const target = this.uiHitTargets.find((entry) => point.x >= entry.x && point.x <= entry.x + entry.width
+    const target = this.uiHitTargets.findLast((entry) => point.x >= entry.x && point.x <= entry.x + entry.width
       && point.y >= entry.y && point.y <= entry.y + entry.height);
     if (target?.action != null) this.uiClickEffects.push({ x: point.x, y: point.y, startedAt: performance.now() });
     return target?.action ?? null;
@@ -3522,10 +4549,22 @@ export class Game {
 
   renderWeaponDeployables(context) {
     const renderTime = performance.now() / 1000;
+    for(const point of this.gasolineTrail){const x=point.x-this.camera.x,y=point.y-this.camera.y;context.fillStyle="rgba(232,183,65,.55)";context.beginPath();context.arc(x,y,12,0,Math.PI*2);context.fill();}
+    for(const patch of this.firePatches){const x=patch.x-this.camera.x,y=patch.y-this.camera.y,pulse=.9+Math.sin(renderTime*12+patch.x)*.1;context.fillStyle="rgba(255,91,35,.2)";context.beginPath();context.arc(x,y,patch.radius,0,Math.PI*2);context.fill();context.strokeStyle="#ffb02e";context.lineWidth=4;context.setLineDash([7,6]);context.beginPath();context.arc(x,y,patch.radius*pulse,0,Math.PI*2);context.stroke();context.setLineDash([]);for(let i=0;i<7;i++){context.fillStyle=i%2?"#ffde55":"#ff6338";context.beginPath();context.arc(x+Math.cos(i*2.4+renderTime)*patch.radius*.55,y+Math.sin(i*2.4+renderTime)*patch.radius*.55,5+3*Math.sin(renderTime*9+i),0,Math.PI*2);context.fill();}}
+    for(const flare of this.flareShots){const x=flare.x-this.camera.x,y=flare.y-this.camera.y;context.save();context.shadowColor="#ff8b32";context.shadowBlur=22;context.fillStyle="#fff3a4";context.beginPath();context.arc(x,y,flare.radius,0,Math.PI*2);context.fill();context.restore();}
+    for(const point of this.sunlightPoints){const x=point.x-this.camera.x,y=point.y-this.camera.y;context.save();context.strokeStyle="rgba(255,241,151,.72)";context.lineWidth=7;context.beginPath();context.moveTo(this.player.x-this.camera.x,this.player.y-this.camera.y-24);context.lineTo(x,y);context.stroke();context.shadowColor="#fff36b";context.shadowBlur=24;context.fillStyle="rgba(255,226,74,.72)";context.beginPath();context.arc(x,y,point.radius,0,Math.PI*2);context.fill();context.restore();}
+    for(const bottle of this.sodaBottles){const x=bottle.x-this.camera.x,y=bottle.y-this.camera.y;context.save();context.translate(x,y);context.rotate(bottle.angle+Math.PI/2);context.fillStyle=bottle.color;context.fillRect(-7,-12,14,24);context.fillStyle="#eaf7ff";context.fillRect(-5,-5,10,7);context.restore();}
+    for(const flamingo of this.lawnFlamingos){const x=flamingo.x-this.camera.x,y=flamingo.y-this.camera.y;context.save();context.translate(x,y);context.rotate(flamingo.angle);context.strokeStyle=flamingo.color;context.lineWidth=5;context.beginPath();context.arc(0,-10,9,0,Math.PI*2);context.moveTo(-4,-2);context.quadraticCurveTo(-12,10,-4,20);context.stroke();context.fillStyle="#252125";context.fillRect(7,-12,13,4);context.restore();}
+    for(const grill of this.weaponGrills){const x=grill.x-this.camera.x,y=grill.y-this.camera.y;context.fillStyle="#343638";context.fillRect(x-20,y-10,40,23);context.fillStyle=`rgba(255,${Math.round(100+grill.heat*100)},35,${.35+grill.heat*.55})`;context.fillRect(x-16,y-7,32,8);context.strokeStyle="#9da3a4";context.lineWidth=4;context.beginPath();context.arc(x,y-10,20,Math.PI,0);context.stroke();context.fillRect(x-15,y+13,4,17);context.fillRect(x+11,y+13,4,17);}
+    for(const kite of this.kites){const px=this.player.x-this.camera.x,py=this.player.y-this.camera.y,kx=kite.x-this.camera.x,ky=kite.y-this.camera.y;context.save();context.strokeStyle="rgba(242,222,161,.85)";context.lineWidth=2;context.beginPath();context.moveTo(px,py);context.lineTo(kx,ky);if(kite.stringCount>=3){const angle=Math.atan2(ky-py,kx-px),sx=-Math.sin(angle)*55,sy=Math.cos(angle)*55;context.moveTo(px+sx,py+sy);context.lineTo(kx,ky);context.moveTo(px-sx,py-sy);context.lineTo(kx,ky);}context.stroke();context.translate(kx,ky);context.rotate(Math.sin(renderTime*3)*.12);context.fillStyle=kite.color;context.beginPath();context.moveTo(0,-18);context.lineTo(15,0);context.lineTo(0,18);context.lineTo(-15,0);context.closePath();context.fill();context.fillStyle="#f4d76a";context.fillRect(-3,-14,6,28);context.restore();}
+    for(const rake of this.rakeTraps){const x=rake.x-this.camera.x,y=rake.y-this.camera.y;context.save();context.translate(x,y);context.rotate(rake.snap>0?-1.15:0);context.fillStyle="#76502d";context.fillRect(-4,-4,44,7);context.fillStyle=rake.color;context.fillRect(-10,-15,8,30);for(let i=-12;i<=12;i+=6)context.fillRect(-18,i,10,3);context.restore();}
+    for(const fan of this.ceilingFans){const x=fan.x-this.camera.x,y=fan.y-this.camera.y;context.save();context.translate(x,y);context.fillStyle="#4b5d62";context.beginPath();context.arc(0,0,9,0,Math.PI*2);context.fill();for(let i=0;i<fan.bladeCount;i++){context.save();context.rotate(fan.angle+i/fan.bladeCount*Math.PI*2);context.fillStyle=fan.color;context.fillRect(5,-fan.bladeWidth/2,fan.bladeLength,fan.bladeWidth);context.fillStyle="rgba(255,255,255,.4)";context.fillRect(12,-fan.bladeWidth/2+3,fan.bladeLength-18,3);context.restore();}context.restore();}
+    for(const frog of this.windUpFrogs){const jump=frog.state==="jumping"?Math.sin(Math.PI*(1-Math.max(0,frog.jumpTime)/(frog.maxJumpTime||1)))*25:0,x=frog.x-this.camera.x,y=frog.y-this.camera.y-jump,crouch=frog.state==="windup"?Math.max(.55,frog.timer/frog.windup):1;context.save();context.translate(x,y);context.scale(1,crouch);context.fillStyle=frog.color;context.fillRect(-13,-8,26,16);context.beginPath();context.arc(-8,-9,6,0,Math.PI*2);context.arc(8,-9,6,0,Math.PI*2);context.fill();context.fillStyle="#d4be55";context.fillRect(-18,7,10,5);context.fillRect(8,7,10,5);context.restore();}
+    for(const roller of this.lawnRollers){const x=roller.x-this.camera.x,y=roller.y-this.camera.y;context.save();context.translate(x,y);context.rotate(roller.angle);context.fillStyle=roller.color;context.fillRect(-roller.length/2,-roller.width/2,roller.length,roller.width);context.fillStyle="#343a36";context.fillRect(-roller.length/2+8,-roller.width/2+8,roller.length*.48,roller.width-16);for(const side of [-1,1]){context.save();context.translate(0,side*roller.width/2);context.rotate(roller.wheel*.025);context.fillStyle="#202522";context.fillRect(-roller.length*.35,-6,roller.length*.7,12);context.fillStyle="#818b84";context.fillRect(-2,-6,4,12);context.restore();}context.restore();}
     for (const laser of this.laserEffects) {
       context.save(); context.globalAlpha = laser.lifetime / laser.maxLifetime; context.strokeStyle = laser.color; context.lineWidth = 2;
       context.beginPath(); context.moveTo(laser.x1 - this.camera.x, laser.y1 - this.camera.y); context.lineTo(laser.x2 - this.camera.x, laser.y2 - this.camera.y); context.stroke();
-      context.strokeStyle = "rgba(255,255,255,.8)"; context.lineWidth = 1; context.stroke(); context.restore();
+      context.strokeStyle = "rgba(255,255,255,.8)"; context.lineWidth = 1; context.stroke(); if(laser.measurement){context.fillStyle="#fff2b5";context.font="bold 13px monospace";context.textAlign="center";context.fillText(laser.measurement,(laser.x1+laser.x2)/2-this.camera.x,(laser.y1+laser.y2)/2-this.camera.y-9);} context.restore();
     }
     for (const car of this.rcCars) {
       const x = Math.round(car.x - this.camera.x); const y = Math.round(car.y - this.camera.y);
@@ -3572,6 +4611,28 @@ export class Game {
       context.fillStyle = "#dce6e8"; context.fillRect(x - 2, y - 7, 7, 4);
       context.fillStyle = "#e5a044"; context.fillRect(x + 8, y - 5, 5, 3);
       context.fillStyle = "#15191b"; context.fillRect(x + 4, y - 7, 2, 2); context.restore();
+    }
+    for (const hive of this.beehives) {
+      const x = Math.round(hive.x - this.camera.x); const y = Math.round(hive.y - this.camera.y);
+      context.save(); context.fillStyle = "#68431d"; context.fillRect(x - 18, y + 12, 36, 7); context.fillStyle = hive.color; context.fillRect(x - 16, y - 12, 32, 26);
+      context.fillStyle = "#a97525"; context.fillRect(x - 18, y - 8, 36, 5); context.fillRect(x - 18, y + 2, 36, 5); context.fillStyle = "#241d14"; context.fillRect(x - 5, y + 7, 10, 7);
+      for (const bee of hive.bees) { const bx = bee.x - this.camera.x; const by = bee.y - this.camera.y; context.save(); context.translate(bx, by); context.rotate(bee.angle); context.fillStyle = "#f3ca45"; context.fillRect(-6, -4, 12, 8); context.fillStyle = "#29251d"; context.fillRect(-2, -4, 3, 8); context.fillRect(4, -4, 2, 8); context.fillStyle = "rgba(220,245,255,.75)"; context.fillRect(-4, -8, 6, 4); context.fillRect(-4, 4, 6, 4); context.restore(); }
+      context.restore();
+    }
+    for (const shot of this.homingShots) {
+      const x = Math.round(shot.x - this.camera.x); const y = Math.round(shot.y - this.camera.y);
+      context.save(); context.translate(x, y); context.rotate(shot.angle);
+      if (shot.kind === "firefly-jar") { context.fillStyle = "#7cb9ad"; context.fillRect(-8, -9, 16, 18); context.fillStyle = "rgba(244,232,107,.7)"; context.fillRect(-5, -6, 10, 12); }
+      else if (shot.kind === "firefly") { context.shadowColor = shot.color; context.shadowBlur = 12; context.fillStyle = shot.color; context.fillRect(-4, -3, 8, 6); context.fillStyle = "rgba(244,255,220,.7)"; context.fillRect(-7, -6, 5, 4); context.fillRect(-7, 2, 5, 4); }
+      else if (shot.kind === "homing-dart") { context.fillStyle = shot.color; context.fillRect(-10, -2, 18, 4); context.fillStyle = "#e8f7f2"; context.beginPath(); context.moveTo(8, -4); context.lineTo(14, 0); context.lineTo(8, 4); context.closePath(); context.fill(); }
+      else { context.strokeStyle = "rgba(255,184,72,.55)"; context.lineWidth = 5; context.beginPath(); context.moveTo(-25, 0); context.lineTo(-8, 0); context.stroke(); context.fillStyle = shot.guidanceDelay <= 0 ? "#fff08a" : shot.color; context.fillRect(-9, -5, 18, 10); context.beginPath(); context.moveTo(9, -5); context.lineTo(16, 0); context.lineTo(9, 5); context.closePath(); context.fill(); }
+      context.restore();
+    }
+    for (const beam of this.heatBeams) {
+      context.save(); context.globalAlpha = Math.max(0, beam.lifetime / beam.maxLifetime); context.strokeStyle = beam.color; context.lineWidth = 7; context.shadowColor = "#ffb04f"; context.shadowBlur = 12;
+      context.beginPath(); context.moveTo(beam.x1 - this.camera.x, beam.y1 - this.camera.y); context.quadraticCurveTo(beam.cx - this.camera.x, beam.cy - this.camera.y, beam.x2 - this.camera.x, beam.y2 - this.camera.y); context.stroke();
+      if (beam.branch?.active) { context.lineWidth = 4; context.beginPath(); context.moveTo(beam.x2 - this.camera.x, beam.y2 - this.camera.y); context.lineTo(beam.branch.x - this.camera.x, beam.branch.y - this.camera.y); context.stroke(); }
+      context.restore();
     }
     for (const sprinkler of this.lawnSprinklers) {
       const x = Math.round(sprinkler.x - this.camera.x); const y = Math.round(sprinkler.y - this.camera.y);
@@ -3666,12 +4727,19 @@ export class Game {
     for (const cloud of this.fertilizerClouds) {
       const x = Math.round(cloud.x - this.camera.x); const y = Math.round(cloud.y - this.camera.y);
       const isGas = cloud.color === "#93a94e";
-      context.fillStyle = isGas ? "rgba(129,158,67,0.32)" : "rgba(159,120,61,0.25)"; context.beginPath(); context.arc(x, y, cloud.radius, 0, Math.PI * 2); context.fill();
       if (isGas) {
-        context.fillStyle = "rgba(190,211,91,0.32)";
-        for (let puff = 0; puff < 6; puff += 1) { const angle = renderTime * 0.8 + puff * Math.PI / 3; context.beginPath(); context.arc(x + Math.cos(angle) * cloud.radius * 0.42, y + Math.sin(angle) * cloud.radius * 0.3, cloud.radius * 0.17, 0, Math.PI * 2); context.fill(); }
+        // Match the skunk's separated gas puffs, with extra particles spread
+        // throughout the Fart Gun's much larger expanding damage area.
+        context.fillStyle = "rgba(126,151,71,.16)";context.beginPath();context.arc(x,y,cloud.radius*.92,0,Math.PI*2);context.fill();
+        for (let puff = 0; puff < 20; puff += 1) {
+          const angle=puff*2.39996+renderTime*(puff%2?.22:-.17),spread=.15+((puff*37)%83)/100,distance=cloud.radius*spread,wobble=Math.sin(renderTime*1.7+puff*1.31)*cloud.radius*.035,size=cloud.radius*(.055+(puff%4)*.012);
+          context.fillStyle=puff%3===0?"rgba(204,220,105,.42)":puff%3===1?"rgba(148,178,73,.39)":"rgba(106,139,61,.36)";
+          context.beginPath();context.arc(x+Math.cos(angle)*distance+Math.cos(angle+Math.PI/2)*wobble,y+Math.sin(angle)*distance+Math.sin(angle+Math.PI/2)*wobble,size,0,Math.PI*2);context.fill();
+        }
+        context.strokeStyle="rgba(147,169,78,.42)";context.lineWidth=2;context.setLineDash([3,9]);context.beginPath();context.arc(x,y,cloud.radius,0,Math.PI*2);context.stroke();context.setLineDash([]);
+      } else {
+        context.fillStyle="rgba(159,120,61,0.25)";context.beginPath();context.arc(x,y,cloud.radius,0,Math.PI*2);context.fill();context.strokeStyle=cloud.color;context.lineWidth=3;context.stroke();
       }
-      context.strokeStyle = cloud.color; context.lineWidth = 3; context.stroke();
     }
   }
 
@@ -3683,7 +4751,7 @@ export class Game {
     this.canvas.style.cursor = this.screenState === "running" ? "crosshair" : "default";
     context.clearRect(0, 0, width, height);
     context.save();
-    if (this.screenState === "running" && (this.screenShakeTime ?? 0) > 0
+    if (this.screenState === "running" && !this.enemyDiscovery && (this.screenShakeTime ?? 0) > 0
       && this.progress.settings.screenShake && !this.progress.settings.reducedMotion) {
       const directionIndex = Math.floor((this.screenShakeFrame ?? 0) / 3) % SCREEN_SHAKE_DIRECTIONS.length;
       const direction = SCREEN_SHAKE_DIRECTIONS[directionIndex];
@@ -3697,6 +4765,12 @@ export class Game {
       this.screenShakeFrame = (this.screenShakeFrame ?? 0) + 1;
     }
     this.renderLawn(context, width, height);
+    this.renderBeach(context);
+    this.renderCampground(context);
+    this.renderMountainTrail(context);
+    this.renderBlockParty(context);
+    this.renderSupermarket(context);
+    this.renderBotanicalGarden(context);
     this.renderGardenBeds(context);
     this.renderCornFarm(context);
     this.renderFence(context);
@@ -3704,6 +4778,7 @@ export class Game {
     this.renderConstructionEffects(context);
     this.renderSlimeTerrain(context);
     this.renderIcePuddles(context);
+    this.renderPlayerMovementEffects(context);
     for (const lilyPad of this.lilypads) lilyPad.render(context, this.camera);
     this.renderWeaponDeployables(context);
     for (const enemy of this.enemies) {
@@ -3713,6 +4788,7 @@ export class Game {
     this.renderDeathEffects(context);
     for (const thrownGnome of this.thrownGnomes) thrownGnome.render(context, this.camera);
     for (const spore of this.bossProjectiles) spore.render(context, this.camera);
+    for(const rock of this.mountainRocks)rock.render(context,this.camera);
     for (const dump of this.cornDumps ?? []) {
       const x = Math.round(dump.x - this.camera.x); const y = Math.round(dump.y - this.camera.y);
       context.fillStyle = "#8c6531"; context.fillRect(x - 22, y - 13, 44, 26);
@@ -3753,11 +4829,10 @@ export class Game {
     }
     for (const ability of this.abilityProjectiles) this.renderAbilityProjectile(context, ability);
     if (this.player.flamingoTube) this.renderFlamingoTube(context);
-    this.player.render(
-      context,
-      this.camera,
-      weaponForSlot(this.weaponSlot, this.progress.equippedWeapons),
-    );
+    const heldWeapons = this.progress.autoFireUnlocked && this.dualWieldEnabled
+      ? [weaponById(this.progress.equippedWeapons.melee), weaponById(this.progress.equippedWeapons.ranged)]
+      : weaponForSlot(this.weaponSlot, this.progress.equippedWeapons);
+    this.player.render(context, this.camera, heldWeapons);
     this.renderMeleePulse(context);
     this.renderAttackEffects(context);
     this.renderHitEffects(context);
@@ -3794,6 +4869,8 @@ export class Game {
       this.renderGlossaryOverlay(context, width, height);
     } else if (this.screenState === "weapon-preview") {
       this.renderWeaponPreviewOverlay(context, width, height);
+    } else if (this.screenState === "chest-reveal") {
+      this.renderChestRevealOverlay(context, width, height);
     } else if (this.screenState === "paused") {
       this.renderPauseOverlay(context, width, height);
     } else if (this.screenState === "upgrade") {
@@ -3803,12 +4880,17 @@ export class Game {
     } else if (this.screenState === "victory") {
       this.renderVictoryOverlay(context, width, height);
     }
+    if (this.tutorial?.active && this.screenState !== "tutorial" && !this.infoTutorial) {
+      this.renderTutorialCoach(context, width, height);
+    }
+    if (this.infoTutorial) this.renderInfoTutorial(context, width, height);
+    if (this.enemyDiscovery) this.renderEnemyDiscovery(context, width, height);
     this.renderUiClickEffects(context);
     context.restore();
   }
 
   addScreenShake(strength = 0.06, duration = 0.12, kickX = 0, kickY = 0) {
-    if (this.screenState !== "running" || !this.progress?.settings?.screenShake || this.progress.settings.reducedMotion) return;
+    if (this.screenState !== "running" || this.enemyDiscovery || !this.progress?.settings?.screenShake || this.progress.settings.reducedMotion) return;
     const heavyDuration = duration * 1.25;
     if ((this.screenShakeTime ?? 0) <= 0) this.screenShakeFrame = 0;
     this.screenShakeTime = Math.max(this.screenShakeTime ?? 0, heavyDuration);
@@ -3970,6 +5052,14 @@ export class Game {
     if (!enemy.active || enemy.targetable === false) return;
     const x = Math.round(enemy.x - this.camera.x);
     const y = Math.round(enemy.y - this.camera.y);
+    const paintPalette = { black: "#222326", yellow: "#f1cf3e", blue: "#438fe3", red: "#d94b4b", white: "#f4f2e9", green: "#53b65d" };
+    const activePaint = Object.keys(enemy.paintEffects ?? {}).filter((color) => enemy.paintEffects[color] > 0);
+    activePaint.forEach((color, index) => {
+      context.strokeStyle = paintPalette[color]; context.lineWidth = 4;
+      context.beginPath(); context.arc(x, y, enemy.radius + 4 + index * 4, 0, Math.PI * 2); context.stroke();
+      context.fillStyle = paintPalette[color];
+      context.fillRect(x - enemy.radius + index * 7, y - enemy.radius - 7, 6, 6);
+    });
     if ((enemy.freezeTime ?? 0) > 0) {
       context.fillStyle = "rgba(122, 220, 245, 0.82)";
       context.fillRect(x - enemy.radius, y + enemy.radius - 7, enemy.radius * 2, 7);
@@ -4074,6 +5164,21 @@ export class Game {
     context.fillRect(width - 240, 81, 202, 5);
     context.fillStyle = "#78a84a";
     context.fillRect(width - 240, 81, 202 * clamp01(this.levelXp / this.xpToNextLevel), 5);
+    if (this.progress.autoFireUnlocked) {
+      const autoFireWidth = 180;
+      const autoFireX = width / 2 + 6;
+      const autoFireY = height - 48;
+      this.renderButton(context, autoFireX, autoFireY, autoFireWidth, 32,
+        `E · AUTO FIRE ${this.autoFireEnabled ? "ON" : "OFF"}`, "toggle-auto-fire", {
+          font: "bold 12px 'Courier New', monospace",
+          fill: this.autoFireEnabled ? "rgba(92, 125, 56, .94)" : "rgba(35, 38, 25, .92)",
+        });
+      this.renderButton(context, width / 2 - autoFireWidth - 6, autoFireY, autoFireWidth, 32,
+        `Q · ${this.dualWieldEnabled ? "DUAL WIELD" : "SINGLE WIELD"}`, "toggle-dual-wield", {
+          font: "bold 12px 'Courier New', monospace",
+          fill: this.dualWieldEnabled ? "rgba(83, 101, 139, .94)" : "rgba(35, 38, 25, .92)",
+        });
+    }
 
     if (this.boss?.active) {
       const barWidth = Math.min(440, width * 0.42);
@@ -4086,7 +5191,7 @@ export class Game {
       context.fillStyle = "#f1e4b4";
       context.textAlign = "center";
       context.font = "bold 13px 'Courier New', monospace";
-      context.fillText(this.boss.name.toUpperCase(), width / 2, 38);
+      context.fillText(String(this.boss.name ?? this.boss.config?.name ?? this.boss.enemyType ?? "Boss").toUpperCase(), width / 2, 38);
       context.fillStyle = "#33211d";
       context.fillRect(barX, 46, barWidth, 10);
       context.fillStyle = "#b83b32";
@@ -4186,11 +5291,45 @@ export class Game {
     context.textAlign = "start";
   }
 
+  renderEnemyDiscovery(context, width, height) {
+    const discovery = this.enemyDiscovery;
+    if (!discovery) return;
+    const entry = discovery.entry;
+    const elapsed = discovery.duration - discovery.remaining;
+    const fade = Math.min(1, elapsed / .35, discovery.remaining / .35);
+    const panelWidth = Math.min(390, width * .34);
+    const panelHeight = 244;
+    const x = width - panelWidth - 28;
+    const y = Math.max(76, height / 2 - panelHeight / 2);
+    context.save();
+    context.globalAlpha = Math.max(0, fade);
+    context.fillStyle = "rgba(22, 25, 18, .96)";
+    context.fillRect(x, y, panelWidth, panelHeight);
+    context.strokeStyle = "#d8c769";
+    context.lineWidth = 4;
+    context.strokeRect(x, y, panelWidth, panelHeight);
+    context.fillStyle = "#f3df7c";
+    context.font = "bold 13px 'Courier New', monospace";
+    context.textAlign = "center";
+    context.fillText("NEW BESTIARY ENTRY", x + panelWidth / 2, y + 26);
+    renderBestiaryEnemyPortrait(context, entry.id, x + 70, y + 104);
+    context.fillStyle = "#fff0a2";
+    context.font = "bold 18px 'Courier New', monospace";
+    context.fillText(entry.name.toUpperCase(), x + panelWidth * .66, y + 67);
+    context.fillStyle = "#d8d0ae";
+    context.font = "12px 'Courier New', monospace";
+    wrapCenteredText(context, entry.description, x + panelWidth * .66, y + 91, panelWidth * .55, 16, 7);
+    context.fillStyle = "#8f8758";
+    context.font = "bold 10px 'Courier New', monospace";
+    context.fillText("TIME PAUSED · ENTRY SAVED", x + panelWidth / 2, y + panelHeight - 18);
+    context.restore();
+  }
+
   renderBestiary(context, width, height) {
     const listTop = height / 2 - 165;
     const listBottom = height - 92;
-    const rowHeight = 112;
-    const cardHeight = 100;
+    const rowHeight = 126;
+    const cardHeight = 114;
     const visibleHeight = listBottom - listTop;
     const maxScroll = Math.max(0, ENEMY_GLOSSARY.length * rowHeight - visibleHeight);
     this.glossaryScroll = clamp(this.glossaryScroll, 0, maxScroll);
@@ -4221,10 +5360,10 @@ export class Game {
         context,
         defeated > 0 ? enemy.description : "Defeat this enemy to reveal its entry.",
         textCenterX,
-        y + 64,
+        y + 62,
         defeated > 0 ? 430 : 530,
         13,
-        3,
+        4,
       );
     });
     context.restore();
@@ -4244,7 +5383,7 @@ export class Game {
     const itemCount = this.glossaryTab === "bestiary" ? ENEMY_GLOSSARY.length : collectionWeapons.length + 4;
     const limitedRows = Math.ceil(collectionWeapons.filter((weapon) => weapon.limited).length / 2);
     const regularRows = Math.ceil(collectionWeapons.filter((weapon) => !weapon.limited).length / 2);
-    const contentHeight = this.glossaryTab === "bestiary" ? itemCount * 112 : (limitedRows + regularRows) * 56 + (limitedRows > 0 ? 62 : 30) + 34;
+    const contentHeight = this.glossaryTab === "bestiary" ? itemCount * 126 : (limitedRows + regularRows) * 56 + (limitedRows > 0 ? 62 : 30) + 34;
     return Math.max(0, contentHeight - visibleHeight);
   }
 
@@ -4449,22 +5588,95 @@ export class Game {
 
   renderTutorialOverlay(context, width, height) {
     renderDarkOverlay(context, width, height);
+    const page = MAIN_TUTORIAL_PAGES[this.tutorial.page] ?? MAIN_TUTORIAL_PAGES[0];
     context.textAlign = "center";
     context.fillStyle = "#ead77b";
     context.font = "bold 34px 'Courier New', monospace";
-    context.fillText("WELCOME TO LAWN ENFORCEMENT", width / 2, height / 2 - 150);
+    context.fillText(page.title, width / 2, height / 2 - 150);
     context.fillStyle = "#f3e7bd";
-    context.font = "15px 'Courier New', monospace";
-    [
-      "WASD or arrow keys move your homeowner.",
-      "Aim with the mouse and hold left click to attack.",
-      "Use your configured weapon keys to switch between the two loadout slots.",
-      "Collect individual coins and green XP orbs dropped by enemies.",
-      "Choose one temporary upgrade whenever your run level increases.",
-      "Survive until the selected map's boss arrives, then defeat it.",
-    ].forEach((line, index) => context.fillText(line, width / 2, height / 2 - 92 + index * 29));
-    this.renderButton(context, width / 2 - 145, height / 2 + 92, 290, 42, "CONTINUE", "continue");
+    context.font = "bold 16px 'Courier New', monospace";
+    page.lines.forEach((line, index) => wrapCenteredText(context, line, width / 2, height / 2 - 82 + index * 46, Math.min(720, width - 100), 20, 2));
+    this.renderButton(context, width / 2 - 150, height / 2 + 122, 300, 44,
+      this.tutorial.page === MAIN_TUTORIAL_PAGES.length - 1 ? "START GUIDED TUTORIAL" : "NEXT",
+      "tutorial-next", { font: "bold 14px 'Courier New', monospace" });
+    this.renderButton(context, width - 142, 26, 112, 34, "SKIP", "tutorial-skip", { font: "bold 12px 'Courier New', monospace" });
+    context.fillStyle="#9fcf71";context.font="12px 'Courier New', monospace";
+    context.fillText(`${this.tutorial.page + 1} / ${MAIN_TUTORIAL_PAGES.length}`, width / 2, height / 2 + 190);
     context.textAlign = "start";
+  }
+
+  advanceMainTutorial() {
+    if (this.tutorial.page < MAIN_TUTORIAL_PAGES.length - 1) { this.tutorial.page += 1; return; }
+    this.tutorial.stage = "start";
+    this.screenState = "menu";
+  }
+
+  skipMainTutorial() {
+    this.tutorial.active = false;
+    this.progress.settings.tutorialSeen = true;
+    this.screenState = "menu";
+    this.savePermanentProgress();
+  }
+
+  openInfoTutorial(kind, pages) { this.infoTutorial = { kind, pages, page: 0 }; }
+  advanceInfoTutorial() {
+    if (!this.infoTutorial) return;
+    if (this.infoTutorial.page < this.infoTutorial.pages.length - 1) { this.infoTutorial.page += 1; return; }
+    this.closeInfoTutorial(false);
+  }
+  closeInfoTutorial(skipped = false) {
+    const kind = this.infoTutorial?.kind;
+    this.infoTutorial = null;
+    if (kind === "stats" && this.tutorial.active) this.tutorial.stage = "open-arsenal";
+    if (kind === "finish" && this.tutorial.active) {
+      this.tutorial.active = false;
+      this.progress.settings.tutorialSeen = true;
+    }
+    if (kind === "season") this.progress.settings.seasonTutorialSeen = true;
+    if (kind === "quests") this.progress.settings.questTutorialSeen = true;
+    if (kind === "boss" && skipped) this.tutorial.bossExplained = true;
+    this.savePermanentProgress();
+  }
+
+  renderInfoTutorial(context, width, height) {
+    const info = this.infoTutorial;
+    const page = info.pages[info.page];
+    context.fillStyle="rgba(8,10,7,.86)";context.fillRect(0,0,width,height);
+    const panelWidth=Math.min(760,width-60),panelHeight=Math.min(430,height-70),x=(width-panelWidth)/2,y=(height-panelHeight)/2;
+    context.fillStyle="#292b1d";context.fillRect(x,y,panelWidth,panelHeight);context.strokeStyle="#d4bd58";context.lineWidth=4;context.strokeRect(x,y,panelWidth,panelHeight);
+    context.textAlign="center";context.fillStyle="#ead77b";context.font="bold 28px 'Courier New', monospace";context.fillText(page.title,width/2,y+52);
+    context.fillStyle="#f3e7bd";context.font="bold 15px 'Courier New', monospace";
+    page.lines.forEach((line,index)=>wrapCenteredText(context,line,width/2,y+105+index*56,panelWidth-70,19,2));
+    this.renderButton(context,width/2-145,y+panelHeight-64,290,40,info.page===info.pages.length-1?"GOT IT":"NEXT","tutorial-next",{font:"bold 14px 'Courier New', monospace"});
+    this.renderButton(context,x+panelWidth-104,y+14,86,30,"SKIP","tutorial-skip",{font:"bold 11px 'Courier New', monospace"});
+    context.textAlign="start";
+  }
+
+  renderTutorialCoach(context, width, height) {
+    const messages = {
+      start: "GUIDED STEP: Click START RUN.", map: "GUIDED STEP: Choose BACKYARD for your first run.",
+      loadout: "GUIDED STEP: Choose any two weapons, then click BEGIN RUN.",
+      "first-run": "Move, aim, attack, collect drops, and choose upgrades. Defeat King Gnomulus!",
+      victory: "Great work! Choose MAIN MENU to learn permanent progression.",
+      "post-victory": "GUIDED STEP: Open UPGRADES.", upgrades: "Learn the permanent stats, then continue.",
+      "open-arsenal": "GUIDED STEP: Open WEAPON ARSENAL.", "upgrade-weapon": "GUIDED STEP: Upgrade one owned weapon.",
+      shop: "GUIDED STEP: Open SHOP and claim the FREE tutorial Weapon Chest.",
+    };
+    const message=messages[this.tutorial.stage];if(!message)return;
+    const w=Math.min(720,width-40);context.fillStyle="rgba(24,29,17,.94)";context.fillRect((width-w)/2,height-58,w,42);context.strokeStyle="#d4bd58";context.lineWidth=2;context.strokeRect((width-w)/2,height-58,w,42);
+    context.fillStyle="#fff0a0";context.font="bold 13px 'Courier New', monospace";context.textAlign="center";context.fillText(message,width/2,height-32);context.textAlign="start";
+  }
+
+  renderChestRevealOverlay(context,width,height) {
+    renderDarkOverlay(context,width,height);const reveal=this.chestReveal,result=reveal?.result;if(!result)return;
+    const t=Math.min(1,reveal.time/.8),cx=width/2,cy=height/2-40;
+    context.save();context.translate(cx,cy);context.scale(.7+t*.3,.7+t*.3);
+    context.fillStyle="#6b4325";context.fillRect(-95,-30,190,95);context.fillStyle="#d2a84e";context.fillRect(-102,-42,204,28);context.fillRect(-12,-45,24,112);
+    context.save();context.translate(0,-38);context.rotate(-Math.sin(t*Math.PI)*.8);context.fillStyle="#80532e";context.fillRect(-100,-35,200,30);context.restore();
+    for(let i=0;i<18;i++){const a=i/18*Math.PI*2;context.fillStyle=i%2?"#fff1a0":"#9fe8ff";context.fillRect(Math.cos(a)*110*t-4,-30+Math.sin(a)*70*t-4,8,8);}context.restore();
+    context.textAlign="center";context.fillStyle="#ead77b";context.font="bold 30px 'Courier New', monospace";context.fillText(result.duplicate?"DUPLICATE SOLD!":"WEAPON UNLOCKED!",cx,cy+115);
+    context.fillStyle="#f3e7bd";context.font="bold 20px 'Courier New', monospace";context.fillText(`${result.weapon.name} · ${result.rarity}`,cx,cy+150);
+    if(reveal.time>=.8)this.renderButton(context,cx-130,cy+175,260,42,"CONTINUE","chest-continue",{font:"bold 14px 'Courier New', monospace"});context.textAlign="start";
   }
 
   renderWeaponSelectionOverlay(context, width, height) {
@@ -4546,8 +5758,10 @@ export class Game {
       `1 SOUND: ${settings.sound ? "ON" : "OFF"}`,
       `2 SCREEN SHAKE: ${settings.screenShake ? "ON" : "OFF"}`,
       `3 REDUCED MOTION: ${settings.reducedMotion ? "ON" : "OFF"}`,
-      `4 MELEE KEY: ${formatKeyCode(this.progress.keybinds.melee)}`,
-      `5 RANGED KEY: ${formatKeyCode(this.progress.keybinds.ranged)}`,
+      `4 TUTORIAL HELP: ${settings.tutorialEnabled ? "ON" : "OFF"}`,
+      "5 REPLAY TUTORIAL",
+      `6 LOADOUT 1 KEY: ${formatKeyCode(this.progress.keybinds.melee)}`,
+      `7 LOADOUT 2 KEY: ${formatKeyCode(this.progress.keybinds.ranged)}`,
     ];
     context.textAlign = "center";
     context.fillStyle = "#ead77b";
@@ -4658,10 +5872,17 @@ export class Game {
     wrapCenteredText(context, `LV 10: ${weapon.levelTenFeature}`, detailX + detailWidth / 2, 350, detailWidth - 42, 15, 3);
     const buttonY = detailY + detailHeight - 52;
     this.renderButton(context, detailX + 18, buttonY, 110, 38, "CLOSE", "preview-close", { font: "bold 12px 'Courier New', monospace" });
-    if (this.weaponPreviewReturnState === "shop") {
-      const owned = this.progress.ownedWeapons.includes(weapon.id);
+    const owned = this.progress.ownedWeapons.includes(weapon.id);
+    if (owned) {
+      const level = this.progress.weaponLevels[weapon.id] ?? 1;
+      const maxLevel = weaponMaxLevelForMaps(this.progress.unlockedMaps);
+      const cost = weaponUpgradeCost(level) * (this.progress.shieldUnlocked ? 2 : 1);
       this.renderButton(context, detailX + detailWidth - 148, buttonY, 130, 38,
-        owned ? "OWNED" : `BUY ${shopWeaponPrice(weapon.id)}`, owned ? null : "preview-buy", { font: "bold 10px 'Courier New', monospace" });
+        level >= maxLevel ? `LEVEL ${level} · MAX` : `UPGRADE ${cost}`,
+        level >= maxLevel ? null : "preview-upgrade", { font: "bold 10px 'Courier New', monospace" });
+    } else if (this.weaponPreviewReturnState === "shop") {
+      this.renderButton(context, detailX + detailWidth - 148, buttonY, 130, 38,
+        `BUY ${shopWeaponPrice(weapon.id)}`, "preview-buy", { font: "bold 10px 'Courier New', monospace" });
     }
     context.textAlign = "start";
   }
@@ -4686,7 +5907,7 @@ export class Game {
       const rowY = height / 2 - 132 + index * rowHeight;
       const weapon = item.id ? weaponById(item.id) : null;
       const label = item.chest
-        ? `WEAPON CHEST — ${chestCost(this.progress)} coins`
+        ? `WEAPON CHEST — ${this.tutorial.active && this.tutorial.freeChestAvailable ? "FREE TUTORIAL CHEST" : `${chestCost(this.progress)} coins`}`
         : "";
       if (item.chest) {
         this.renderButton(context, width / 2 - 260, rowY, 520, 43, label,
@@ -4876,9 +6097,9 @@ export class Game {
     context.fillText(`COINS ${this.bankCoins} · EVERY OWNED WEAPON CAN REACH LEVEL 5`, width / 2, height / 2 - 192);
     context.font = "12px 'Courier New', monospace";
     const listTop = height / 2 - 165;
-    const listBottom = height - 105;
-    const rowHeight = 34;
-    const visibleCount = Math.max(1, Math.floor((listBottom - listTop) / rowHeight));
+    const rowHeight = 56;
+    const visibleCount = Math.min(5, weapons.length);
+    const listBottom = listTop + visibleCount * rowHeight;
     const maxOffset = Math.max(0, weapons.length - visibleCount);
     const offset = clamp(this.arsenalScroll[category] ?? 0, 0, maxOffset);
     this.arsenalScroll[category] = offset;
@@ -4887,12 +6108,13 @@ export class Game {
     context.rect(width / 2 - 265, listTop, 530, visibleCount * rowHeight);
     context.clip();
     weapons.slice(offset, offset + visibleCount).forEach((weapon, visibleIndex) => {
-      const index = offset + visibleIndex;
       const equipped = Object.values(this.progress.equippedWeapons).includes(weapon.id);
-      this.renderButton(context, width / 2 - 255, listTop + visibleIndex * rowHeight, 510, 29,
-        `${equipped ? "> " : ""}${weaponUpgradeLabel(this.progress, weapon)}`,
-        { type: "choice", value: index + 1 },
+      const rowY = listTop + visibleIndex * rowHeight;
+      this.renderButton(context, width / 2 - 255, rowY, 510, 50, "",
+        { type: "weapon-preview", value: weapon.id },
         { fill: equipped ? "#5a5530" : "#343621", font: "11px 'Courier New', monospace" });
+      renderWeaponMenuEntry(context, weapon, width / 2 - 220, rowY + 28, width / 2 - 160, rowY + 18,
+        `${equipped ? "> " : ""}${weaponUpgradeLabel(this.progress, weapon)}`, 385, .82, 1.08);
     });
     context.restore();
     this.renderScrollBar(context, Math.min(width / 2 + 264, width - 14), listTop, visibleCount * rowHeight, maxOffset, offset);
@@ -4905,7 +6127,7 @@ export class Game {
     context.font = "11px 'Courier New', monospace";
     context.fillText(this.menuMessage, width / 2, height - 70);
     context.fillStyle = "#d8d0ae";
-    context.fillText("Click a weapon to upgrade · Scroll or arrows · Escape returns", width / 2, height - 46);
+    context.fillText("Click a weapon to view stats and upgrade · Scroll or arrows · Escape returns", width / 2, height - 46);
     context.textAlign = "start";
   }
 
@@ -5025,6 +6247,9 @@ export class Game {
   }
 
   renderLandmarks(context) {
+    if (this.currentMap.id === "botanical-garden") return;
+    if (this.currentMap.id === "beach") return;
+    if (this.currentMap.id === "campground") return;
     if (this.currentMap.id === "garden" || this.currentMap.id === "corn-farm") return;
     if (this.currentMap.id === "redwood-trail") {
       this.renderRedwoodLandmarks(context);
@@ -5058,6 +6283,7 @@ export class Game {
       this.renderLakeLandmarks(context);
       return;
     }
+    if (this.currentMap.id !== "backyard" && this.currentMap.id !== "frontyard") return;
     const landmarks = this.currentMap.id === "frontyard"
       ? [
           { x: this.world.width / 2 - 260, y: 60, width: 520, height: 260, color: "#83604b" },
@@ -5088,6 +6314,125 @@ export class Game {
       context.fillRect(Math.round(x + 10), Math.round(y + 10), landmark.width - 20, 8);
     }
   }
+
+  renderBeach(context) {
+    if(this.currentMap.id!=="beach")return;
+    const shoreline=this.world.width*(1-this.beachWaterCoverage)-this.camera.x;
+    const waveTime=this.beachTideTime??0;
+    context.save();context.fillStyle="rgba(55,155,201,.62)";context.fillRect(shoreline-14,-this.camera.y,this.world.width-(shoreline+this.camera.x)+14,this.world.height);
+    // Layered moving wavelets make the sea feel alive and make the current
+    // shoreline boundary readable without turning it into a hard straight line.
+    for(let band=0;band<4;band++){
+      context.strokeStyle=band===0?"rgba(226,248,246,.9)":"rgba(159,220,235,.35)";
+      context.lineWidth=band===0?10:4;context.beginPath();
+      for(let sy=-24;sy<=this.camera.viewHeight+24;sy+=12){const sx=shoreline+band*34+Math.sin(sy*.035+waveTime*(.8+band*.12))*10+Math.sin(sy*.011-waveTime*.42)*5;if(sy===-24)context.moveTo(sx,sy);else context.lineTo(sx,sy);}
+      context.stroke();
+    }
+    context.fillStyle="rgba(235,250,246,.32)";
+    for(let i=0;i<18;i++){const wy=(i*83+waveTime*24)%this.camera.viewHeight;const wx=shoreline+55+(i*71)%Math.max(90,this.camera.viewWidth-shoreline);context.fillRect(wx,wy,18+((i*13)%28),3);}
+    for(const strip of this.temporaryBeachWater){context.fillStyle="rgba(67,176,213,.38)";context.fillRect(strip.x-strip.width/2-this.camera.x,strip.y-50-this.camera.y,strip.width,100);}
+    for(let i=0;i<12;i++){const x=(i*197+83)%this.world.width-this.camera.x,y=(i*113+170)%this.world.height-this.camera.y;context.fillStyle=i%3===0?"#f06e75":"#f2e2b2";context.fillRect(x,y,12,7);}
+    for(const warning of this.beachWarnings){const source=warning.source??warning;const x=(warning.type==="claw"?source.x:warning.x)-this.camera.x,y=(warning.type==="claw"?source.y:warning.y)-this.camera.y;context.globalAlpha=.35+.3*Math.sin(warning.lifetime*30);context.strokeStyle="#ff594e";context.lineWidth=5;if(warning.type==="claw"){for(const side of[-1,1]){context.beginPath();context.arc(x+side*100,y,warning.radius,0,Math.PI*2);context.stroke();}}else if(warning.type==="charge"){context.fillStyle="rgba(255,79,61,.2)";context.fillRect(warning.direction>0?x:x-this.world.width,y-70,this.world.width,140);}else{context.beginPath();context.arc(x,y,warning.radius,0,Math.PI*2);context.stroke();}}context.globalAlpha=1;
+    for(const ring of this.rescueRings){const x=ring.source.x+(ring.target.x-ring.source.x)*ring.progress-this.camera.x,y=ring.source.y+(ring.target.y-ring.source.y)*ring.progress-this.camera.y;context.strokeStyle="#f7f3db";context.lineWidth=7;context.beginPath();context.arc(x,y,16,0,Math.PI*2);context.stroke();}
+    context.restore();
+  }
+
+  renderMountainTrail(context){if(this.currentMap.id!=="mountain-trail")return;const t=this.runTime??0;context.save();context.fillStyle="rgba(82,72,55,.28)";context.fillRect(0,0,this.camera.viewWidth,this.camera.viewHeight);context.strokeStyle="#9d835b";context.lineWidth=92;context.lineCap="round";context.beginPath();context.moveTo(-120-this.camera.x,280-this.camera.y);context.bezierCurveTo(this.world.width*.28-this.camera.x,this.world.height*.18-this.camera.y,this.world.width*.62-this.camera.x,this.world.height*.78-this.camera.y,this.world.width+120-this.camera.x,this.world.height*.55-this.camera.y);context.stroke();context.lineCap="butt";
+    for(let i=0;i<34;i++){const wx=(i*251+73)%this.world.width,wy=(i*137+111)%this.world.height,x=wx-this.camera.x,y=wy-this.camera.y,size=12+(i*17)%31;context.fillStyle=i%4===0?"#48523a":"#5a554a";if(i%4===0){context.fillRect(x-size,y-size*.5,size*2,size);context.fillStyle="#73805a";context.fillRect(x-size*.6,y-size*.8,size*1.2,size*.5);}else{context.beginPath();context.arc(x,y,size,0,Math.PI*2);context.fill();context.fillStyle="#817a69";context.fillRect(x-size*.35,y-size*.5,size*.45,size*.24);}}
+    for(const warning of this.mountainWarnings){const alpha=Math.max(.25,warning.lifetime/(warning.maxLifetime??1));context.globalAlpha=alpha;context.strokeStyle=warning.boss?"#ff673d":"#f2bd63";context.lineWidth=warning.boss?7:4;context.setLineDash([12,9]);if(warning.type==="impact"){context.beginPath();context.arc(warning.x-this.camera.x,warning.y-this.camera.y,warning.radius,0,Math.PI*2);context.stroke();context.fillStyle="rgba(105,95,78,.45)";context.beginPath();context.arc(warning.x-this.camera.x,warning.y-this.camera.y-warning.lifetime*150,12,0,Math.PI*2);context.fill();}else{context.beginPath();context.moveTo(warning.x-this.camera.x,warning.y-this.camera.y);context.lineTo(warning.targetX-this.camera.x,warning.targetY-this.camera.y);context.stroke();if(warning.sequence){context.setLineDash([]);context.fillStyle="#fff1b0";context.font="bold 20px monospace";context.fillText(`${warning.sequence}/3`,warning.x-this.camera.x,warning.y-this.camera.y-80);}}context.setLineDash([]);context.globalAlpha=1;}
+    if(this.mountainShakeTime>0){context.fillStyle=`rgba(196,156,91,${.08+.05*Math.sin(t*35)})`;context.fillRect(0,0,this.camera.viewWidth,this.camera.viewHeight);}context.restore();}
+
+  renderBlockParty(context){if(this.currentMap.id!=="neighborhood-block-party")return;const t=this.runTime??0,cx=this.world.width/2-this.camera.x,cy=this.world.height/2-this.camera.y;context.save();context.fillStyle="#56585b";context.beginPath();context.arc(cx,cy,330,0,Math.PI*2);context.fill();context.strokeStyle="#a7a39a";context.lineWidth=22;context.stroke();context.fillStyle="#46484b";context.fillRect(-this.camera.x,cy-95,this.world.width,190);
+    context.font="bold 18px monospace";context.textAlign="center";for(let i=0;i<12;i++){const a=i/12*Math.PI*2,x=cx+Math.cos(a)*470,y=cy+Math.sin(a)*390;context.fillStyle=i%3===0?"#ef6f79":i%3===1?"#f5cf58":"#59c8d6";context.beginPath();context.arc(x,y,13+Math.sin(t*3+i)*2,0,Math.PI*2);context.fill();context.fillStyle="#4a3025";context.fillRect(x-34,y+18,68,20);context.fillStyle="#f1e0ba";context.fillRect(x-29,y+21,58,5);}
+    for(let i=0;i<8;i++){const x=(i*337+130)%this.world.width-this.camera.x,y=(i*211+150)%this.world.height-this.camera.y;context.fillStyle="#26333b";context.fillRect(x-25,y-20,50,40);context.fillStyle="#61bfd3";context.beginPath();context.arc(x-12,y,9,0,Math.PI*2);context.arc(x+12,y,9,0,Math.PI*2);context.fill();}
+    context.strokeStyle="#f7d66b";context.lineWidth=4;context.beginPath();context.moveTo(-this.camera.x,75-this.camera.y);context.lineTo(this.world.width-this.camera.x,75-this.camera.y);context.stroke();for(let x=30;x<this.world.width;x+=75){context.fillStyle=(x/75)%3===0?"#f36f7e":(x/75)%3===1?"#68cdd2":"#ffe26c";context.beginPath();context.moveTo(x-this.camera.x,77-this.camera.y);context.lineTo(x+20-this.camera.x,110-this.camera.y);context.lineTo(x+40-this.camera.x,77-this.camera.y);context.fill();}
+    for(const source of this.enemies){if(!source.active)continue;const x=source.x-this.camera.x,y=source.y-this.camera.y;if(source instanceof CoolerCarrier||source instanceof PartyDJ){context.globalAlpha=.34;context.strokeStyle=source instanceof PartyDJ?"#d783ff":"#7ddff2";context.lineWidth=5;context.setLineDash([12,10]);context.beginPath();context.arc(x,y,source.auraRadius,0,Math.PI*2);context.stroke();context.setLineDash([]);context.globalAlpha=1;}if(source.balloonShield&&source.shield>0){for(const side of[-1,1]){context.fillStyle=side<0?"#ff6485":"#69d6e2";context.beginPath();context.arc(x+side*18,y-52+Math.sin(t*4+side)*4,9,0,Math.PI*2);context.fill();context.strokeStyle="#eee";context.lineWidth=1;context.beginPath();context.moveTo(x+side*18,y-43);context.lineTo(x+side*8,y-18);context.stroke();}}}
+    for(const effect of this.partyEffects??[]){const alpha=effect.lifetime/(effect.maxLifetime??1);context.globalAlpha=alpha;context.strokeStyle=effect.kind==="food"||effect.kind==="pizza"?"#ffca68":effect.kind==="aid"?"#9ee8ff":"#ff7eca";context.lineWidth=5;if(effect.type==="travel"||effect.type==="dash"){context.beginPath();context.moveTo(effect.x1-this.camera.x,effect.y1-this.camera.y);context.lineTo(effect.x2-this.camera.x,effect.y2-this.camera.y);context.stroke();}else if(effect.type==="ring"){context.beginPath();context.arc(effect.x1-this.camera.x,effect.y1-this.camera.y,effect.radius*(1-alpha*.4),0,Math.PI*2);context.stroke();}else{context.fillStyle="#fff4a8";context.font="bold 22px monospace";context.fillText(effect.label,effect.x1-this.camera.x,effect.y1-this.camera.y-80);}}
+    context.globalAlpha=1;context.textAlign="left";context.restore();}
+
+  renderCampground(context){if(this.currentMap.id!=="campground")return;const t=this.runTime??0;context.save();context.fillStyle="rgba(5,10,16,.55)";context.fillRect(0,0,this.camera.viewWidth,this.camera.viewHeight);
+    for(let i=0;i<18;i++){const x=(i*173+90)%this.world.width-this.camera.x,y=(i*241+110)%this.world.height-this.camera.y;context.fillStyle=i%3===0?"#725744":"#405041";if(i%3===0){context.fillRect(x,y,60,35);context.fillStyle="#b77b47";context.fillRect(x+8,y-8,44,10);}else{context.fillRect(x,y,22,48);context.fillStyle="#17241c";context.fillRect(x-22,y-20,66,32);}}
+    for(const fire of this.campfires){const x=fire.x-this.camera.x,y=fire.y-this.camera.y;if(fire.lit){const g=context.createRadialGradient(x,y,10,x,y,fire.lightRadius);g.addColorStop(0,"rgba(255,190,77,.42)");g.addColorStop(1,"rgba(255,155,44,0)");context.fillStyle=g;context.beginPath();context.arc(x,y,fire.lightRadius,0,Math.PI*2);context.fill();}context.fillStyle="#5d412d";context.save();context.translate(x,y);context.rotate(.55);context.fillRect(-23,-6,46,12);context.rotate(-1.1);context.fillRect(-23,-6,46,12);context.restore();if(fire.lit){context.fillStyle="#ffb33f";context.beginPath();context.moveTo(x,y-35-Math.sin(t*9)*5);context.lineTo(x-18,y+4);context.lineTo(x+18,y+4);context.fill();context.fillStyle="#fff08a";context.fillRect(x-5,y-17,10,19);}}
+    for(const h of this.campgroundHazards){const x=h.x-this.camera.x,y=h.y-this.camera.y,alpha=Math.min(1,h.lifetime/(h.maxLifetime??1));context.globalAlpha=alpha;if(h.type==="gas"){context.fillStyle="rgba(126,151,71,.48)";for(let i=0;i<7;i++){context.beginPath();context.arc(x+Math.cos(i*2.2+t)*h.radius*.4,y+Math.sin(i*1.7+t*.8)*h.radius*.35,28+i%3*7,0,Math.PI*2);context.fill();}}else{context.fillStyle="rgba(255,102,31,.52)";context.beginPath();context.arc(x,y,h.radius,0,Math.PI*2);context.fill();}context.globalAlpha=1;}
+    for(const w of this.campgroundWarnings){context.strokeStyle="#ffbe62";context.lineWidth=5;context.setLineDash([10,7]);context.beginPath();context.arc(w.x-this.camera.x,w.y-this.camera.y,w.radius,0,Math.PI*2);context.stroke();context.setLineDash([]);}
+    const ranger=this.boss instanceof CampgroundRangerBoss?this.boss:null;if(ranger?.searchlightVisual?.lifetime>0){const x=ranger.x-this.camera.x,y=ranger.y-this.camera.y,a=ranger.searchlightVisual.angle;context.fillStyle="rgba(255,244,177,.24)";context.beginPath();context.moveTo(x,y);context.arc(x,y,620,a-.42,a+.42);context.closePath();context.fill();context.strokeStyle="rgba(255,249,202,.65)";context.lineWidth=3;context.stroke();}
+    if(this.campgroundClosedTime>0){context.fillStyle="#ff6848";context.font="bold 32px 'Courier New', monospace";context.textAlign="center";context.fillText("CAMPGROUND CLOSED!",this.camera.viewWidth/2,110);context.textAlign="left";}context.restore();}
+
+  renderBotanicalGarden(context) {
+    if (this.currentMap.id !== "botanical-garden") return;
+    const worldToScreen = (entry) => ({ x: entry.x - this.camera.x, y: entry.y - this.camera.y });
+
+    // Pale winding paths keep the arena readable without becoming collision terrain.
+    context.save();
+    context.strokeStyle = "rgba(218, 204, 164, 0.72)";
+    context.lineWidth = 76;
+    context.lineCap = "round";
+    context.beginPath();
+    context.moveTo(-this.camera.x, this.world.height * .48 - this.camera.y);
+    context.bezierCurveTo(this.world.width * .28 - this.camera.x, this.world.height * .34 - this.camera.y, this.world.width * .68 - this.camera.x, this.world.height * .66 - this.camera.y, this.world.width - this.camera.x, this.world.height * .49 - this.camera.y);
+    context.stroke();
+    context.strokeStyle = "rgba(244, 234, 199, 0.48)";
+    context.lineWidth = 54;
+    context.stroke();
+
+    for (const bed of this.currentMap.obstacles.filter((entry) => entry.kind.endsWith("-bed"))) {
+      const { x, y } = worldToScreen(bed);
+      const palette = bed.kind === "sunflower-bed"
+        ? { soil: "#6d5534", edge: "#e4c64c", flower: "#f4d94f", center: "#6b482a" }
+        : bed.kind === "rose-bed"
+          ? { soil: "#684039", edge: "#d85978", flower: "#ed7293", center: "#772c49" }
+          : { soil: "#51465f", edge: "#aa8bd2", flower: "#b99ae8", center: "#664f87" };
+      context.fillStyle = palette.soil;
+      context.fillRect(x, y, bed.width, bed.height);
+      context.strokeStyle = palette.edge;
+      context.lineWidth = 6;
+      context.strokeRect(x, y, bed.width, bed.height);
+      for (let fy = 24; fy < bed.height - 10; fy += 42) {
+        for (let fx = 24; fx < bed.width - 10; fx += 44) {
+          const wobble = ((fx * 7 + fy * 11) % 13) - 6;
+          context.fillStyle = palette.flower;
+          context.fillRect(x + fx - 7 + wobble, y + fy - 3, 6, 6);
+          context.fillRect(x + fx + 3 + wobble, y + fy - 3, 6, 6);
+          context.fillRect(x + fx - 2 + wobble, y + fy - 8, 6, 6);
+          context.fillRect(x + fx - 2 + wobble, y + fy + 2, 6, 6);
+          context.fillStyle = palette.center;
+          context.fillRect(x + fx - 1 + wobble, y + fy - 2, 4, 4);
+        }
+      }
+    }
+
+    for (const prop of this.currentMap.obstacles.filter((entry) => !entry.kind.endsWith("-bed"))) {
+      const { x, y } = worldToScreen(prop);
+      if (prop.kind === "hedge") {
+        context.fillStyle = "#285b37"; context.fillRect(x, y, prop.width, prop.height);
+        context.fillStyle = "#4f8a49"; for (let px = 8; px < prop.width; px += 24) context.fillRect(x + px, y + 5, 13, 7);
+      } else if (prop.kind === "bench") {
+        context.fillStyle = "#765233"; context.fillRect(x, y, prop.width, 12); context.fillRect(x + 10, y + 17, prop.width - 20, 8);
+        context.fillStyle = "#3c372f"; context.fillRect(x + 18, y + 10, 7, 20); context.fillRect(x + prop.width - 25, y + 10, 7, 20);
+      } else if (prop.kind === "fountain") {
+        context.fillStyle = "#8c9891"; context.beginPath(); context.ellipse(x + 40, y + 55, 39, 20, 0, 0, Math.PI * 2); context.fill();
+        context.fillStyle = "#66b8cd"; context.beginPath(); context.ellipse(x + 40, y + 51, 31, 13, 0, 0, Math.PI * 2); context.fill();
+        context.strokeStyle = "#a9e4ec"; context.lineWidth = 5; context.beginPath(); context.moveTo(x + 40, y + 50); context.quadraticCurveTo(x + 22, y + 10, x + 40, y + 4); context.quadraticCurveTo(x + 58, y + 10, x + 40, y + 50); context.stroke();
+      } else if (prop.kind === "statue") {
+        context.fillStyle = "#9ca49a"; context.fillRect(x + 8, y + 58, 64, 18); context.fillRect(x + 25, y + 18, 30, 43); context.beginPath(); context.arc(x + 40, y + 13, 14, 0, Math.PI * 2); context.fill();
+      }
+    }
+
+    for (const vine of this.botanicalGroundVines) {
+      const fade = clamp(vine.lifetime / (vine.maxLifetime ?? 3), 0, 1);
+      context.strokeStyle = `rgba(18, 55, 31, ${.7 + fade * .3})`; context.lineWidth = vine.width * 2.35; context.lineCap = "round";
+      context.beginPath(); context.moveTo(vine.x1 - this.camera.x, vine.y1 - this.camera.y); context.lineTo(vine.x2 - this.camera.x, vine.y2 - this.camera.y); context.stroke();
+      context.strokeStyle = `rgba(125, 232, 91, ${.55 + fade * .45})`; context.lineWidth = vine.width * 1.55; context.stroke();
+      context.strokeStyle = `rgba(229, 250, 125, ${.55 + fade * .45})`; context.lineWidth = 7; context.setLineDash([13, 10]); context.stroke(); context.setLineDash([]);
+    }
+    for (const line of this.queenThornLines) {
+      context.strokeStyle = line.warning > 0 ? "rgba(255, 225, 122, .82)" : "rgba(151, 26, 69, .94)";
+      context.lineWidth = line.warning > 0 ? 4 : line.width * 2; context.setLineDash(line.warning > 0 ? [16, 13] : []);
+      context.beginPath(); context.moveTo(line.x1 - this.camera.x, line.y1 - this.camera.y); context.lineTo(line.x2 - this.camera.x, line.y2 - this.camera.y); context.stroke(); context.setLineDash([]);
+    }
+    context.restore();
+  }
+  renderSupermarket(context){if(this.currentMap.id!=="supermarket")return;const t=this.runTime??0;context.save();context.fillStyle="rgba(233,230,215,.28)";context.fillRect(0,0,this.camera.viewWidth,this.camera.viewHeight);for(let row=0;row<3;row++){const y=240+row*330-this.camera.y;context.fillStyle="#766a5b";context.fillRect(140-this.camera.x,y,this.world.width-280,52);context.fillStyle="#d6b56b";for(let x=165;x<this.world.width-150;x+=95)context.fillRect(x-this.camera.x,y+8,58,36);}context.fillStyle="#4d6671";for(let x=100;x<this.world.width-100;x+=180)context.fillRect(x-this.camera.x,70-this.camera.y,120,62);context.fillStyle="#d9d9d1";for(let x=100;x<this.world.width-100;x+=180)context.fillRect(x+8-this.camera.x,78-this.camera.y,104,46);context.fillStyle="#405b68";for(let x=120;x<this.world.width-100;x+=230){context.fillRect(x-this.camera.x,this.world.height-190-this.camera.y,155,72);context.fillStyle="#8d4b42";context.fillRect(x+18-this.camera.x,this.world.height-215-this.camera.y,120,24);context.fillStyle="#405b68";}for(const spill of this.supermarketSpills){context.globalAlpha=Math.min(.7,spill.lifetime);context.fillStyle="#dfc34d";context.beginPath();context.ellipse(spill.x-this.camera.x,spill.y-this.camera.y,spill.radius,spill.radius*.55,Math.sin(spill.x)*.3,0,Math.PI*2);context.fill();context.strokeStyle="#fff09a";context.lineWidth=4;context.stroke();}context.globalAlpha=1;for(const warning of this.supermarketWarnings){context.strokeStyle=warning.type==="crate"?"#ef4d42":"#f3e364";context.lineWidth=5;context.setLineDash([12,8]);context.beginPath();context.arc(warning.x-this.camera.x,warning.y-this.camera.y,warning.radius,0,Math.PI*2);context.stroke();context.setLineDash([]);}for(const cart of this.shoppingCarts){const x=cart.x-this.camera.x,y=cart.y-this.camera.y,a=Math.atan2(cart.vy,cart.vx);context.save();context.translate(x,y);context.rotate(cart.rolling?a:0);if(cart.warning>0){context.strokeStyle="#ff604d";context.lineWidth=5;context.strokeRect(-38,-27,76,54);}context.strokeStyle="#65747b";context.lineWidth=6;context.strokeRect(-30,-20,50,34);context.beginPath();context.moveTo(20,-20);context.lineTo(36,-30);context.stroke();context.fillStyle="#202427";context.beginPath();context.arc(-20,22,7,0,Math.PI*2);context.arc(18,22,7,0,Math.PI*2);context.fill();context.restore();}for(const projectile of this.supermarketProjectiles){const x=projectile.x-this.camera.x,y=projectile.y-this.camera.y;context.fillStyle=projectile.kind==="frozen"?"#79cfe8":projectile.kind==="can"?"#d7554c":"#d7a357";context.save();context.translate(x,y);context.rotate(t*8);context.fillRect(-projectile.radius,-projectile.radius*.65,projectile.radius*2,projectile.radius*1.3);context.restore();}if(this.supermarketAnnouncementTime>0){context.fillStyle="rgba(20,23,24,.8)";context.fillRect(this.camera.viewWidth/2-220,70,440,54);context.fillStyle="#ffe36d";context.font="bold 26px 'Courier New', monospace";context.textAlign="center";context.fillText(this.supermarketAnnouncement,this.camera.viewWidth/2,105);context.textAlign="left";}context.restore();}
 
   renderSlimeTerrain(context) {
     for (const puddle of this.slimeTerrain ?? []) {
@@ -5556,7 +6901,7 @@ export function weaponStatsWithPermanentProgress(weapon, level, characterStats =
   const damageBonus = Math.max(0, Number(characterStats.damage) || 0) * 0.08;
   const cooldownMultiplier = Math.max(0.55, 1 - Math.max(0, Number(characterStats.attackSpeed) || 0) * 0.06);
   const accuracyMultiplier = 1 + Math.max(0, Number(characterStats.accuracy) || 0) * 0.08;
-  return {
+  const result = {
     ...leveled,
     damage: Number((leveled.damage * (1 + damageBonus)).toFixed(2)),
     cooldown: leveled.cooldown * cooldownMultiplier,
@@ -5566,6 +6911,12 @@ export function weaponStatsWithPermanentProgress(weapon, level, characterStats =
     permanentCooldownMultiplier: cooldownMultiplier,
     permanentAccuracyMultiplier: accuracyMultiplier,
   };
+  for (const field of Object.keys(SIDE_DAMAGE_SCALING)) {
+    if (Number.isFinite(result[field]) && result[field] > 0) {
+      result[field] = scaleSideDamageValue(result[field], 1 + damageBonus, field);
+    }
+  }
+  return result;
 }
 
 function renderGrassTuft(context, x, y, seed) {
@@ -5581,8 +6932,49 @@ function renderGrassTuft(context, x, y, seed) {
   }
 }
 
+const MAIN_TUTORIAL_PAGES = [
+  { title: "WELCOME TO LAWN ENFORCEMENT", lines: ["Protect each map from increasingly dangerous yard invaders.", "This guided tutorial follows your real first run and can be skipped at any time."] },
+  { title: "MOVEMENT & AIM", lines: ["Move with WASD or the arrow keys. Aim with the mouse.", "Hold the attack button to fire or swing. Use your two loadout keys to swap weapons."] },
+  { title: "DROPS & RUN LEVELS", lines: ["Enemies drop Coins and green XP orbs. Coins earned during a run are banked afterward.", "XP raises your run level. Each level offers one temporary Bronze, Silver, or Gold upgrade."] },
+  { title: "SURVIVE, THEN DEFEAT", lines: ["Survive until the boss arrives, learn its warnings, and defeat it to unlock the next map."] },
+];
+const FIRST_RUN_TUTORIAL_PAGES = [
+  { title: "YOUR FIRST RUN", lines: ["You chose two weapons. Switch between them whenever their different ranges or effects are useful.", "Move continuously, aim with the mouse, and collect the Coins and XP scattered by defeated enemies."] },
+  { title: "RUN UPGRADES", lines: ["When your XP bar fills, time pauses and three upgrades appear.", "Bronze improves stats, Silver adds abilities, and Gold provides powerful or weapon-specific effects for this run."] },
+];
+const BOSS_TUTORIAL_PAGES = [
+  { title: "BOSS: KING GNOMULUS", lines: ["The boss arrival slows time and highlights both you and the boss.", "King Gnomulus throws minions and summons formations. Watch warnings, keep moving, and focus your damage on him."] },
+  { title: "BOSS PHASE", lines: ["Existing minions take extra damage during boss fights, but boss-created minions do not.", "Defeating a boss triggers a slow-motion camera finish before rewards and unlocks are awarded."] },
+];
+const STAT_TUTORIAL_PAGES = [
+  { title: "PERMANENT STATS", lines: ["Health raises maximum HP. Damage strengthens every weapon. Speed improves movement.", "Attack Speed reduces cooldowns, while Accuracy reduces recoil and shot deviation."] },
+  { title: "SHIELD & REGENERATION", lines: ["Shield is unlocked by defeating the Ancient Snail on Redwood Trail. It absorbs damage and slowly refills.", "Regeneration unlocks after Golf Course and restores 1 HP every 3 seconds at its current single level."] },
+  { title: "WEAPON ARSENAL", lines: ["Every unlocked map raises weapon level caps. Weapon levels improve damage and attack speed.", "Open Weapon Arsenal now and upgrade one weapon to continue."] },
+];
+const QUEST_TUTORIAL_PAGES = [
+  { title: "DAILY QUESTS", lines: ["Daily quests track enemy defeats, weapon eliminations, and play time.", "Only possible quests are selected from maps and weapons you can actually use."] },
+  { title: "REWARDS & REFRESH", lines: ["Completed daily quests award regular Coins based on difficulty.", "The list refreshes each day at noon local time; progress is saved automatically."] },
+];
+const SEASON_TUTORIAL_PAGES = [
+  { title: "SEASONS", lines: ["Seasons are limited-time events with their own quests, Season Coins, and exclusive Limited weapons.", "Limited is a special label, separate from a weapon's normal rarity."] },
+  { title: "SEASON QUESTS", lines: ["Three easier Season Quests remain until claimed. Up to six quests can award Season Coins each day.", "Claiming completed quests refreshes their slots. Season Coins buy seasonal rewards or exchange for regular Coins."] },
+];
+const FINAL_TUTORIAL_PAGES = [
+  { title: "ACCOUNTS & CLOUD SAVES", lines: ["An account can synchronize progress between devices. Email is optional unless you want email confirmation or recovery.", "Never share your password; authentication is handled securely rather than stored in the public game code."] },
+  { title: "TRADING POST", lines: ["Signed-in players can view profiles, estimated collection values, and send rate-limited weapon or Money trades.", "Trading and Account controls stay hidden during active runs. Explore the remaining menus whenever you are ready!"] },
+];
+
 function circlesOverlap(first, second) {
   return Math.hypot(first.x - second.x, first.y - second.y) <= first.radius + second.radius;
+}
+
+function distanceToSegment(pointX, pointY, x1, y1, x2, y2) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const lengthSquared = dx * dx + dy * dy;
+  if (lengthSquared === 0) return Math.hypot(pointX - x1, pointY - y1);
+  const progress = clamp(((pointX - x1) * dx + (pointY - y1) * dy) / lengthSquared, 0, 1);
+  return Math.hypot(pointX - (x1 + progress * dx), pointY - (y1 + progress * dy));
 }
 
 function resolveEnemyObstacles(enemy, obstacles) {
@@ -5839,6 +7231,40 @@ export function bestiaryEnemyPreview(enemyId) {
   else if (enemyId === "popcorn") enemy = new PopcornEnemy(common);
   else if (enemyId === "mini-tractor") enemy = new MiniTractor({ ...common, world: PREVIEW_WORLD });
   else if (enemyId === "combine") enemy = new CombineBoss({ ...common, config: { ...bossConfig, health: 18000, speed: 52, name: "The Combine" }, world: PREVIEW_WORLD });
+  else if (enemyId === "cactus") enemy = new Cactus(common);
+  else if (enemyId === "snapflower") enemy = new Snapflower(common);
+  else if (enemyId === "sunflower") enemy = new SunflowerEnemy(common);
+  else if (enemyId === "vine") enemy = new VineEnemy(common);
+  else if (enemyId === "queen-rose") enemy = new QueenRoseBoss({ ...common, config: { ...bossConfig, health: 20000, name: "Queen Rose" } });
+  else if (enemyId === "crab") enemy = new Crab(common);
+  else if (enemyId === "hermit-crab") enemy = new HermitCrab(common);
+  else if (enemyId === "beach-ball-enemy") enemy = new BeachBallEnemy({ ...common, world: PREVIEW_WORLD });
+  else if (enemyId === "sand-octopus") enemy = new SandOctopus(common);
+  else if (enemyId === "lifeguard") enemy = new Lifeguard(common);
+  else if (enemyId === "king-crab") enemy = new KingCrabBoss({ ...common, config: { ...bossConfig, health: 25000, speed: 150, damage: 35, name: "King Crab" }, world: PREVIEW_WORLD });
+  else if(enemyId==="raccoon")enemy=new Raccoon(common);
+  else if(enemyId==="skunk")enemy=new Skunk(common);
+  else if(enemyId==="camp-bear")enemy=new CampBear(common);
+  else if(enemyId==="camp-owl")enemy=new CampOwl(common);
+  else if(enemyId==="campground-ranger")enemy=new CampgroundRangerBoss({...common,config:{...bossConfig,health:28000,speed:95,name:"Campground Ranger"},world:PREVIEW_WORLD});
+  else if(enemyId==="mountain-goat")enemy=new MountainGoat({...common,world:PREVIEW_WORLD});
+  else if(enemyId==="mountain-eagle")enemy=new MountainEagle({...common,world:PREVIEW_WORLD});
+  else if(enemyId==="mountain-ram")enemy=new MountainRam({...common,world:PREVIEW_WORLD});
+  else if(enemyId==="billy-mountain-king")enemy=new BillyMountainKingBoss({...common,config:{...bossConfig,health:32000,speed:115,name:"Billy the Mountain King"},world:PREVIEW_WORLD});
+  else if(enemyId==="partygoer")enemy=new Partygoer(common);
+  else if(enemyId==="hype-man")enemy=new HypeMan(common);
+  else if(enemyId==="grill-master")enemy=new GrillMaster(common);
+  else if(enemyId==="cooler-carrier")enemy=new CoolerCarrier(common);
+  else if(enemyId==="party-dj")enemy=new PartyDJ(common);
+  else if(enemyId==="party-coach")enemy=new PartyCoach(common);
+  else if(enemyId==="first-aid-volunteer")enemy=new FirstAidVolunteer(common);
+  else if(enemyId==="party-planner")enemy=new PartyPlannerBoss({...common,config:{...bossConfig,health:38000,speed:105,name:"The Party Planner"},world:PREVIEW_WORLD});
+  else if(enemyId==="bag-gremlin")enemy=new BagGremlin({...common,world:PREVIEW_WORLD});
+  else if(enemyId==="can-stack")enemy=new CanStack({...common,world:PREVIEW_WORLD});
+  else if(enemyId==="baguette-bandit")enemy=new BaguetteBandit({...common,world:PREVIEW_WORLD});
+  else if(enemyId==="frozen-dinner")enemy=new FrozenDinner({...common,world:PREVIEW_WORLD});
+  else if(enemyId==="cart-goblin")enemy=new CartGoblin({...common,world:PREVIEW_WORLD});
+  else if(enemyId==="store-manager")enemy=new StoreManagerBoss({...common,config:{...bossConfig,health:42000,speed:105,name:"The Store Manager"},world:PREVIEW_WORLD});
   if (!enemy) return null;
   enemy.x = 0;
   enemy.y = 0;
@@ -5864,6 +7290,62 @@ function renderEnemyPixelDetails(context, enemy, camera, portrait) {
   const radius = Math.max(14, enemy.radius ?? 20);
   context.save();
   context.globalAlpha = portrait ? 0.95 : 0.72;
+  if (enemy.enemyType === "mountain-goat") {
+    context.globalAlpha = 1;
+    context.fillStyle = "rgba(20,18,15,.28)";
+    context.fillRect(x - 25, y + 22, 50, 7);
+    context.fillStyle = enemy.hitFlash > 0 ? "#fff8df" : "#d8c9aa";
+    context.fillRect(x - 25, y - 15, 39, 31);
+    context.fillRect(x + 7, y - 22, 24, 25);
+    context.fillStyle = "#b9a985";
+    context.fillRect(x - 20, y + 12, 8, 16);
+    context.fillRect(x + 4, y + 12, 8, 16);
+    context.fillStyle = "#5a4a39";
+    context.fillRect(x - 21, y + 25, 10, 5);
+    context.fillRect(x + 3, y + 25, 10, 5);
+    context.fillStyle = "#8b7556";
+    context.fillRect(x + 11, y - 31, 6, 12);
+    context.fillRect(x + 24, y - 30, 6, 11);
+    context.fillStyle = "#eee0bc";
+    context.fillRect(x + 7, y - 25, 8, 8);
+    context.fillRect(x + 23, y - 24, 8, 8);
+    context.fillStyle = "#28231d";
+    context.fillRect(x + 13, y - 14, 4, 4);
+    context.fillRect(x + 24, y - 14, 4, 4);
+    context.fillRect(x + 25, y - 3, 8, 5);
+    context.fillStyle = "#f0e4ca";
+    context.fillRect(x + 2, y - 3, 12, 17);
+    context.fillRect(x + 8, y + 10, 6, 8);
+  } else if (enemy.enemyType === "mountain-ram") {
+    context.globalAlpha = 1;
+    context.fillStyle = "rgba(20,18,15,.32)";
+    context.fillRect(x - 38, y + 29, 76, 9);
+    context.fillStyle = enemy.hitFlash > 0 ? "#fff8e8" : "#817568";
+    context.fillRect(x - 35, y - 20, 61, 46);
+    context.fillStyle = "#665c52";
+    context.fillRect(x - 28, y + 20, 13, 20);
+    context.fillRect(x + 12, y + 20, 13, 20);
+    context.fillStyle = "#29251f";
+    context.fillRect(x - 30, y + 36, 16, 6);
+    context.fillRect(x + 11, y + 36, 16, 6);
+    context.fillStyle = "#cabc9f";
+    context.fillRect(x + 10, y - 30, 29, 31);
+    context.fillStyle = "#4c4137";
+    context.fillRect(x - 1, y - 39, 15, 10);
+    context.fillRect(x - 8, y - 34, 11, 24);
+    context.fillRect(x + 34, y - 38, 15, 10);
+    context.fillRect(x + 43, y - 33, 10, 24);
+    context.fillStyle = "#d8cbb0";
+    context.fillRect(x + 1, y - 35, 10, 7);
+    context.fillRect(x + 39, y - 34, 10, 7);
+    context.fillStyle = "#211d19";
+    context.fillRect(x + 16, y - 19, 5, 5);
+    context.fillRect(x + 30, y - 19, 5, 5);
+    context.fillRect(x + 21, y - 7, 16, 7);
+    context.fillStyle = "#aaa08e";
+    context.fillRect(x - 31, y - 17, 8, 34);
+    context.fillRect(x - 19, y - 18, 7, 35);
+  }
   if (enemy.isBoss) {
     context.fillStyle = "#f4da78";
     const edge = Math.min(58, radius * 0.72);
@@ -5929,6 +7411,8 @@ function createPreviewInput() {
     consumeClickRequest: () => null,
     consumeWeaponSlot: () => null,
     consumeAttackRequest: () => false,
+    consumeAutoFireToggle: () => false,
+    consumeDualWieldToggle: () => false,
     consumeConfirmRequest: () => false,
     consumeRestartRequest: () => false,
     consumeScrollRequest: () => 0,
@@ -5991,6 +7475,8 @@ function weaponUpgradeLabel(progress, weapon) {
   const cost = weaponUpgradeCost(level) * (progress.shieldUnlocked ? 2 : 1);
   return `${weapon.name} LV ${level} → ${level >= maxLevel ? "MAX" : `${cost} coins`}`;
 }
+
+function pointSegmentDistance(px,py,x1,y1,x2,y2){const dx=x2-x1,dy=y2-y1,lengthSquared=dx*dx+dy*dy;if(lengthSquared===0)return Math.hypot(px-x1,py-y1);const t=clamp(((px-x1)*dx+(py-y1)*dy)/lengthSquared,0,1);return Math.hypot(px-(x1+t*dx),py-(y1+t*dy));}
 
 function renderMeleePattern(context, centerX, centerY, facing, weapon, radius) {
   const forwardX = Math.cos(facing);
